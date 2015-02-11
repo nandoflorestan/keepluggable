@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Installer for image_store'''
+'''Installer for keepluggable'''
 
 import os
 from setuptools import setup, find_packages
@@ -15,7 +15,7 @@ with open('README.rst', encoding='utf-8') as f:
 
 requires = ['nine', 'bag']
 
-setup(name='image_store',
+setup(name='keepluggable',
     version='0.1dev1',
     description='Manages storage of images and other documents, with metadata.'
     ' Also offers a Pyramid UI',
@@ -43,16 +43,16 @@ setup(name='image_store',
     ],
     author='Nando Florestan',
     author_email="nandoflorestan@gmail.com",
-    url='https://github.com/nandoflorestan/image_store',
+    url='https://github.com/nandoflorestan/keepluggable',
     keywords='web pylons pyramid images store thumbnails',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=requires,
     # tests_require=requires,
-    # test_suite="image_store",
+    # test_suite="keepluggable",
     entry_points="""\
     [paste.app_factory]
-    main = image_store:main
+    main = keepluggable:main
     """,
     )

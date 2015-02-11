@@ -1,11 +1,13 @@
-===========
-image_store
-===========
+============
+keepluggable
+============
 
 Scope
 =====
 
-This is a highly configurable and pluggable system to manage storage of images and other documents (any kind of file, really), with metadata.
+**keepluggable** is a highly configurable and pluggable system to manage
+storage of images and other documents (any kind of file, really),
+with metadata.
 
 A user can upload images (or documents) and enter metadata about them, such as name, description, date, place, alt text, title attribute etc.
 
@@ -17,13 +19,18 @@ The metadata are stored separately from the payloads. Most people will use the p
 
 The business rules are implemented in a separate layer (isolated from any of the storage strategies and any UI), called an "action" layer. (This is commonly known as a "service" layer, but we call it "action".)
 
-One such action is the pluggable policy for uploaded image treatment. For instance, the default policy converts the original uploaded image to the JPEG format (so it will never store an unecessarily large BMP), with 1920px maximum for both width and height, then creates the following smaller versions of it as required:
+One such action is the pluggable policy for uploaded image treatment.
+For instance, the default policy converts the original uploaded image
+to the JPEG format (so it will never store an unecessarily large BMP),
+with 1920px maximum for both width and height, then creates (configurable)
+smaller versions of it as required:
 
 - 960px (half size)
 - 480px (quarter size)
-- 240px (thumb size)
+- 240px (vignette)
+- 160px (thumbnail)
 
-For those using the Pyramid web framework, some components are provided, too. There is an image_store resource that you can use with RESTful URLs such as these:
+For those using the Pyramid web framework, some components are provided, too. There is an keepluggable resource that you can use with RESTful URLs such as these:
 
 * my-img-store (GET, POST)
 * my-img-store/1 (GET, PUT, DELETE)
@@ -36,6 +43,7 @@ We want the experience to be as convenient as possible to the user:
 
 * Detect whether an image is already in the store and let the user edit it
 * Generate image slug from the name the user is typing
+* Optionally keep the original image stored (configurable)
 * Read EXIF data to fill in date and location, hopefully before the user types these
 * Allow the user to draw a square on the image to generate the thumbnail
 * Configure what kinds of files are accepted (e. g. only images)
@@ -46,6 +54,6 @@ We want the experience to be as convenient as possible to the user:
 * http caching
 * tags
 
-We are open to feature requests, suggestions and (especially) pull requests.
-Reach us at
-https://github.com/nandoflorestan/image_store
+We are open to bug reports, feature requests, suggestions and
+(especially) pull requests. Reach us at
+https://github.com/nandoflorestan/keepluggable
