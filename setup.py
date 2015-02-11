@@ -6,31 +6,41 @@
 import os
 from setuptools import setup, find_packages
 # http://peak.telecommunity.com/DevCenter/setuptools#developer-s-guide
+from codecs import open
 
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
+with open('README.rst', encoding='utf-8') as f:
+    long_description = f.read()
+
 # CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-requires = [
-    'pyramid',
-    # 'transaction',
-    # 'pyramid_tm',
-    # 'pyramid_debugtoolbar',
-    'six',
-    'waitress',
-    ]
+requires = ['nine', 'bag']
 
 setup(name='image_store',
-    version='0.1dev',
-    description='Pluggable Pyramid app: upload images, metadata, '
-    'serve thumbnails',
-    long_description=README,
-    classifiers=[ # TODO add more
+    version='0.1dev1',
+    description='Manages storage of images and other documents, with metadata.'
+    ' Also offers a Pyramid UI',
+    long_description=long_description,
+    classifiers=[  # http://pypi.python.org/pypi?:action=list_classifiers
+        'Development Status :: 3 - Alpha',
+        # "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        'License :: OSI Approved :: MIT License',
+        "Operating System :: OS Independent",
         "Programming Language :: Python",
+        'Programming Language :: Python :: 2',
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        'Programming Language :: Python :: Implementation :: CPython',
         "Framework :: Pyramid",
+        'Topic :: Database',
         "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-        ],
+        'Topic :: Internet :: WWW/HTTP :: WSGI',
+        'Topic :: Multimedia :: Graphics :: Graphics Conversion',
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
     author='Nando Florestan',
     author_email="nandoflorestan@gmail.com",
     url='https://github.com/nandoflorestan/image_store',
@@ -39,8 +49,8 @@ setup(name='image_store',
     include_package_data=True,
     zip_safe=False,
     install_requires=requires,
-    tests_require=requires,
-    test_suite="image_store",
+    # tests_require=requires,
+    # test_suite="image_store",
     entry_points="""\
     [paste.app_factory]
     main = image_store:main

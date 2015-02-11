@@ -1,24 +1,33 @@
+===========
 image_store
 ===========
 
 Scope
 =====
 
-This is a pluggable Pyramid app that manages image storage with metadata.
+This is a highly configurable and pluggable system to manage storage of images and other documents (any kind of file, really), with metadata.
 
-A user can upload images and enter metadata about them, such as name, description, date, place etc.
+A user can upload images (or documents) and enter metadata about them, such as name, description, date, place, alt text, title attribute etc.
 
-The application stores the image using one of several strategies and then it
-can serve the image in any size. The size is specified in the URL and a version of the image is created dynamically. There is a cache, too, so maybe the image already exists and is directly served.
+Some of the metadata shall be automatically found, such as image size, aspect ratio, geolocation data, MD5 checksum etc.
 
-The app uses URLs such as these:
+Multiple pluggable backends for payload storage are planned: Amazon S3, filesystem etc. You can add your own backend.
 
-* my-img-store
-* my-img-store/@@add
-* my-img-store/1/@@edit
-* my-img-store/1/@@delete
-* my-img-store/1?w=960&h=600
-* my-img-store/1/@@thumb/40x30
+The metadata are stored separately from the payloads. Most people will use the provided SQLAlchemy metadata storage. Again, you can provide your own component for this.
+
+The business rules are implemented in a separate layer (isolated from any of the storage strategies and any UI), called an "action" layer. (This is commonly known as a "service" layer, but we call it "action".)
+
+One such action is the pluggable policy for uploaded image treatment. For instance, the default policy converts the original uploaded image to the JPEG format (so it will never store an unecessarily large BMP), with 1920px maximum for both width and height, then creates the following smaller versions of it as required:
+
+- 960px (half size)
+- 480px (quarter size)
+- 240px (thumb size)
+
+For those using the Pyramid web framework, some components are provided, too. There is an image_store resource that you can use with RESTful URLs such as these:
+
+* my-img-store (GET, POST)
+* my-img-store/1 (GET, PUT, DELETE)
+* my-img-store/1?w=960&h=600 (GET)
 
 Future
 ======
@@ -28,11 +37,9 @@ We want the experience to be as convenient as possible to the user:
 * Detect whether an image is already in the store and let the user edit it
 * Generate image slug from the name the user is typing
 * Read EXIF data to fill in date and location, hopefully before the user types these
-* Create a thumbnail automatically, then let the user change it
-* The thumbnail also can be served in any size.
-* LRU cache for image sizes
-* Don't store BMP images; convert them first
-* define policies for formats: whether to convert/serve JPG, PNG, GIF
+* Allow the user to draw a square on the image to generate the thumbnail
+* Configure what kinds of files are accepted (e. g. only images)
+* Define policies for formats: whether to convert/serve JPG, PNG, GIF
 * generate image tag with alt, title (maybe legend) etc.
 * trigger an event when image is uploaded
 * search images to edit or remove them
