@@ -5,7 +5,7 @@ keepluggable
 Scope
 =====
 
-**keepluggable** is a highly configurable and pluggable system to manage
+**keepluggable** is a highly configurable Python library to manage
 storage of images and other documents (any kind of file, really),
 with metadata.
 
@@ -22,19 +22,31 @@ The business rules are implemented in a separate layer (isolated from any of the
 One such action is the pluggable policy for uploaded image treatment.
 For instance, the default policy converts the original uploaded image
 to the JPEG format (so it will never store an unecessarily large BMP),
-with 1920px maximum for both width and height, then creates (configurable)
-smaller versions of it as required:
+optionally stores the original image in whatever size it is, then
+creates configurable smaller versions of it:
 
+- 1920px (HD)
 - 960px (half size)
 - 480px (quarter size)
 - 240px (vignette)
 - 160px (thumbnail)
 
-For those using the Pyramid web framework, some components are provided, too. There is an keepluggable resource that you can use with RESTful URLs such as these:
+
+Integration with UI frameworks
+==============================
+
+Pyramid
+-------
+
+For those using the Pyramid web framework, some components are provided, too.
+There is a context resource that you can use with RESTful URLs such as:
 
 * my-img-store (GET, POST)
 * my-img-store/1 (GET, PUT, DELETE)
 * my-img-store/1?w=960&h=600 (GET)
+
+`Read more about Pyramid integration. <http://github.com/nandoflorestan/keepluggable/blob/master/docs/integration_pyramid.rst>`_
+
 
 Future
 ======
@@ -53,6 +65,10 @@ We want the experience to be as convenient as possible to the user:
 * search images to edit or remove them
 * http caching
 * tags
+
+
+Collaboration
+=============
 
 We are open to bug reports, feature requests, suggestions and
 (especially) pull requests. Reach us at
