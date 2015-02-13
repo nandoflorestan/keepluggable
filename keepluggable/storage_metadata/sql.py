@@ -18,7 +18,8 @@ class SQLAlchemyMetadataStorage(object):
         self.settings = settings
 
         # TODO Obtain the model classes from the configuration
-        self.file_model_cls = resolve_setting(self.settings, 'file_model_cls')
+        self.file_model_cls = resolve_setting(
+            self.settings, 'sql.file_model_cls')
 
     def _get_session(self):
         raise NotImplementedError()

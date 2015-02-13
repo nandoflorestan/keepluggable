@@ -22,10 +22,10 @@ class Orchestrator(object):
 
     def _instantiate_payload_storage(self):
         '''Instantiate a payload storage strategy based on configuration.'''
-        storage_cls = resolve_setting(self.settings, 'storage_file')
+        storage_cls = resolve_setting(self.settings, 'storage.file')
         self.storage_file = storage_cls(self.settings)
 
     def _instantiate_metadata_storage(self):
         '''Instantiate a metadata storage strategy based on configuration.'''
-        storage_cls = resolve_setting(self.settings, 'storage_metadata')
+        storage_cls = resolve_setting(self.settings, 'storage.metadata')
         self.storage_metadata = storage_cls(self.settings)

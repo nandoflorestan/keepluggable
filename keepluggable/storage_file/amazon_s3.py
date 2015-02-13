@@ -11,7 +11,7 @@ from time import time
 from hashlib import sha1
 from bag import dict_subset
 # from boto3 import resource
-from boto3.session import Session
+from boto3.session import Session  # easy_install -UZ boto3
 from keepluggable import read_setting
 
 

@@ -2,9 +2,17 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from keepluggable import read_setting
+from keepluggable.exceptions import FileNotAllowed
 
 
 class BaseFilesAction(object):
+    '''Configuration settings used by this component:
+
+        - ``max_file_size`` (int): the maximum file length, in bytes, that
+          can be stored. When absent, the system does not have a maximum size.
+        '''
+
     def __init__(self, orchestrator, bucket):
         self.orchestrator = orchestrator
         self.bucket = bucket
@@ -29,15 +37,15 @@ class BaseFilesAction(object):
         self._compute_length(bytes_io, metadata)
 
         # Hook for subclasses to allow or forbid storing this file
-        if not self._can_store(bytes_io, metadata):
-            return
+        self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
 
         self._compute_md5(bytes_io, metadata)
 
-        if metadata['mime_type'].startswith('image'):
+        is_image = metadata['mime_type'].startswith('image')
+        if is_image:
             self._before_storing_image(bytes_io, metadata)
         self._store_file(bytes_io, metadata)
-        if metadata['mime_type'].startswith('image'):
+        if is_image:
             self._after_storing_image(bytes_io, metadata)
         return metadata
 
@@ -48,10 +56,15 @@ class BaseFilesAction(object):
             from mimetypes import guess_type
             metadata['mime_type'] = guess_type(metadata['file_name'])[0]
 
-    def _can_store(self, bytes_io, metadata):
-        '''Override this method if you wish to abort storing some files early.
+    def _allow_storage_of(self, bytes_io, metadata):
+        '''Override this method if you wish to abort storing some files.
             To abort, raise FileNotAllowed with a message explaining why.'''
-        return True
+        maximum = int(read_setting(
+            self.orchestrator.settings, 'max_file_size', default=None))
+        if maximum is not None and metadata['length'] > maximum:
+            raise FileNotAllowed(
+                'The file is {} KB long and the maximum is {} KB.'.format(
+                    int(metadata['length'] / 1024), int(maximum / 1024)))
 
     def _compute_length(self, bytes_io, metadata):
         from bag.streams import get_file_size
