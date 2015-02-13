@@ -11,7 +11,13 @@ class BaseFilesAction(object):
 
     def store_original_file(self, bytes_io, **metadata):
         '''Point of entry into the workflow of storing a file.
-            This method will usually be overridden in subclasses.
+            You can override this method in subclasses to change the steps
+            since it is a sort of coordinator that calls one method for
+            each step.
+
+            The argument *bytes_io* is a file-like object with the payload.
+            *metadata* is a dict with the information to be persisted in
+            the metadata storage.
             '''
         assert metadata['file_name']
 
@@ -20,7 +26,9 @@ class BaseFilesAction(object):
 
         self._guess_mime_type(metadata)
 
-        # Hook for subclasses to avoid storing this file
+        self._compute_length(bytes_io, metadata)
+
+        # Hook for subclasses to allow or forbid storing this file
         if not self._can_store(bytes_io, metadata):
             return
 
@@ -41,8 +49,13 @@ class BaseFilesAction(object):
             metadata['mime_type'] = guess_type(metadata['file_name'])[0]
 
     def _can_store(self, bytes_io, metadata):
-        'Override this method if you wish to abort storing some files early.'
+        '''Override this method if you wish to abort storing some files early.
+            To abort, raise FileNotAllowed with a message explaining why.'''
         return True
+
+    def _compute_length(self, bytes_io, metadata):
+        from bag.streams import get_file_size
+        metadata['length'] = get_file_size(bytes_io)
 
     def _compute_md5(self, bytes_io, metadata):
         from hashlib import md5
@@ -56,14 +69,13 @@ class BaseFilesAction(object):
             the_length += len(segment)
             the_hash.update(segment)
         metadata['md5'] = the_hash.hexdigest()
-        metadata['length'] = the_length
+        previous_length = metadata.get('length')
+        if previous_length is None:
+            metadata['length'] = the_length
+        else:
+            assert previous_length == the_length, "Bug? File lengths {}, {} " \
+                "don't match.".format(previous_length, the_length)
         bytes_io.seek(0)  # ...so it can be read again
-
-    def _store_file(self, bytes_io, metadata):
-        '''Saves the payload and the metadata on the 2 storage backends.'''
-        self.orchestrator.storage_metadata.create_file_metadata(metadata)
-        self.orchestrator.storage_file.put_object(
-            bucket=self.bucket, metadata=metadata, bytes_io=bytes_io)
 
     def _before_storing_image(self, bytes_io, metadata):
         # TODO Apply self.image_resize_policy
@@ -71,5 +83,13 @@ class BaseFilesAction(object):
         # TODO Store metadata['image_height']
         pass
 
+    def _store_file(self, bytes_io, metadata):
+        '''Saves the payload and the metadata on the 2 storage backends.'''
+        self.orchestrator.storage_metadata.create_file_metadata(metadata)
+        # TODO Enable file storage soon:
+        # self.orchestrator.storage_file.put_object(
+        #     bucket=self.bucket, metadata=metadata, bytes_io=bytes_io)
+
     def _after_storing_image(self, bytes_io, metadata):
+        # TODO Store different sizes
         pass
