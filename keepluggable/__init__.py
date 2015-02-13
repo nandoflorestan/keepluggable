@@ -2,6 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from bag import resolve
 
 
 def read_setting(settings, key, default=None):
@@ -13,3 +14,8 @@ def read_setting(settings, key, default=None):
                                'in its [keepluggable] section.'.format(key))
     else:
         return settings.get(key, default)
+
+
+def resolve_setting(settings, key, default=None):
+    resource_spec = read_setting(settings, key, default)
+    return resolve(resource_spec)

@@ -20,7 +20,8 @@ def upload_multiple_files(context, request):
     ids = []
     for fieldStorage in request.POST.getall('files'):
         # buffered_reader = fieldStorage.fp
+        # encoding = fieldStorage.encoding
         ids.append(action.store_original_file(
             bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
-            mimetype=fieldStorage.type, encoding=fieldStorage.encoding))
+            mime_type=fieldStorage.type)['id'])
     return {'items': ids}

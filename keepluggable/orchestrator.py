@@ -2,8 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from bag import resolve
-from keepluggable import read_setting
+from keepluggable import resolve_setting
 
 
 class Orchestrator(object):
@@ -13,18 +12,20 @@ class Orchestrator(object):
 
     def __init__(self, settings):
         self.settings = settings
-
-        # Instantiate a storage strategy based on configuration
-        storage_cls = self.resolve('storage_file')
-        self.storage_file = storage_cls(settings)
-
-        # Get the model classes based on configuration
-        self.file_model_cls = self.resolve('file_model_cls')
+        self._instantiate_payload_storage()
+        self._instantiate_metadata_storage()
 
         # Get the action classes based on configuration
-        self.files_action_cls = self.resolve(
-            'files_action_cls', 'keepluggable.actions:BaseFilesAction')
+        self.files_action_cls = resolve_setting(
+            self.settings, 'files_action_cls',
+            'keepluggable.actions:BaseFilesAction')
 
-    def resolve(self, key, default=None):
-        resource_spec = read_setting(self.settings, key, default)
-        return resolve(resource_spec)
+    def _instantiate_payload_storage(self):
+        '''Instantiate a payload storage strategy based on configuration.'''
+        storage_cls = resolve_setting(self.settings, 'storage_file')
+        self.storage_file = storage_cls(self.settings)
+
+    def _instantiate_metadata_storage(self):
+        '''Instantiate a metadata storage strategy based on configuration.'''
+        storage_cls = resolve_setting(self.settings, 'storage_metadata')
+        self.storage_metadata = storage_cls(self.settings)

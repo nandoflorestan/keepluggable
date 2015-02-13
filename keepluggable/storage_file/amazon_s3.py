@@ -9,7 +9,7 @@ import urllib
 import hmac
 from time import time
 from hashlib import sha1
-# import boto3
+from bag import dict_subset
 # from boto3 import resource
 from boto3.session import Session
 from keepluggable import read_setting
@@ -53,11 +53,14 @@ class AmazonS3Storage(object):
         adict = self.get_object(bucket, key).get()
         return adict['Body'].read()
 
-    def put_object(self, bucket, key, metadata, content):
-        '''*content* may be an open file.'''
-        return self.get_bucket(bucket).put_object(
-            Key=key, Metadata=metadata, Body=content)
-        # TODO ContentMD5, ContentLength, ContentType (the MIME type)
+    def put_object(self, bucket, metadata, bytes_io):
+        subset = dict_subset(metadata, lambda k, v: k not in (
+            'length', 'md5', 'mime_type'))
+        md5 = metadata['md5']
+        result = self.get_bucket(bucket).put_object(
+            Key=md5, ContentMD5=md5, ContentType=metadata.pop('mime_type'),
+            ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
+        import ipdb; ipdb.set_trace() # TODO Remove debug
 
     def delete_object(self, bucket, key):
         return self.get_object(bucket, key).delete()
