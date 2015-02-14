@@ -2,6 +2,8 @@
 Getting started with keepluggable
 =================================
 
+TODO: Notes on installing Pillow
+
 ::
 
 	easy_install -UZ keepluggable
@@ -12,8 +14,15 @@ After installing the Python package, you can select the components you are using
 Selecting components
 ====================
 
-File payload storage backends are available from keepluggable.storage_file.
-File metadata storage backends are available from keepluggable.storage_metadata.
+**File payload storage backends:**
+
+- `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_
+- A storage backend using the local file system should be implemented. Would you help?
+
+**File metadata storage backends:**
+
+- `SQLAlchemyMetadataStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_metadata/sql.py>`_
+- You can write a new metadata storage backend. ZODB, Mongo, gdbm, anyone?
 
 
 Understanding the configuration
@@ -23,14 +32,22 @@ In my case, I am integrating keepluggable with an existing Pyramid web app.
 So I add a new ``[keepluggable]`` section to my Pyramid config file::
 
 	[keepluggable]
+	# The components we chose:
 	storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
 	storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
-	max_file_size = 23068672
-	sql.file_model_cls = myapp.modules.uploads.models:File
-	sql.session = myapp.database:session
+	action.files = keepluggable.actions:BaseFilesAction
+
+	# AmazonS3Storage configuration:
 	s3.access_key_id = SOME_KEY
 	s3.secret_access_key = SOME_SECRET
 	s3.region_name = SOME_REGION
+
+	# SQLAlchemyMetadataStorage configuration:
+	sql.file_model_cls = myapp.modules.uploads.models:File
+	sql.session = myapp.database:session
+
+	# action.files configuration keys have a "fls." prefix:
+	fls.max_file_size = 23068672
 
 Above you see a few [key, value] pairs. The section of an INI file
 becomes a Python dictionary which is what the system actually uses as
@@ -42,18 +59,16 @@ class name. What do they do?
 
 - ``storage.file`` informs which backend class shall be used for file payload storage. In the example, we are using Amazon S3.
 - ``storage.metadata`` informs which backend class shall be used for metadata storage. In the example, we are storing metadata with SQLAlchemy.
+- ``action.files``: points to an "Action" class that contains the actual steps that will be carried out in the workflow. Thus, probably this will point to your own subclass instead of the value given in the example.
 
 Each component we just selected needs its own configuration. Thus,
 the Amazon S3 backend has settings beginning with "s3." and the
 SQLAlchemy metadata storage has settings beginning with "sql.".
 
-- ``sql.file_model_cls`` in the above example tells the SQLAlchemy backend to use a certain model class to store the file metadata.
-- ``sql.session`` lets the SQLAlchemy backend know where to find the session.
-- The settings beginning with "s3." provide information for the system to authenticate with Amazon.
-
-This has been an overview of configuration. You should look up the
-documentation for each component you are actually using in order to
-see all the possible settings.
+To configure each component you selected, please refer to that component's
+own docstring -- it should mention all the possible settings.
+You can see the source code by clicking on the component in
+the list at the top of this document.
 
 
 Integration with UI frameworks

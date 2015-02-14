@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
 
+'''Action class that coordinates the workflow. You are likely to need to
+    subclass this.
+
+    Configuration settings
+    ======================
+
+    - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
+      can be stored. When absent, the system does not have a maximum size.
+    - ``fls.bucket_prefix`` (string): The action is instantiated with a
+      bucket_id argument (usually an integer), but you should usually
+      namespace your bucket names. Easiest way is to provide a prefix.
+      So if the prefix is "mybucket" and the current bucket_id is 42,
+      the computed bucket name will be "mybucket42". If this isn't enough
+      for your use case, you should override the "bucket_name" property.
+    '''
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from keepluggable import read_setting
@@ -7,15 +23,19 @@ from keepluggable.exceptions import FileNotAllowed
 
 
 class BaseFilesAction(object):
-    '''Configuration settings used by this component:
+    __doc__ = __doc__
 
-        - ``max_file_size`` (int): the maximum file length, in bytes, that
-          can be stored. When absent, the system does not have a maximum size.
-        '''
-
-    def __init__(self, orchestrator, bucket):
+    def __init__(self, orchestrator, bucket_id):
         self.orchestrator = orchestrator
-        self.bucket = bucket
+        self.bucket_id = bucket_id
+
+    @property
+    def bucket_name(self):
+        '''Override this property in subclasses to properly build the
+            bucket_name according to your needs.
+            '''
+        prefix = self.orchestrator.settings.get('fls.bucket_prefix', '')
+        return prefix + str(self.bucket_id)
 
     def store_original_file(self, bytes_io, **metadata):
         '''Point of entry into the workflow of storing a file.
@@ -59,12 +79,14 @@ class BaseFilesAction(object):
     def _allow_storage_of(self, bytes_io, metadata):
         '''Override this method if you wish to abort storing some files.
             To abort, raise FileNotAllowed with a message explaining why.'''
-        maximum = int(read_setting(
-            self.orchestrator.settings, 'max_file_size', default=None))
-        if maximum is not None and metadata['length'] > maximum:
-            raise FileNotAllowed(
-                'The file is {} KB long and the maximum is {} KB.'.format(
-                    int(metadata['length'] / 1024), int(maximum / 1024)))
+        maximum = read_setting(
+            self.orchestrator.settings, 'fls.max_file_size', default=None)
+        if maximum is not None:
+            maximum = int(maximum)
+            if metadata['length'] > maximum:
+                raise FileNotAllowed(
+                    'The file is {} KB long and the maximum is {} KB.'.format(
+                        int(metadata['length'] / 1024), int(maximum / 1024)))
 
     def _compute_length(self, bytes_io, metadata):
         from bag.streams import get_file_size
@@ -100,7 +122,7 @@ class BaseFilesAction(object):
         '''Saves the payload and the metadata on the 2 storage backends.'''
         # TODO Enable file storage soon:
         # self.orchestrator.storage_file.put_object(
-        #     bucket=self.bucket, metadata=metadata, bytes_io=bytes_io)
+        #     bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
 
         metadata['id'] = \
             self.orchestrator.storage_metadata.create_file_metadata(metadata)

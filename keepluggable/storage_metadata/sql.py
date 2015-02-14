@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
-'''File metadata storage backend using SQLAlchemy.
-
-    To use this:
+'''File metadata storage backend using SQLAlchemy. To use this:
 
     - Either point to your SQLAlchemy session in the configuration setting
       ``sql.session`` or subclass this and override the ``_get_session()``
       method.
+
+    Configuration settings
+    ======================
+
+    - ``sql.file_model_cls`` must point to a certain model class to store the file metadata.
+    - ``sql.session`` should point to a scoped session global variable.
+
+    TODO: Offer an example of the model class.
     '''
 
 from __future__ import (absolute_import, division, print_function,

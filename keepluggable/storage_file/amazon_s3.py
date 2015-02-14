@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 
-'''Amazon S3 storage backend.'''
+'''Amazon S3 storage backend.
+
+    Configuration settings
+    ======================
+
+    - ``s3.access_key_id``: part of your Amazon credentials
+    - ``s3.secret_access_key``: part of your Amazon credentials
+    - ``s3.region_name``: part of your Amazon credentials
+    '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)

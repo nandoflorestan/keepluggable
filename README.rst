@@ -10,7 +10,9 @@ Scope
 highly configurable Python library to manage storage of images and
 other documents (any kind of file, really), with metadata.
 
-The file metadata is stored in one place and the file payload in another.
+The file metadata can be stored in a different place than the file payload.
+This is recommended because many operations, such as listing files,
+do not involve actual file content, so you should avoid loading it.
 
 For file payloads, we currently have implemented one backend that stores
 them in Amazon S3. We also intend to provide another backend that stores
@@ -33,6 +35,10 @@ The business rules are implemented in a separate layer
 called an "action" layer. (This is commonly known as a "service" layer,
 but we call it "action".) This makes it possible for us to have any
 storage backends and use any web frameworks or other UI frameworks.
+
+Each application has its own business rules, therefore it is likely that
+you will subclass the provided action layer to tweak the workflow for
+your purposes.
 
 One such "action" is the pluggable policy for uploaded image treatment.
 For instance, the default policy converts the original uploaded image
