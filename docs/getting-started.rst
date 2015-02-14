@@ -27,6 +27,7 @@ So I add a new ``[keepluggable]`` section to my Pyramid config file::
 	storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
 	max_file_size = 23068672
 	sql.file_model_cls = myapp.modules.uploads.models:File
+	sql.session = myapp.database:session
 	s3.access_key_id = SOME_KEY
 	s3.secret_access_key = SOME_SECRET
 	s3.region_name = SOME_REGION
@@ -47,6 +48,7 @@ the Amazon S3 backend has settings beginning with "s3." and the
 SQLAlchemy metadata storage has settings beginning with "sql.".
 
 - ``sql.file_model_cls`` in the above example tells the SQLAlchemy backend to use a certain model class to store the file metadata.
+- ``sql.session`` lets the SQLAlchemy backend know where to find the session.
 - The settings beginning with "s3." provide information for the system to authenticate with Amazon.
 
 This has been an overview of configuration. You should look up the

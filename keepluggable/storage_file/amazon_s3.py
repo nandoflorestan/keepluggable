@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Amazon S3 storage backend'''
+'''Amazon S3 storage backend.'''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -16,6 +16,8 @@ from keepluggable import read_setting
 
 
 class AmazonS3Storage(object):
+    __doc__ = __doc__
+
     def __init__(self, settings):
         self.access_key_id = read_setting(settings, 's3.access_key_id')
         self.secret_access_key = read_setting(settings, 's3.secret_access_key')

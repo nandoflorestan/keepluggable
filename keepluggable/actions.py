@@ -98,10 +98,12 @@ class BaseFilesAction(object):
 
     def _store_file(self, bytes_io, metadata):
         '''Saves the payload and the metadata on the 2 storage backends.'''
-        self.orchestrator.storage_metadata.create_file_metadata(metadata)
         # TODO Enable file storage soon:
         # self.orchestrator.storage_file.put_object(
         #     bucket=self.bucket, metadata=metadata, bytes_io=bytes_io)
+
+        metadata['id'] = \
+            self.orchestrator.storage_metadata.create_file_metadata(metadata)
 
     def _after_storing_image(self, bytes_io, metadata):
         # TODO Store different sizes

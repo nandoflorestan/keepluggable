@@ -2,9 +2,12 @@
 
 '''File metadata storage backend using SQLAlchemy.
 
-To use this, you must create a subclass and override the ``_get_session()``
-method.
-'''
+    To use this:
+
+    - Either point to your SQLAlchemy session in the configuration setting
+      ``sql.session`` or subclass this and override the ``_get_session()``
+      method.
+    '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -21,10 +24,16 @@ class SQLAlchemyMetadataStorage(object):
         self.file_model_cls = resolve_setting(
             self.settings, 'sql.file_model_cls')
 
+        # Instantiate a session at startup just to make sure it is configured
+        self._get_session()
+
     def _get_session(self):
-        raise NotImplementedError()
+        '''Returns the SQLAlchemy session.'''
+        return resolve_setting(self.settings, 'sql.session')
 
     def create_file_metadata(self, metadata):
         sas = self._get_session()
         model_instance = self.file_model_cls(**metadata)
         sas.add(model_instance)
+        sas.flush()
+        return model_instance.id
