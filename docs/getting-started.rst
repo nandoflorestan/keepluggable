@@ -17,7 +17,8 @@ Selecting components
 **File payload storage backends:**
 
 - `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_
-- A storage backend using the local file system should be implemented. Would you help?
+- A storage backend using the local file system should be implemented.
+  Would you help?
 
 **File metadata storage backends:**
 
@@ -53,7 +54,7 @@ Above you see a few [key, value] pairs. The section of an INI file
 becomes a Python dictionary which is what the system actually uses as
 configuration.
 
-The first few settings define which components we are using. Each value is
+The first group of settings define which components we are using. Each value is
 comprised of a Python package name (containing dots), then a colon, then a
 class name. What do they do?
 
@@ -82,9 +83,9 @@ thin server style. Our AJAX views are based on URL traversal -- they are
 attached to certain context resources -- so you can mount the resource
 wherever you want in your URL scheme. For instance:
 
-* /somewhere/down/the/url/my-img-store (GET, POST)
-* /somewhere/down/the/url/my-img-store/1 (GET, PUT, DELETE)
-* /somewhere/down/the/url/my-img-store/1?w=960&h=600 (GET)
+- /somewhere/down/the/url/my-img-store (GET, POST)
+- /somewhere/down/the/url/my-img-store/1 (GET, PUT, DELETE)
+- /somewhere/down/the/url/my-img-store/1?w=960&h=600 (GET)
 
 `Read more about Pyramid integration. <http://github.com/nandoflorestan/keepluggable/blob/master/docs/integration_pyramid.rst>`_
 

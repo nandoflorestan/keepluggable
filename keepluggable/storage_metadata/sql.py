@@ -26,7 +26,6 @@ class SQLAlchemyMetadataStorage(object):
     def __init__(self, settings):
         self.settings = settings
 
-        # TODO Obtain the model classes from the configuration
         self.file_model_cls = resolve_setting(
             self.settings, 'sql.file_model_cls')
 
@@ -37,9 +36,15 @@ class SQLAlchemyMetadataStorage(object):
         '''Returns the SQLAlchemy session.'''
         return resolve_setting(self.settings, 'sql.session')
 
-    def create_file_metadata(self, metadata):
+    def create_file_metadata(self, metadata, bucket_id, bucket_name):
+        # TODO Use create_or_update()
         sas = self._get_session()
-        model_instance = self.file_model_cls(**metadata)
+        model_instance = self._instantiate_file_model(
+            metadata, bucket_id, bucket_name)
         sas.add(model_instance)
         sas.flush()
         return model_instance.id
+
+    def _instantiate_file_model(self, metadata, bucket_id, bucket_name):
+        '''Override this to add or delete arguments on the constructor call.'''
+        return self.file_model_cls(**metadata)

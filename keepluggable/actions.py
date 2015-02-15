@@ -18,6 +18,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from nine.decorator import reify
 from keepluggable import read_setting
 from keepluggable.exceptions import FileNotAllowed
 
@@ -29,7 +30,7 @@ class BaseFilesAction(object):
         self.orchestrator = orchestrator
         self.bucket_id = bucket_id
 
-    @property
+    @reify
     def bucket_name(self):
         '''Override this property in subclasses to properly build the
             bucket_name according to your needs.
@@ -52,7 +53,7 @@ class BaseFilesAction(object):
         # This is not a derived file such as a resized image.
         metadata['version'] = 'original'
 
-        self._guess_mime_type(metadata)
+        self._guess_mime_type(bytes_io, metadata)
 
         self._compute_length(bytes_io, metadata)
 
@@ -69,7 +70,7 @@ class BaseFilesAction(object):
             self._after_storing_image(bytes_io, metadata)
         return metadata
 
-    def _guess_mime_type(self, metadata):
+    def _guess_mime_type(self, bytes_io, metadata):
         '''Fill in the mime_type if not already known.'''
         t = metadata.get('mime_type')
         if t is None:
@@ -125,7 +126,8 @@ class BaseFilesAction(object):
         #     bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
 
         metadata['id'] = \
-            self.orchestrator.storage_metadata.create_file_metadata(metadata)
+            self.orchestrator.storage_metadata.create_file_metadata(
+                metadata, self.bucket_id, self.bucket_name)
 
     def _after_storing_image(self, bytes_io, metadata):
         # TODO Store different sizes

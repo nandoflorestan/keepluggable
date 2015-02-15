@@ -60,18 +60,18 @@ Future
 
 We want the experience to be as convenient as possible for the user:
 
-* Detect whether an image is already in the store and let the user edit it
-* Generate image slug from the name the user is typing
-* Optionally keep the original image stored (configurable)
-* Read EXIF data to fill in date and location, hopefully before the user types these
-* Allow the user to draw a square on the image to generate the thumbnail
-* Configure what kinds of files are accepted (e. g. only images)
-* Define policies for formats: whether to convert/serve JPG, PNG, GIF
-* generate image tag with alt, title (maybe legend) etc.
-* trigger an event when image is uploaded
-* search images to edit or remove them
-* http caching
-* tags
+- Detect whether an image is already in the store and let the user edit it
+- Generate image slug from the name the user is typing
+- Optionally keep the original image stored (configurable)
+- Read EXIF data to fill in date and location, hopefully before the user types these
+- Allow the user to draw a square on the image to generate the thumbnail
+- Configure what kinds of files are accepted (e. g. only images)
+- Define policies for formats: whether to convert/serve JPG, PNG, GIF
+- generate image tag with alt, title (maybe legend) etc.
+- trigger an event when image is uploaded
+- search images to edit or remove them
+- http caching
+- tags
 
 
 Collaboration
