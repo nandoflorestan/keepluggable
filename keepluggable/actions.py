@@ -125,8 +125,8 @@ class BaseFilesAction(object):
         # self.orchestrator.storage_file.put_object(
         #     bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
 
-        metadata['id'] = \
-            self.orchestrator.storage_metadata.create_file_metadata(
+        metadata['id'], is_new = \
+            self.orchestrator.storage_metadata.put_metadata(
                 metadata, self.bucket_id, self.bucket_name)
 
     def _after_storing_image(self, bytes_io, metadata):

@@ -36,15 +36,35 @@ class SQLAlchemyMetadataStorage(object):
         '''Returns the SQLAlchemy session.'''
         return resolve_setting(self.settings, 'sql.session')
 
-    def create_file_metadata(self, metadata, bucket_id, bucket_name):
-        # TODO Use create_or_update()
-        sas = self._get_session()
-        model_instance = self._instantiate_file_model(
-            metadata, bucket_id, bucket_name)
-        sas.add(model_instance)
-        sas.flush()
-        return model_instance.id
+    def put_metadata(self, metadata, bucket_id, bucket_name):
+        '''Create or update a file corresponding to the given ``metadata``.
+            This method returns a 2-tuple containing the ID of the entity
+            and a boolean saying whether the entity is new or existing.
 
-    def _instantiate_file_model(self, metadata, bucket_id, bucket_name):
+            It is not likely that this method should be overridden.
+            '''
+        sas = self._get_session()
+        entity = self._find(sas, metadata, bucket_id, bucket_name)
+        is_new = entity is None
+        if is_new:
+            entity = self._instantiate(
+                sas, metadata, bucket_id, bucket_name)
+            sas.add(entity)
+        else:
+            self._update(sas, metadata, bucket_id, bucket_name, entity)
+        sas.flush()
+        return entity.id, is_new
+
+    def _find(self, sas, metadata, bucket_id, bucket_name):
+        '''Override this to search for an existing file.'''
+        return sas.query(self.file_model_cls).filter_by(
+            md5=metadata['md5']).first()
+
+    def _update(self, sas, metadata, bucket_id, bucket_name, entity):
+        '''Override this to update the metadata of an existing entity.'''
+        for key, value in metadata.items():
+            setattr(entity, key, value)
+
+    def _instantiate(self, sas, metadata, bucket_id, bucket_name):
         '''Override this to add or delete arguments on the constructor call.'''
         return self.file_model_cls(**metadata)
