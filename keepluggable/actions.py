@@ -38,6 +38,9 @@ class BaseFilesAction(object):
         prefix = self.orchestrator.settings.get('fls.bucket_prefix', '')
         return prefix + str(self.bucket_id)
 
+    def create_bucket(self):
+        self.orchestrator.storage_file.create_bucket(self.bucket_name)
+
     def store_original_file(self, bytes_io, **metadata):
         '''Point of entry into the workflow of storing a file.
             You can override this method in subclasses to change the steps
@@ -121,13 +124,18 @@ class BaseFilesAction(object):
 
     def _store_file(self, bytes_io, metadata):
         '''Saves the payload and the metadata on the 2 storage backends.'''
-        # TODO Enable file storage soon:
-        # self.orchestrator.storage_file.put_object(
-        #     bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
+        storage_file = self.orchestrator.storage_file
+        storage_file.put_object(
+            bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
 
-        metadata['id'], is_new = \
-            self.orchestrator.storage_metadata.put_metadata(
-                metadata, self.bucket_id, self.bucket_name)
+        try:
+            metadata['id'], is_new = \
+                self.orchestrator.storage_metadata.put_metadata(
+                    metadata, self.bucket_id, self.bucket_name)
+        except:
+            storage_file.delete_object(
+                bucket=self.bucket_name, key=metadata['md5'])
+            raise
 
     def _after_storing_image(self, bytes_io, metadata):
         # TODO Store different sizes

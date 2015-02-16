@@ -2,6 +2,10 @@
 
 '''Amazon S3 storage backend.
 
+    To enable this backend, use this configuration::
+
+        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
+
     Configuration settings
     ======================
 
@@ -39,41 +43,41 @@ class AmazonS3Storage(object):
         self.s3.create_bucket(Name=name)
 
     def delete_bucket(self, name):
-        return self.get_bucket(name).delete()
+        return self._get_bucket(name).delete()
 
-    def all_buckets(self):  # buckets have a .name
+    def _buckets(self):  # buckets have a .name
         return self.s3.buckets.all()
 
     def bucket_names(self):  # generator
-        return (b.name for b in self.all_buckets())
+        return (b.name for b in self._buckets())
 
-    def get_bucket(self, name):
+    def _get_bucket(self, name):
         return self.s3.Bucket(name) if isinstance(name, str) else name
 
     def gen_objects(self, bucket):
-        '''List the contents of a bucket.'''
-        for obj in self.get_bucket(bucket).objects.all():
+        '''Generator of the keys in a bucket.'''
+        for obj in self._get_bucket(bucket).objects.all():
             yield obj  # which has .key
 
-    def get_object(self, bucket, key):
-        # return self.get_bucket(bucket).Object(key)
+    def _get_object(self, bucket, key):
+        # return self._get_bucket(bucket).Object(key)
         return self.s3.Object(bucket_name=bucket, key=key)
 
     def get_content(self, bucket, key):
-        adict = self.get_object(bucket, key).get()
+        adict = self._get_object(bucket, key).get()
         return adict['Body'].read()
 
     def put_object(self, bucket, metadata, bytes_io):
         subset = dict_subset(metadata, lambda k, v: k not in (
             'length', 'md5', 'mime_type'))
         md5 = metadata['md5']
-        result = self.get_bucket(bucket).put_object(
+        result = self._get_bucket(bucket).put_object(
             Key=md5, ContentMD5=md5, ContentType=metadata.pop('mime_type'),
             ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
         import ipdb; ipdb.set_trace() # TODO Remove debug
 
     def delete_object(self, bucket, key):
-        return self.get_object(bucket, key).delete()
+        return self._get_object(bucket, key).delete()
 
     def get_url(self, bucket, key, seconds=3600, https=False):
         """Return S3 authenticated URL sans network access or phatty

@@ -3,19 +3,23 @@
 
 '''Installer for keepluggable'''
 
-import os
+from codecs import open
+from sys import version_info
 from setuptools import setup, find_packages
 # http://peak.telecommunity.com/DevCenter/setuptools#developer-s-guide
-from codecs import open
 
 with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
-# CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+requires = ['nine', 'bag']  # Each backend may have additional dependencies.
 
-requires = ['nine', 'bag']
+if version_info[:2] < (3, 4):
+    requires.append('pathlib')  # 'enum34'
+# if version_info[:2] < (3, 2):
+#     requires.extend(['futures', 'unittest2'])
 
-setup(name='keepluggable',
+setup(
+    name='keepluggable',
     version='0.1dev1',
     description='Manages storage of images and other documents, with metadata.'
     ' Also offers a Pyramid UI',

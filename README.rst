@@ -15,8 +15,8 @@ This is recommended because many operations, such as listing files,
 do not involve actual file content, so you should avoid loading it.
 
 For file payloads, we currently have implemented one backend that stores
-them in Amazon S3. We also intend to provide another backend that stores
-files in the local filesystem (mostly useful for usage during development).
+them in Amazon S3. There is also a very simple backend that stores
+files in the local filesystem (useful during development).
 
 For (optionally) storing the metadata we currently provide a SQLAlchemy
 backend. In both cases, you can easily write other storage backends.
