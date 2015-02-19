@@ -22,11 +22,12 @@ from __future__ import (absolute_import, division, print_function,
 from pathlib import Path
 from time import time
 from keepluggable import read_setting
+from . import BasePayloadStorage
 
 MEGABYTE = 1048576
 
 
-class LocalFilesystemStorage(object):
+class LocalFilesystemStorage(BasePayloadStorage):
     __doc__ = __doc__
 
     def __init__(self, settings):
@@ -38,14 +39,18 @@ class LocalFilesystemStorage(object):
     def create_bucket(self, name):
         (self.directory / name).mkdir()
 
-    def delete_bucket(self, name):
-        (self.directory / name).rmdir()
+    def delete_bucket(self, bucket):
+        for key in self.gen_objects(bucket):
+            self.delete_object(bucket, key)
+        (self.directory / bucket).rmdir()
 
+    @property
     def _buckets(self):
         return (d for d in self.directory.iterdir() if d.is_dir())
 
+    @property
     def bucket_names(self):  # generator
-        return (b.name for b in self._buckets())
+        return (b.name for b in self._buckets)
 
     def gen_objects(self, bucket):
         '''Generator of the keys in a bucket.'''

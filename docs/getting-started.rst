@@ -18,13 +18,20 @@ Selecting components
 
 - `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_
 - `LocalFilesystemStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/local.py>`_
-A storage backend using the local file system should be implemented.
-  Would you help?
+is a (too simple) storage backend using the local file system, useful during development.
 
 **File metadata storage backends:**
 
 - `SQLAlchemyMetadataStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_metadata/sql.py>`_
 - You can write a new metadata storage backend. ZODB, Mongo, gdbm, anyone?
+
+**Action (workflow) backends: **
+
+- `BaseFilesAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/actions.py>`_
+is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
+- `ImageAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/image_actions.py>`_
+is a workflow class that does everything that BaseFilesAction does, but has
+additional features for image files.
 
 
 Understanding the configuration

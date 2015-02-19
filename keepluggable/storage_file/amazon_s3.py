@@ -25,9 +25,10 @@ from bag import dict_subset
 # from boto3 import resource
 from boto3.session import Session  # easy_install -UZ boto3
 from keepluggable import read_setting
+from . import BasePayloadStorage
 
 
-class AmazonS3Storage(object):
+class AmazonS3Storage(BasePayloadStorage):
     __doc__ = __doc__
 
     def __init__(self, settings):
@@ -42,14 +43,18 @@ class AmazonS3Storage(object):
     def create_bucket(self, name):
         self.s3.create_bucket(Name=name)
 
-    def delete_bucket(self, name):
-        return self._get_bucket(name).delete()
+    def delete_bucket(self, bucket):
+        # for key in self.gen_objects(bucket):
+        #     self.delete_object(bucket, key)
+        return self._get_bucket(bucket).delete()
 
-    def _buckets(self):  # buckets have a .name
+    @property
+    def _buckets(self):  # used by important methods
         return self.s3.buckets.all()
 
+    @property
     def bucket_names(self):  # generator
-        return (b.name for b in self._buckets())
+        return (b.name for b in self._buckets)
 
     def _get_bucket(self, name):
         return self.s3.Bucket(name) if isinstance(name, str) else name

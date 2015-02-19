@@ -36,6 +36,9 @@ class SQLAlchemyMetadataStorage(object):
         '''Returns the SQLAlchemy session.'''
         return resolve_setting(self.settings, 'sql.session')
 
+    def create_bucket(self, bucket_id, bucket_name):
+        pass  # In SQL we don't need to do anything to create a bucket.
+
     def put_metadata(self, metadata, bucket_id, bucket_name):
         '''Create or update a file corresponding to the given ``metadata``.
             This method returns a 2-tuple containing the ID of the entity
@@ -68,3 +71,17 @@ class SQLAlchemyMetadataStorage(object):
     def _instantiate(self, sas, metadata, bucket_id, bucket_name):
         '''Override this to add or delete arguments on the constructor call.'''
         return self.file_model_cls(**metadata)
+
+    def gen_objects(self, bucket):
+        '''Generator of the keys in a bucket.'''
+        raise NotImplementedError()
+
+    def get_metadata(self, bucket_id, bucket_name, key):
+        '''Returns a dict containing the metadata of one file.'''
+        raise NotImplementedError()
+
+    def delete_metadata(self, bucket_id, bucket_name, key):
+        raise NotImplementedError()  # but a sketch follows:
+        sas = self._get_session()
+        sas.query(self.file_model_cls).filter_by(  # Missing criteria here
+            ).delete()

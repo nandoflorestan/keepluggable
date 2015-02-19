@@ -3,11 +3,16 @@
 '''Action class that coordinates the workflow. You are likely to need to
     subclass this.
 
+    To enable this action, use this configuration::
+
+        action.files = keepluggable.actions:BaseFilesAction
+
+
     Configuration settings
     ======================
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
-      can be stored. When absent, the system does not have a maximum size.
+      can be uploaded. When absent, the system does not have a maximum size.
     - ``fls.bucket_prefix`` (string): The action is instantiated with a
       bucket_id argument (usually an integer), but you should usually
       namespace your bucket names. Easiest way is to provide a prefix.
@@ -39,6 +44,8 @@ class BaseFilesAction(object):
         return prefix + str(self.bucket_id)
 
     def create_bucket(self):
+        self.orchestrator.storage_metadata.create_bucket(
+            self.bucket_id, self.bucket_name)
         self.orchestrator.storage_file.create_bucket(self.bucket_name)
 
     def store_original_file(self, bytes_io, **metadata):
@@ -57,20 +64,13 @@ class BaseFilesAction(object):
         metadata['version'] = 'original'
 
         self._guess_mime_type(bytes_io, metadata)
-
         self._compute_length(bytes_io, metadata)
+        self._compute_md5(bytes_io, metadata)
 
         # Hook for subclasses to allow or forbid storing this file
         self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
 
-        self._compute_md5(bytes_io, metadata)
-
-        is_image = metadata['mime_type'].startswith('image')
-        if is_image:
-            self._before_storing_image(bytes_io, metadata)
-        self._store_file(bytes_io, metadata)
-        if is_image:
-            self._after_storing_image(bytes_io, metadata)
+        self._store_versions(bytes_io, metadata)
         return metadata
 
     def _guess_mime_type(self, bytes_io, metadata):
@@ -101,6 +101,7 @@ class BaseFilesAction(object):
         two_megabytes = 1048576 * 2
         the_hash = md5()
         the_length = 0
+        bytes_io.seek(0)
         while True:
             segment = bytes_io.read(two_megabytes)
             if segment == b'':
@@ -116,11 +117,9 @@ class BaseFilesAction(object):
                 "don't match.".format(previous_length, the_length)
         bytes_io.seek(0)  # ...so it can be read again
 
-    def _before_storing_image(self, bytes_io, metadata):
-        # TODO Apply self.image_resize_policy
-        # TODO Store metadata['image_width']
-        # TODO Store metadata['image_height']
-        pass
+    def _store_versions(self, bytes_io, metadata):
+        '''Subclasses will have a complex workflow for storing versions.'''
+        return self._store_file(bytes_io, metadata)
 
     def _store_file(self, bytes_io, metadata):
         '''Saves the payload and the metadata on the 2 storage backends.'''
@@ -129,14 +128,13 @@ class BaseFilesAction(object):
             bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
 
         try:
-            metadata['id'], is_new = \
-                self.orchestrator.storage_metadata.put_metadata(
-                    metadata, self.bucket_id, self.bucket_name)
+            self._store_metadata(bytes_io, metadata)
         except:
             storage_file.delete_object(
                 bucket=self.bucket_name, key=metadata['md5'])
             raise
 
-    def _after_storing_image(self, bytes_io, metadata):
-        # TODO Store different sizes
-        pass
+    def _store_metadata(self, bytes_io, metadata):
+        metadata['id'], is_new = \
+            self.orchestrator.storage_metadata.put_metadata(
+                metadata, self.bucket_id, self.bucket_name)

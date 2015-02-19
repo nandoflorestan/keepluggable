@@ -64,6 +64,7 @@ We want the experience to be as convenient as possible for the user:
 - Generate image slug from the name the user is typing
 - Optionally keep the original image stored (configurable)
 - Read EXIF data to fill in date and location, hopefully before the user types these
+- Read other EXIF, IPTC, and XMP metadata in photo files
 - Allow the user to draw a square on the image to generate the thumbnail
 - Configure what kinds of files are accepted (e. g. only images)
 - Define policies for formats: whether to convert/serve JPG, PNG, GIF
@@ -72,6 +73,7 @@ We want the experience to be as convenient as possible for the user:
 - search images to edit or remove them
 - http caching
 - tags
+- Integrate with Celery to create image versions in a background task
 
 
 Collaboration

@@ -8,19 +8,22 @@ from configparser import ConfigParser
 from keepluggable.orchestrator import Orchestrator
 
 
-def includeme(config):
-    config.scan('keepluggable.web.pyramid')
-
-    # Read the 'keepluggable' section of the current .ini file
+def get_orchestrator(ini_path):
+    '''Returns an Orchestrator instance.'''
     parser = ConfigParser()
-    path = config.registry.settings['__file__']
-    parser.read(path)
+    parser.read(ini_path)
     try:
         section = parser['keepluggable']
     except KeyError:
         raise RuntimeError(
             'There is no [keepluggable] section in the config file.')
+    # TODO Instantiate a configured Orchestrator subclass instead:
+    return Orchestrator(section)
 
+
+def includeme(config):
+    config.scan('keepluggable.web.pyramid')
+    # Read the 'keepluggable' section of the current .ini file
+    ini_path = config.registry.settings['__file__']
     # Instantiate the orchestrator and make it globally available
-    config.registry.settings['keepluggable'] = Orchestrator(section)
-    # TODO Instantiate a configured Orchestrator subclass instead.
+    config.registry.settings['keepluggable'] = get_orchestrator(ini_path)
