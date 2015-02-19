@@ -18,15 +18,17 @@ For file payloads, we currently have implemented one backend that stores
 them in Amazon S3. There is also a very simple backend that stores
 files in the local filesystem (useful during development).
 
-For (optionally) storing the metadata we currently provide a SQLAlchemy
-backend. In both cases, you can easily write other storage backends.
+For (optionally) storing the metadata we currently provide a base SQLAlchemy
+backend for you to subclass.
+
+In both cases, you can easily write other storage backends.
 
 Using this library you can more easily have your user upload images
 (or any kind of file) and enter metadata about them, such as name,
 description, date, place, alt text, title attribute etc.
 
 Some of the metadata is automatically found, such as file size, mime type,
-image size, aspect ratio, geolocation data, MD5 checksum etc.
+image size, aspect ratio, MD5 checksum etc.
 
 The code is highly decoupled so you can tweak the behaviour easily.
 
@@ -52,7 +54,7 @@ creates configurable smaller versions of it:
 - 240px (vignette)
 - 160px (thumbnail)
 
-`Get started! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_
+**`Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_**
 
 
 Future

@@ -5,7 +5,13 @@
     You should use this for testing only because it is not very robust.
     It stores files in a very simple directory scheme::
 
-        base_storage_directory / bucket_name / md5
+        base_storage_directory / namespace / key
+
+    Performance will suffer as soon as a couple of thousand files are
+    stored in a namespace.
+
+    Keys are MD5 hashes by default. To change this, you would modify
+    the action, not the storage backend.
 
     To enable this backend, use this configuration::
 
@@ -36,31 +42,44 @@ class LocalFilesystemStorage(BasePayloadStorage):
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
-    def create_bucket(self, name):
-        (self.directory / name).mkdir()
+    def delete_bucket(self, bucket=None):
+        '''Empty the whole bucket.'''
+        for namespace in self.namespaces:
+            self.delete_namespace(namespace)
 
-    def delete_bucket(self, bucket):
-        for key in self.gen_objects(bucket):
-            self.delete_object(bucket, key)
-        (self.directory / bucket).rmdir()
+    def create_bucket(self, name):
+        pass  # This backend ignores buckets.
 
     @property
-    def _buckets(self):
+    def _namespaces(self):  # generator of Path objects
         return (d for d in self.directory.iterdir() if d.is_dir())
 
     @property
-    def bucket_names(self):  # generator
-        return (b.name for b in self._buckets)
+    def namespaces(self):  # generator of namespace names
+        return (n.name for n in self._namespaces)
 
-    def gen_objects(self, bucket):
-        '''Generator of the keys in a bucket.'''
-        return (d.name for d in (self.directory / bucket).iterdir())
+    def delete(self, namespace, key):
+        '''Delete one file'''
+        (self.directory / str(namespace) / key).unlink()
 
-    def get_content(self, bucket, key):
-        return open(self.directory / bucket / key, 'rb')
+    def gen_keys(self, namespace):
+        '''Generator of the keys in a namespace.'''
+        return (d.name for d in (self.directory / str(namespace)).iterdir())
 
-    def put_object(self, bucket, metadata, bytes_io):
-        outfile = self.directory / bucket / metadata['md5']
+    def delete_namespace(self, namespace):
+        '''Delete all files in ``namespace``'''
+        for key in self.gen_keys(namespace):
+            self.delete(namespace, key)
+        (self.directory / str(namespace)).rmdir()
+
+    def get_reader(self, namespace, key):
+        return open(str(self.directory / str(namespace) / key), 'rb')
+
+    def put(self, namespace, metadata, bytes_io):
+        outdir = self.directory / str(namespace)
+        if not outdir.exists():
+            outdir.mkdir()  # Create the namespace directory as needed
+        outfile = outdir / metadata['md5']
         with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
             while True:
                 chunk = bytes_io.read(MEGABYTE)
@@ -70,13 +89,10 @@ class LocalFilesystemStorage(BasePayloadStorage):
                     break
         assert outfile.lstat().st_size == metadata['length']
 
-    def delete_object(self, bucket, key):
-        (self.directory / bucket / key).unlink()
-
-    def get_url(self, bucket, key, seconds=3600, https=False):
+    def get_url(self, namespace, key, seconds=3600, https=False):
         '''Returns only a "file://" URL for local testing. For more adequate
             URLs you should override this method and use your web framework.
             '''
         # seconds = int(time()) + seconds
-        return 'file://{directory}/{bucket}/{key}'.format(
-                directory=self.directory, bucket=bucket, key=key)
+        return 'file://{directory}/{namespace}/{key}'.format(
+                directory=self.directory, namespace=namespace, key=key)

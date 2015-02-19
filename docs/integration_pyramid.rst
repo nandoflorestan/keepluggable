@@ -36,17 +36,13 @@ must inherit in your own resource class::
 
 
     class FilesResource(YourBaseResourceClass, BaseFilesResource):
-        bucket_id = 42
+        bucket = 'myapp42'
 
 The important thing is for this resource's instances to know which
 bucket they should manage. It was done above through a static
 class variable, but it need not be so static. It could be a Python property,
-or an instance variable set by the constructor. Most of the time your code will
+or an instance variable set by the constructor. Your code might
 calculate the bucket ID based on the URL.
-
-For instance, imagine your app has the URL "/collection/42/images".
-If the resource corresponds to the "images" part of the URL,
-maybe a "bucket_id" property would return "collection42".
 
 More information is available on the
 `BaseFilesResource docstring <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/resources.py>`_.

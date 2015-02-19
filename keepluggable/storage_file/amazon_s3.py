@@ -12,6 +12,9 @@
     - ``s3.access_key_id``: part of your Amazon credentials
     - ``s3.secret_access_key``: part of your Amazon credentials
     - ``s3.region_name``: part of your Amazon credentials
+    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
+      like to come up with the bucket name in code rather than configuration,
+      you may omit this setting and override the _set_bucket() method.
     '''
 
 from __future__ import (absolute_import, division, print_function,
@@ -40,63 +43,93 @@ class AmazonS3Storage(BasePayloadStorage):
         # self.s3 = resource('s3')
         self.s3 = session.resource('s3')
 
-    def create_bucket(self, name):
-        self.s3.create_bucket(Name=name)
+        self._set_bucket(settings)
 
-    def delete_bucket(self, bucket):
-        # for key in self.gen_objects(bucket):
-        #     self.delete_object(bucket, key)
-        return self._get_bucket(bucket).delete()
+    def _set_bucket(self, settings):
+        self.bucket_name = read_setting(settings, 's3.bucket')
+        self.bucket = self.s3.Bucket(self.bucket_name)
+
+    def create_bucket(self, name):
+        return self.s3.create_bucket(Name=name)
 
     @property
-    def _buckets(self):  # used by important methods
+    def _buckets(self):
         return self.s3.buckets.all()
 
     @property
     def bucket_names(self):  # generator
         return (b.name for b in self._buckets)
 
-    def _get_bucket(self, name):
-        return self.s3.Bucket(name) if isinstance(name, str) else name
+    def _get_bucket(self, bucket=None):
+        if bucket is None:
+            return self.bucket
+        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
-    def gen_objects(self, bucket):
-        '''Generator of the keys in a bucket.'''
-        for obj in self._get_bucket(bucket).objects.all():
-            yield obj  # which has .key
+    def delete_bucket(self, bucket=None):
+        '''Empty the whole bucket.'''
+        return self._get_bucket(bucket).delete()
 
-    def _get_object(self, bucket, key):
-        # return self._get_bucket(bucket).Object(key)
-        return self.s3.Object(bucket_name=bucket, key=key)
+    # Intrabucket operations are below
 
-    def get_content(self, bucket, key):
-        adict = self._get_object(bucket, key).get()
-        return adict['Body'].read()
+    SEP = '-'
 
-    def put_object(self, bucket, metadata, bytes_io):
+    @property
+    def namespaces(self):  # generator of namespace names
+        return set((o.split(self.SEP, 1)[0]
+                    for o in self.bucket.objects.all()))
+
+    def _cat(self, namespace, key):
+        return namespace + self.SEP + key
+
+    def _get_object(self, namespace, key, bucket=None):
+        return self._get_bucket(bucket).Object(self._cat(namespace, key))
+
+    def delete(self, namespace, key, bucket=None):
+        '''Delete one file'''
+        return self._get_object(namespace, key, bucket).delete()
+
+    def gen_keys(self, namespace, bucket=None):
+        '''Generator of the keys in a namespace. Too costly.'''
+        for o in self._get_bucket(bucket).objects.all():
+            composite = o.key
+            if composite.startswith(namespace + '/'):
+                yield composite.split(self.SEP, 1)[1]
+
+    def delete_namespace(self, namespace, bucket=None):
+        '''Delete all files in ``namespace``. Too costly.'''
+        for key in self.gen_keys(namespace, bucket=bucket):
+            self.delete(namespace, key, bucket=bucket)
+
+    def get_reader(self, namespace, key, bucket=None):
+        adict = self._get_object(namespace, key, bucket).get()
+        return adict['Body']
+
+    def put(self, namespace, metadata, bytes_io, bucket=None):
         subset = dict_subset(metadata, lambda k, v: k not in (
             'length', 'md5', 'mime_type'))
         md5 = metadata['md5']
         result = self._get_bucket(bucket).put_object(
-            Key=md5, ContentMD5=md5, ContentType=metadata.pop('mime_type'),
+            Key=self._cat(metadata, md5), ContentMD5=md5,
+            ContentType=metadata['mime_type'],
             ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
+        print(result)
         import ipdb; ipdb.set_trace() # TODO Remove debug
 
-    def delete_object(self, bucket, key):
-        return self._get_object(bucket, key).delete()
-
-    def get_url(self, bucket, key, seconds=3600, https=False):
+    def get_url(self, namespace, key, seconds=3600, https=False, bucket=None):
         """Return S3 authenticated URL sans network access or phatty
             dependencies like boto.
 
             Stolen from https://gist.github.com/kanevski/655022
             """
+        bucket = bucket or self.bucket_name
+        composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
-        to_sign = "GET\n\n\n{}\n/{}/{}".format(seconds, bucket, key)
+        to_sign = "GET\n\n\n{}\n/{}/{}".format(seconds, bucket, composite)
         digest = hmac.new(self.secret_access_key, to_sign, sha1).digest()
         return '{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId=' \
             '{access_key_id}&Expires={seconds}&Signature={signature}'.format(
                 scheme='https://' if https else 'http://',
-                bucket=bucket, key=key,
+                bucket=bucket, key=composite,
                 access_key_id=self.access_key_id, seconds=seconds,
                 signature=urllib.quote(base64.encodestring(digest).strip()),
             )

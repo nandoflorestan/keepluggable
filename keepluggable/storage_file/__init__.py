@@ -7,7 +7,4 @@ from __future__ import (absolute_import, division, print_function,
 
 
 class BasePayloadStorage(object):
-    def clear(self):
-        '''Remove all buckets'''
-        for bucket in self.bucket_names:
-            self.delete_bucket(bucket)
+    pass

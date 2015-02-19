@@ -8,7 +8,8 @@ TODO: Notes on installing Pillow
 
 	easy_install -UZ keepluggable
 
-After installing the Python package, you can select the components you are using and then create a configuration file.
+After installing the Python package, you can select the components
+you are using and then create a configuration file.
 
 
 Selecting components
@@ -16,22 +17,25 @@ Selecting components
 
 **File payload storage backends:**
 
-- `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_
+- `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_ is recommended for production.
 - `LocalFilesystemStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/local.py>`_
-is a (too simple) storage backend using the local file system, useful during development.
+  is a (too simple) storage backend using the local file system,
+  useful during development.
+- You can write a new payload storage backend. I hear Rackspace also has a
+  nice file storage solution...
 
 **File metadata storage backends:**
 
 - `SQLAlchemyMetadataStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_metadata/sql.py>`_
 - You can write a new metadata storage backend. ZODB, Mongo, gdbm, anyone?
 
-**Action (workflow) backends: **
+**Action (workflow) backends:**
 
 - `BaseFilesAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/actions.py>`_
-is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
+  is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
 - `ImageAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/image_actions.py>`_
-is a workflow class that does everything that BaseFilesAction does, but has
-additional features for image files.
+  is a workflow class that does everything that BaseFilesAction does, but has
+  additional features for image files.
 
 
 Understanding the configuration
@@ -50,6 +54,7 @@ So I add a new ``[keepluggable]`` section to my Pyramid config file::
 	s3.access_key_id = SOME_KEY
 	s3.secret_access_key = SOME_SECRET
 	s3.region_name = SOME_REGION
+	s3.bucket = BUCKET_NAME
 
 	# SQLAlchemyMetadataStorage configuration:
 	sql.file_model_cls = myapp.modules.uploads.models:File
@@ -58,13 +63,13 @@ So I add a new ``[keepluggable]`` section to my Pyramid config file::
 	# action.files configuration keys have a "fls." prefix:
 	fls.max_file_size = 23068672
 
-Above you see a few [key, value] pairs. The section of an INI file
+Above you see a few [key = value] pairs. The section of an INI file
 becomes a Python dictionary which is what the system actually uses as
 configuration.
 
-The first group of settings define which components we are using. Each value is
-comprised of a Python package name (containing dots), then a colon, then a
-class name. What do they do?
+The first group of settings define which components we are using.
+Each value is comprised of a Python package name (containing dots),
+then a colon, then a class name. What do they do?
 
 - ``storage.file`` informs which backend class shall be used for file payload storage. In the example, we are using Amazon S3.
 - ``storage.metadata`` informs which backend class shall be used for metadata storage. In the example, we are storing metadata with SQLAlchemy.

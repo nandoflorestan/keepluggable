@@ -31,22 +31,9 @@ from keepluggable.exceptions import FileNotAllowed
 class BaseFilesAction(object):
     __doc__ = __doc__
 
-    def __init__(self, orchestrator, bucket_id):
+    def __init__(self, orchestrator, namespace):
         self.orchestrator = orchestrator
-        self.bucket_id = bucket_id
-
-    @reify
-    def bucket_name(self):
-        '''Override this property in subclasses to properly build the
-            bucket_name according to your needs.
-            '''
-        prefix = self.orchestrator.settings.get('fls.bucket_prefix', '')
-        return prefix + str(self.bucket_id)
-
-    def create_bucket(self):
-        self.orchestrator.storage_metadata.create_bucket(
-            self.bucket_id, self.bucket_name)
-        self.orchestrator.storage_file.create_bucket(self.bucket_name)
+        self.namespace = namespace
 
     def store_original_file(self, bytes_io, **metadata):
         '''Point of entry into the workflow of storing a file.
@@ -124,17 +111,17 @@ class BaseFilesAction(object):
     def _store_file(self, bytes_io, metadata):
         '''Saves the payload and the metadata on the 2 storage backends.'''
         storage_file = self.orchestrator.storage_file
-        storage_file.put_object(
-            bucket=self.bucket_name, metadata=metadata, bytes_io=bytes_io)
+        storage_file.put(
+            namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
 
         try:
             self._store_metadata(bytes_io, metadata)
         except:
-            storage_file.delete_object(
-                bucket=self.bucket_name, key=metadata['md5'])
+            storage_file.delete(
+                namespace=self.namespace, key=metadata['md5'])
             raise
 
     def _store_metadata(self, bytes_io, metadata):
         metadata['id'], is_new = \
-            self.orchestrator.storage_metadata.put_metadata(
-                metadata, self.bucket_id, self.bucket_name)
+            self.orchestrator.storage_metadata.put(
+                namespace=self.namespace, metadata=metadata)

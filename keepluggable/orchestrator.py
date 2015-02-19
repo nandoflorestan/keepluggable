@@ -12,7 +12,7 @@ class Orchestrator(object):
         self.settings = settings
         self._instantiate_payload_storage()
         self._instantiate_metadata_storage()
-        self._get_files_action_class()
+        self._resolve_files_action_class()
 
     def _instantiate_payload_storage(self):
         '''Instantiate a payload storage strategy based on configuration.'''
@@ -24,6 +24,6 @@ class Orchestrator(object):
         storage_cls = resolve_setting(self.settings, 'storage.metadata')
         self.storage_metadata = storage_cls(self.settings)
 
-    def _get_files_action_class(self):
+    def _resolve_files_action_class(self):
         '''Get the files action class based on configuration.'''
         self.files_action_cls = resolve_setting(self.settings, 'action.files')

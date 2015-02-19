@@ -17,11 +17,10 @@ from keepluggable.exceptions import FileNotAllowed
 # @ajax_view
 def upload_multiple_files(context, request):
     orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.bucket_id)
+    action = orchestrator.files_action_cls(orchestrator, context.namespace)
     ids = []
     failures = []
     for fieldStorage in request.POST.getall('files'):
-        # buffered_reader = fieldStorage.fp
         # encoding = fieldStorage.encoding
         try:
             ids.append(action.store_original_file(

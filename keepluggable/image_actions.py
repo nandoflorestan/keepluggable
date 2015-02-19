@@ -13,13 +13,13 @@
     ======================
 
     - ``img.store_original``: a boolean; if False, the original upload will
-     not have its payload stored. The metadata is always stored in an effort
-     to recognize repeated uploads of the same file. The default for this
-     setting is True.
+      not have its payload stored. The metadata is always stored in an effort
+      to recognize repeated uploads of the same file. The default for this
+      setting is True.
     - ``img.versions``: a list of image versions in the form
       "format max-width max-height name"
-    - ``img.versions_quality``: the quality parameter to be passed to the
-      Pillow JPEG encoder. The default is 90.
+    - ``img.versions_quality`` (integer): the quality parameter to be passed
+      to the Pillow JPEG encoder. The default is 90.
 
     Here is an example configuration::
 
@@ -78,6 +78,7 @@ class ImageAction(BaseFilesAction):
 
     def _img_from_stream(self, bytes_io):
         img = Image.open(bytes_io)
+        img.bytes_io = bytes_io
         return img
 
     def _store_versions(self, bytes_io, metadata):
@@ -89,8 +90,8 @@ class ImageAction(BaseFilesAction):
         # Before anything else, ensure the image is not corrupt
         original = self._img_from_stream(bytes_io)
         original.verify()  # TODO Does this raise?
-        # Because verify() erases .fp(), we put it back:
-        original.fp = bytes_io
+        # Because verify() erases .fp, we put it back:
+        original.fp = bytes_io  # otherwise the img won't clone later!
         metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
 
@@ -115,11 +116,12 @@ class ImageAction(BaseFilesAction):
         metadata = copy(original_metadata)
         metadata['version'] = version_config['name']
         metadata['original_id'] = original_metadata['id']
+        del metadata['id']
 
         img = self._convert_img(original, metadata, version_config)
 
         # Store the new metadata and the new payload
-        self._store_file(img.bytes_io, metadata)
+        self._store_file(img.stream, metadata)
 
     def _convert_img(self, original, metadata, version_config):
         '''Return a new image, converted from ``original``, using
@@ -129,16 +131,15 @@ class ImageAction(BaseFilesAction):
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))
 
-        bytes_io = BytesIO()
-        img.save(bytes_io, format=version_config['format'],
+        stream = BytesIO()
+        img.save(stream, format=version_config['format'],
                  quality=self.quality, optimize=1)
-        img.bytes_io = bytes_io  # so we can recover it elsewhere
+        img.stream = stream  # so we can recover it elsewhere
 
         # Fill in the metadata
-        del metadata['id']
         metadata['image_format'] = version_config['format']
         metadata['image_width'], metadata['image_height'] = img.size
-        self._compute_length(bytes_io, metadata)
-        self._compute_md5(bytes_io, metadata)
+        self._compute_length(stream, metadata)
+        self._compute_md5(stream, metadata)
 
         return img

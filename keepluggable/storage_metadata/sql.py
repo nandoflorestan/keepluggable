@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 
-'''File metadata storage backend using SQLAlchemy. To use this:
+'''File metadata storage backend base class using SQLAlchemy.
 
-    - Either point to your SQLAlchemy session in the configuration setting
-      ``sql.session`` or subclass this and override the ``_get_session()``
-      method.
+    This class certainly needs to be subclassed for your specific use case.
+    You must examine the source code and override methods as necessary.
+    The most important reason for this is that each application will need
+    to namespace the stored files differently.
 
     Configuration settings
     ======================
 
-    - ``sql.file_model_cls`` must point to a certain model class to store the file metadata.
+    - ``sql.file_model_cls`` must point to a certain model class to store
+      the file metadata.
     - ``sql.session`` should point to a scoped session global variable.
+      But instead of using this setting, you may override the
+      ``_get_session()`` method.
 
     TODO: Offer an example of the model class.
     '''
@@ -36,52 +40,58 @@ class SQLAlchemyMetadataStorage(object):
         '''Returns the SQLAlchemy session.'''
         return resolve_setting(self.settings, 'sql.session')
 
-    def create_bucket(self, bucket_id, bucket_name):
-        pass  # In SQL we don't need to do anything to create a bucket.
-
-    def put_metadata(self, metadata, bucket_id, bucket_name):
+    def put(self, namespace, metadata, sas=None):
         '''Create or update a file corresponding to the given ``metadata``.
             This method returns a 2-tuple containing the ID of the entity
             and a boolean saying whether the entity is new or existing.
 
-            It is not likely that this method should be overridden.
+            Instead of overriding this method, it is probably better for
+            you to override the methods it calls.
             '''
-        sas = self._get_session()
-        entity = self._find(sas, metadata, bucket_id, bucket_name)
+        sas = sas or self._get_session()
+        entity = self._query(namespace, key=metadata['md5'], sas=sas).first()
         is_new = entity is None
         if is_new:
-            entity = self._instantiate(
-                sas, metadata, bucket_id, bucket_name)
+            entity = self._instantiate(namespace, metadata, sas=sas)
             sas.add(entity)
         else:
-            self._update(sas, metadata, bucket_id, bucket_name, entity)
+            self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
         return entity.id, is_new
 
-    def _find(self, sas, metadata, bucket_id, bucket_name):
-        '''Override this to search for an existing file.'''
-        return sas.query(self.file_model_cls).filter_by(
-            md5=metadata['md5']).first()
+    def _query(self, namespace, key=None, sas=None):
+        '''Override this to search for an existing file.
+            You probably need to do something with the ``namespace``.
+            '''
+        sas = sas or self._get_session()
+        q = sas.query(self.file_model_cls)
+        if key is not None:
+            q = q.filter_by(md5=key)
+        return q
 
-    def _update(self, sas, metadata, bucket_id, bucket_name, entity):
-        '''Override this to update the metadata of an existing entity.'''
+    def _instantiate(self, namespace, metadata, sas=None):
+        '''Override this to add or delete arguments on the constructor call.
+            You probably need to do something with the ``namespace``.
+            '''
+        return self.file_model_cls(**metadata)
+
+    def _update(self, namespace, metadata, entity, sas=None):
+        '''Override this to update the metadata of an existing entity.
+            You might need to do something with the ``namespace``.
+            '''
         for key, value in metadata.items():
             setattr(entity, key, value)
 
-    def _instantiate(self, sas, metadata, bucket_id, bucket_name):
-        '''Override this to add or delete arguments on the constructor call.'''
-        return self.file_model_cls(**metadata)
+    def gen_keys(self, namespace, sas=None):
+        '''Generator of the keys in a namespace.'''
+        return self._query(sas=sas, namespace=namespace)
 
-    def gen_objects(self, bucket):
-        '''Generator of the keys in a bucket.'''
-        raise NotImplementedError()
+    def get(self, namespace, key, sas=None):
+        '''Returns a dict containing the metadata of one file,
+            or None if not found.
+            '''
+        entity = self._query(sas=sas, namespace=namespace, key=key).first()
+        return entity.to_dict() if entity else None
 
-    def get_metadata(self, bucket_id, bucket_name, key):
-        '''Returns a dict containing the metadata of one file.'''
-        raise NotImplementedError()
-
-    def delete_metadata(self, bucket_id, bucket_name, key):
-        raise NotImplementedError()  # but a sketch follows:
-        sas = self._get_session()
-        sas.query(self.file_model_cls).filter_by(  # Missing criteria here
-            ).delete()
+    def delete(self, namespace, key, sas=None):
+        self._query(sas=sas, namespace=namespace, key=key).delete()
