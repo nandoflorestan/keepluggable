@@ -7,6 +7,10 @@ from __future__ import (absolute_import, division, print_function,
 from configparser import ConfigParser
 from keepluggable.orchestrator import Orchestrator
 
+from pyramid.i18n import TranslationStringFactory
+_ = TranslationStringFactory('keepluggable')
+del TranslationStringFactory
+
 
 def get_orchestrator(ini_path):
     '''Returns an Orchestrator instance.'''

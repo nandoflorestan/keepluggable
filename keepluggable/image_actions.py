@@ -92,6 +92,7 @@ class ImageAction(BaseFilesAction):
         original.verify()  # TODO Does this raise?
         # Because verify() erases .fp, we put it back:
         original.fp = bytes_io  # otherwise the img won't clone later!
+
         metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
 
