@@ -7,12 +7,14 @@ Scope
 
 **keepluggable** is an open source
 `(MIT licensed) <http://github.com/nandoflorestan/keepluggable/blob/master/docs/LICENSE.rst>`_,
-highly configurable Python library to manage storage of images and
-other documents (any kind of file, really), with metadata.
+highly configurable Python library to **manage storage of images and
+other documents** (any kind of file, really), with metadata.
 
-The file metadata can be stored in a different place than the file payload.
+The file **metadata** can be stored in a different place than the file payload.
 This is recommended because many operations, such as listing files,
 do not involve actual file content, so you should avoid loading it.
+Also, payloads should be optimized for serving and metadata should be
+optimized for querying.
 
 For file payloads, we currently have implemented one backend that stores
 them in Amazon S3. There is also a very simple backend that stores
@@ -46,15 +48,9 @@ One such "action" is the pluggable policy for uploaded image treatment.
 For instance, the default policy converts the original uploaded image
 to the JPEG format (so it will never store an unecessarily large BMP),
 optionally stores the original image in whatever size it is, then
-creates configurable smaller versions of it:
+creates configurable smaller versions of it.
 
-- 1920px (HD)
-- 960px (half size)
-- 480px (quarter size)
-- 240px (vignette)
-- 160px (thumbnail)
-
-**`Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_**
+`Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_
 
 
 Future
@@ -83,4 +79,4 @@ Collaboration
 
 We want your help. We are open to bug reports, feature requests, suggestions
 and (especially) pull requests. Reach us at
-https://github.com/nandoflorestan/keepluggable
+https://github.com/nandoflorestan/keepluggable/issues

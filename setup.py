@@ -20,7 +20,7 @@ if version_info[:2] < (3, 4):
 
 setup(
     name='keepluggable',
-    version='0.1dev1',
+    version='0.1.0dev1',
     description='Manages storage of images and other documents, with metadata.'
     ' Also offers a Pyramid UI',
     long_description=long_description,
@@ -55,8 +55,8 @@ setup(
     install_requires=requires,
     # tests_require=requires,
     # test_suite="keepluggable",
-    entry_points="""\
-    [paste.app_factory]
-    main = keepluggable:main
-    """,
+    # entry_points="""\
+    # [paste.app_factory]
+    # main = keepluggable:main
+    # """,
     )

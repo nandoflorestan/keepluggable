@@ -71,9 +71,13 @@ The first group of settings define which components we are using.
 Each value is comprised of a Python package name (containing dots),
 then a colon, then a class name. What do they do?
 
-- ``storage.file`` informs which backend class shall be used for file payload storage. In the example, we are using Amazon S3.
-- ``storage.metadata`` informs which backend class shall be used for metadata storage. In the example, we are storing metadata with SQLAlchemy.
-- ``action.files``: points to an "Action" class that contains the actual steps that will be carried out in the workflow. Thus, probably this will point to your own subclass instead of the value given in the example.
+- ``storage.file`` informs which backend class shall be used for
+  file payload storage. In the example, we are using Amazon S3.
+- ``storage.metadata`` informs which backend class shall be used for
+  metadata storage. In the example, we are storing metadata with SQLAlchemy.
+- ``action.files`` points to an "Action" class that contains the actual steps
+  that will be carried out in the workflow. Thus, probably this will point
+  to your own subclass instead of the value given in the example.
 
 Each component we just selected needs its own configuration. Thus,
 the Amazon S3 backend has settings beginning with "s3." and the

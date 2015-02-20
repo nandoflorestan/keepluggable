@@ -4,7 +4,6 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-# from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.view import view_config
 from keepluggable.exceptions import FileNotAllowed
 from . import _
@@ -13,10 +12,8 @@ from .resources import BaseFilesResource
 
 # POST to (for example) ../some/file_store/@@upload
 @view_config(context=BaseFilesResource, permission='kp_upload',
-             # accept='application/json',
              request_method='POST', renderer='json')
 # @csrf
-# @ajax_view
 def upload_multiple_files(context, request):
     files = request.POST.getall('files')
     if not files:

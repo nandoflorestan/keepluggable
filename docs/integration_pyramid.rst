@@ -36,13 +36,20 @@ must inherit in your own resource class::
 
 
     class FilesResource(YourBaseResourceClass, BaseFilesResource):
-        bucket = 'myapp42'
+        namespace = 'myapp42'
 
 The important thing is for this resource's instances to know which
-bucket they should manage. It was done above through a static
+namespace they should manage. It was done above through a static
 class variable, but it need not be so static. It could be a Python property,
 or an instance variable set by the constructor. Your code might
-calculate the bucket ID based on the URL.
+calculate the namespace based on the URL.
 
 More information is available on the
 `BaseFilesResource docstring <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/resources.py>`_.
+
+
+Take a look at the views
+========================
+
+Once you have a resource, you can attach views to it. See
+`views.py <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/views.py>`_.
