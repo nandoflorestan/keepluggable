@@ -25,7 +25,7 @@ import hmac
 from time import time
 from hashlib import sha1
 from bag import dict_subset
-# from boto3 import resource
+# http://botocore.readthedocs.org/en/latest/
 from boto3.session import Session  # easy_install -UZ boto3
 from keepluggable import read_setting
 from . import BasePayloadStorage
@@ -66,8 +66,11 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     def delete_bucket(self, bucket=None):
-        '''Empty the whole bucket.'''
-        return self._get_bucket(bucket).delete()
+        '''Deletes the entire bucket.'''
+        bucket = self._get_bucket(bucket)
+        # All items must be deleted before the bucket itself
+        self.empty_bucket(bucket)
+        return bucket.delete()
 
     # Intrabucket operations are below
 
@@ -79,10 +82,21 @@ class AmazonS3Storage(BasePayloadStorage):
                     for o in self.bucket.objects.all()))
 
     def _cat(self, namespace, key):
-        return namespace + self.SEP + key
+        return str(namespace) + self.SEP + key
 
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
+
+    def empty_bucket(self, bucket=None):
+        # TODO Request up to 1000 files at a time
+        bucket = self._get_bucket(bucket)
+        items = list(bucket.objects.all())
+        if not items:
+            return None
+        resp = bucket.delete_objects(Delete={
+            'Objects': [{'Key': o.key} for o in items]})
+        print(resp)
+        return resp
 
     def gen_keys(self, namespace, bucket=None):
         '''Generator of the keys in a namespace. Too costly.'''
@@ -101,15 +115,23 @@ class AmazonS3Storage(BasePayloadStorage):
         return adict['Body']
 
     def put(self, namespace, metadata, bytes_io, bucket=None):
-        subset = dict_subset(metadata, lambda k, v: k not in (
-            'length', 'md5', 'mime_type'))
-        md5 = metadata['md5']
+        subset = dict_subset(metadata, lambda k, v: k in (
+            # We are not storing the 'file_name'
+            'image_width', 'image_height', 'original_id', 'version'))
+        self._convert_values_to_str(subset)
+        bytes_io.seek(0)
         result = self._get_bucket(bucket).put_object(
-            Key=self._cat(metadata, md5), ContentMD5=md5,
+            Key=self._cat(namespace, metadata['md5']),
+            # done automatically by botocore:  ContentMD5=encoded_md5,
             ContentType=metadata['mime_type'],
             ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
-        print(result)
-        import ipdb; ipdb.set_trace() # TODO Remove debug
+        # print(result)
+        return result
+
+    def _convert_values_to_str(self, subset):
+        '''botocore requires all metadata values be strings, not ints  :('''
+        for k in subset.keys():
+            subset[k] = str(subset[k])
 
     def get_url(self, namespace, key, seconds=3600, https=False, bucket=None):
         """Return S3 authenticated URL sans network access or phatty

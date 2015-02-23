@@ -42,7 +42,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
-    def delete_bucket(self, bucket=None):
+    def empty_bucket(self, bucket=None):
         '''Empty the whole bucket.'''
         for namespace in self.namespaces:
             self.delete_namespace(namespace)
