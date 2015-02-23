@@ -16,11 +16,50 @@
       But instead of using this setting, you may override the
       ``_get_session()`` method.
 
-    TODO: Offer an example of the model class.
+    Creating your File model class
+    ==============================
+
+    Your File model class must inherit from the BaseFile mixin class that
+    we provide. Here is an example in which files are separated by user::
+
+        from bag import fk_rel
+        from keepluggable.storage_metadata.sql import (
+            BaseFile, SQLAlchemyMetadataStorage)
+        from sqlalchemy import Column, UniqueConstraint
+        from sqlalchemy.types import Unicode
+
+        from myapp.db import Base
+        from myapp.modules.user.models import User
+
+
+        class File(Base, BaseFile):
+            __table_args__ = (
+                UniqueConstraint('user_id', 'md5', name='file_user_md5_key'),
+                {})
+
+            # You can add any columns for information entered by the user:
+            description = Column(Unicode(320), nullable=False, default='')
+            # title = Column(Unicode(80), nullable=False)
+            # alt
+
+            # Relationships
+            user_id, user = fk_rel(User, backref='files')
+
+            @property  # Your File model must define a "namespace" property.
+            def namespace(self):  # In this example a user has her own files.
+                return str(self.user_id)
+
+        # Create a self-referential foreign key and relationship so that
+        # a file can point to its original version:
+        File.original_id, File.versions = fk_rel(File, nullable=True)
+        # When original_id is null, this is the original file.
     '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, Unicode
 from keepluggable import resolve_setting
 
 
@@ -108,3 +147,48 @@ class SQLAlchemyMetadataStorage(object):
         '''Delete one file.'''
         sas = sas or self._get_session()
         self._query(sas=sas, namespace=namespace, key=key).delete()
+
+
+class BaseFile(ID, MinimalBase):
+    '''Base mixin class for a model that represents file metadata.
+        The file MAY be an image.
+        '''
+    # id = Primary key that exists because we inherit from ID
+    md5 = Column(Unicode(32), nullable=False,
+                 doc='hashlib.md5(file_content).hexdigest()')
+    file_name = Column(Unicode(300))  # includes the file_extension
+    length = Column(Integer, nullable=False, doc='File size in bytes')
+    created = now_column()  # Stores the moment the instance is created
+    mime_type = Column(Unicode(40), doc='MIME type; e.g. "image/jpeg"')
+    image_width = Column(Integer, doc='Image width in pixels')
+    image_height = Column(Integer, doc='Image height in pixels')
+    image_format = Column(Unicode(20), doc='JPEG, PNG, GIF etc.')
+    version = Column(Unicode(20), default='original')
+
+    @property
+    def is_image(self):
+        return self.image_width is not None
+
+    @property
+    def aspect_ratio(self):
+        return self.image_width / self.image_height
+
+    @property
+    def is_the_original(self):
+        return self.original_id is None
+
+    def get_original(self, sas):
+        return sas.query(type(self)).get(self.original_id)
+
+    def q_versions(self, sas, order_by=created):
+        return sas.query(type(self)).filter_by(
+            original=self).order_by(order_by)
+
+    def __repr__(self):
+        return '<{} #{} "{}" {}>'.format(
+            type(self).__name__, self.id, self.file_name, self.version)
+
+    def to_dict(self):
+        d = super(BaseFile, self).to_dict()
+        d['versions'] = [f.md5 for f in self.versions]
+        return d
