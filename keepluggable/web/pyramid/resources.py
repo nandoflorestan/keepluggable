@@ -29,3 +29,10 @@ class BaseFilesResource(object):
         read more about this in the Pyramid docs.
         '''
     pass
+
+
+class BaseFileResource(object):
+    '''Base class for a Pyramid traversal resource representing a
+        specific file. It also needs to provide ``namespace``.
+        '''
+    pass

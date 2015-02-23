@@ -23,7 +23,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from nine.decorator import reify
+from bag.web.exceptions import Problem
 from keepluggable import read_setting
 from keepluggable.exceptions import FileNotAllowed
 
@@ -125,3 +125,22 @@ class BaseFilesAction(object):
         metadata['id'], is_new = \
             self.orchestrator.storage_metadata.put(
                 namespace=self.namespace, metadata=metadata)
+
+    def delete_file(self, key):
+        # Obtain the original file.
+        sm = self.orchestrator.storage_metadata
+        original = sm.get(namespace=self.namespace, key=key)
+        if original is None:
+            raise Problem('The file was not found.', http_code=404)
+
+        # Add itself to the list of hashes indicating the versions.
+        keys = list(original['versions'])
+        keys.append(original['md5'])
+
+        # Delete payloads
+        self.orchestrator.storage_file.delete(self.namespace, keys)
+
+        # Delete metadata entities
+        # sm.delete_with_versions(self.namespace, original['md5'])
+        for key in keys:
+            sm.delete(self.namespace, key)

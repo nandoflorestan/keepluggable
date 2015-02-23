@@ -4,13 +4,14 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from bag.web.pyramid.views import ajax_view
+from pyramid.response import Response
 from pyramid.view import view_config
 from keepluggable.exceptions import FileNotAllowed
 from . import _
-from .resources import BaseFilesResource
+from .resources import BaseFilesResource, BaseFileResource
 
 
-# POST to (for example) ../some/file_store/@@upload
 @view_config(context=BaseFilesResource, permission='kp_upload',
              request_method='POST', renderer='json')
 # @csrf
@@ -41,3 +42,15 @@ def upload_multiple_files(context, request):
             failures.append(
                 '"{}" was not stored. '.format(fieldStorage.filename) + str(e))
     return {'items': ids, 'failures': failures}
+
+
+@view_config(context=BaseFileResource, permission='kp_upload',
+             request_method='DELETE')
+# @csrf
+@ajax_view
+def delete_file_and_its_versions(context, request):
+    orchestrator = request.registry.settings['keepluggable']
+    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    key_to_delete = context.__name__
+    action.delete_file(key_to_delete)
+    return Response(status_int=204)  # No content

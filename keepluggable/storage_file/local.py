@@ -58,9 +58,12 @@ class LocalFilesystemStorage(BasePayloadStorage):
     def namespaces(self):  # generator of namespace names
         return (n.name for n in self._namespaces)
 
-    def delete(self, namespace, key):
-        '''Delete one file'''
-        (self.directory / str(namespace) / key).unlink()
+    def delete(self, namespace, keys, bucket=None):
+        '''Delete many files.'''
+        for key in keys:
+            path = (self.directory / str(namespace) / key)
+            if path.exists():
+                path.unlink()
 
     def gen_keys(self, namespace):
         '''Generator of the keys in a namespace.'''

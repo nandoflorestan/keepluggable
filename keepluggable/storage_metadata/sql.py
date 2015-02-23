@@ -84,14 +84,27 @@ class SQLAlchemyMetadataStorage(object):
 
     def gen_keys(self, namespace, sas=None):
         '''Generator of the keys in a namespace.'''
+        sas = sas or self._get_session()
         return self._query(sas=sas, namespace=namespace)
 
     def get(self, namespace, key, sas=None):
         '''Returns a dict containing the metadata of one file,
             or None if not found.
             '''
+        sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
         return entity.to_dict() if entity else None
 
+    def delete_with_versions(self, namespace, key, sas=None):
+        '''Delete a file along with all its versions.'''
+        sas = sas or self._get_session()
+        original = self._query(
+            sas=sas, namespace=namespace, key=key).one()
+        for version in original.versions:
+            sas.delete(version)
+        sas.delete(original)
+
     def delete(self, namespace, key, sas=None):
+        '''Delete one file.'''
+        sas = sas or self._get_session()
         self._query(sas=sas, namespace=namespace, key=key).delete()

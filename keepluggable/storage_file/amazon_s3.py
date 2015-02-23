@@ -84,10 +84,6 @@ class AmazonS3Storage(BasePayloadStorage):
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
-    def delete(self, namespace, key, bucket=None):
-        '''Delete one file'''
-        return self._get_object(namespace, key, bucket).delete()
-
     def gen_keys(self, namespace, bucket=None):
         '''Generator of the keys in a namespace. Too costly.'''
         for o in self._get_bucket(bucket).objects.all():
@@ -133,3 +129,14 @@ class AmazonS3Storage(BasePayloadStorage):
                 access_key_id=self.access_key_id, seconds=seconds,
                 signature=urllib.quote(base64.encodestring(digest).strip()),
             )
+
+    def delete(self, namespace, keys, bucket=None):
+        '''Delete many files'''
+        if isinstance(keys, (str, int)):
+            keys = (keys,)
+        number = len(keys)
+        assert number <= 1000, 'Amazon allows us to delete only 1000 ' \
+            'objects per request; you tried {}'.format(number)
+        # return self._get_object(namespace, key, bucket).delete()
+        return self._get_bucket(bucket).delete_objects(Delete={
+            'Objects': [{'Key': self._cat(namespace, k) for k in keys}]})
