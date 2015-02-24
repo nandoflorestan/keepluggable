@@ -20,7 +20,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import base64
-import urllib
 import hmac
 from time import time
 from hashlib import sha1
@@ -29,6 +28,10 @@ from bag import dict_subset
 from boto3.session import Session  # easy_install -UZ boto3
 from keepluggable import read_setting
 from . import BasePayloadStorage
+from nine import nimport
+quote = nimport('urllib.parse:quote')
+
+DAY = 60 * 60 * 24
 
 
 class AmazonS3Storage(BasePayloadStorage):
@@ -133,7 +136,8 @@ class AmazonS3Storage(BasePayloadStorage):
         for k in subset.keys():
             subset[k] = str(subset[k])
 
-    def get_url(self, namespace, key, seconds=3600, https=False, bucket=None):
+    # TODO https and bucket are configuration settings
+    def get_url(self, namespace, key, seconds=DAY, https=False, bucket=None):
         """Return S3 authenticated URL sans network access or phatty
             dependencies like boto.
 
@@ -142,14 +146,16 @@ class AmazonS3Storage(BasePayloadStorage):
         bucket = bucket or self.bucket_name
         composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
-        to_sign = "GET\n\n\n{}\n/{}/{}".format(seconds, bucket, composite)
-        digest = hmac.new(self.secret_access_key, to_sign, sha1).digest()
+        to_sign = "GET\n\n\n{}\n/{}/{}".format(
+            seconds, bucket, composite).encode('ascii')
+        digest = hmac.new(
+            self.secret_access_key.encode('ascii'), to_sign, sha1).digest()
         return '{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId=' \
             '{access_key_id}&Expires={seconds}&Signature={signature}'.format(
                 scheme='https://' if https else 'http://',
                 bucket=bucket, key=composite,
                 access_key_id=self.access_key_id, seconds=seconds,
-                signature=urllib.quote(base64.encodestring(digest).strip()),
+                signature=quote(base64.encodestring(digest).strip()),
             )
 
     def delete(self, namespace, keys, bucket=None):

@@ -98,14 +98,16 @@ class SQLAlchemyMetadataStorage(object):
         sas.flush()
         return entity.id, is_new
 
-    def _query(self, namespace, key=None, sas=None):
+    def _query(self, namespace, key=None, filters=None, what=None, sas=None):
         '''Override this to search for an existing file.
             You probably need to do something with the ``namespace``.
             '''
         sas = sas or self._get_session()
-        q = sas.query(self.file_model_cls)
+        q = sas.query(what or self.file_model_cls)
         if key is not None:
             q = q.filter_by(md5=key)
+        if filters is not None:
+            q = q.filter_by(**filters)
         return q
 
     def _instantiate(self, namespace, metadata, sas=None):
@@ -121,10 +123,20 @@ class SQLAlchemyMetadataStorage(object):
         for key, value in metadata.items():
             setattr(entity, key, value)
 
-    def gen_keys(self, namespace, sas=None):
+    def gen_originals(self, namespace, filters=None, sas=None):
+        filters = {} if filters is None else filters
+        filters['version'] = 'original'
+        for entity in self._query(namespace, filters=filters, sas=sas):
+            yield entity.to_dict()
+
+    # Not currently used, except by the local storage
+    def gen_keys(self, namespace, filters=None, sas=None):
         '''Generator of the keys in a namespace.'''
         sas = sas or self._get_session()
-        return self._query(sas=sas, namespace=namespace)
+        q = self._query(
+            namespace, filters=filters, what=self.file_model_cls.md5, sas=sas)
+        for tup in q:
+            yield tup[0]
 
     def get(self, namespace, key, sas=None):
         '''Returns a dict containing the metadata of one file,
@@ -188,7 +200,11 @@ class BaseFile(ID, MinimalBase):
         return '<{} #{} "{}" {}>'.format(
             type(self).__name__, self.id, self.file_name, self.version)
 
-    def to_dict(self):
+    def to_dict(self, versions=True):
+        '''Convert this File, and optionally its versions, to a dictionary.'''
         d = super(BaseFile, self).to_dict()
-        d['versions'] = [f.md5 for f in self.versions]
+        if versions:
+            d['versions'] = []
+            for version in self.versions:
+                d['versions'].append(version.to_dict())
         return d

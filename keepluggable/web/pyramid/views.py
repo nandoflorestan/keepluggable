@@ -12,10 +12,24 @@ from . import _
 from .resources import BaseFilesResource, BaseFileResource
 
 
+@view_config(context=BaseFilesResource, permission='kp_view_files',
+             request_method='GET', renderer='json')
+def list_files(context, request):
+    orchestrator = request.registry.settings['keepluggable']
+    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    return {'items': list(action.gen_originals(filters=context.filters))}
+
+
 @view_config(context=BaseFilesResource, permission='kp_upload',
              request_method='POST', renderer='json')
 # @csrf
 def upload_multiple_files(context, request):
+    '''The response contains **items**, an array containing either
+        the metadata for each accepted file, or details of upload failure.
+        Each failure will have "upload_failed": true.
+        You can test failures by uploading zero-length files.
+        The order of the *items* is the same as the uploaded *files*.
+        '''
     files = request.POST.getall('files')
     if not files:
         request.response.status_int = 400  # Bad request
@@ -29,19 +43,24 @@ def upload_multiple_files(context, request):
     orchestrator = request.registry.settings['keepluggable']
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
 
-    ids = []
-    failures = []
+    items = []
     for fieldStorage in files:
         # encoding = fieldStorage.encoding
         try:
             metadata = action.store_original_file(
                 bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
                 mime_type=fieldStorage.type, **other_posted_data)
-            ids.append(metadata['id'])
+            items.append(metadata)
         except FileNotAllowed as e:
-            failures.append(
-                '"{}" was not stored. '.format(fieldStorage.filename) + str(e))
-    return {'items': ids, 'failures': failures}
+            items.append({
+                'upload_failed': True,
+                'error_type': '"{}" was not stored. '.format(
+                    fieldStorage.filename),
+                'error_msg': str(e),
+                'file_name': fieldStorage.filename,
+                'mime_type': fieldStorage.type,
+                })
+    return {'items': items}
 
 
 @view_config(context=BaseFileResource, permission='kp_upload',

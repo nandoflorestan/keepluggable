@@ -120,7 +120,7 @@ class BaseFilesAction(object):
             self._store_metadata(bytes_io, metadata)
         except:
             storage_file.delete(
-                namespace=self.namespace, key=metadata['md5'])
+                namespace=self.namespace, keys=(metadata['md5'],))
             raise
 
     def _store_metadata(self, bytes_io, metadata):
@@ -147,10 +147,23 @@ class BaseFilesAction(object):
         for key in keys:
             sm.delete(self.namespace, key)
 
-    def gen_files(self, filters):
-        files = self.orchestrator.storage_metadata.gen(
+    def gen_originals(self, filters=None):
+        '''Yields the original files in this namespace, optionally with
+            further filters.
+            '''
+        files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:
-            fil['href'] = self.orchestrator.storage_file.get_url(
-                self.namespace, fil['md5'])
-            yield fil
+            yield self._complement(fil)
+
+    def _complement(self, fil):
+        '''Add the links for downloading the original file and its versions.'''
+        url = self.orchestrator.storage_file.get_url
+
+        # Add the main *href*
+        fil['href'] = url(self.namespace, fil['md5'])
+
+        # Also add *href* for each version
+        for version in fil['versions']:
+            version['href'] = url(self.namespace, version['md5'])
+        return fil
