@@ -13,16 +13,13 @@
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
       can be uploaded. When absent, the system does not have a maximum size.
-    - ``fls.bucket_prefix`` (string): The action is instantiated with a
-      bucket_id argument (usually an integer), but you should usually
-      namespace your bucket names. Easiest way is to provide a prefix.
-      So if the prefix is "mybucket" and the current bucket_id is 42,
-      the computed bucket name will be "mybucket42". If this isn't enough
-      for your use case, you should override the "bucket_name" property.
+    - ``fls.allow_empty_files`` (boolean): whether to allow zero-length
+      files to be uploaded.
     '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from bag import asbool
 from bag.web.exceptions import Problem
 from keepluggable import read_setting
 from keepluggable.exceptions import FileNotAllowed
@@ -69,15 +66,20 @@ class BaseFilesAction(object):
 
     def _allow_storage_of(self, bytes_io, metadata):
         '''Override this method if you wish to abort storing some files.
-            To abort, raise FileNotAllowed with a message explaining why.'''
-        maximum = read_setting(
-            self.orchestrator.settings, 'fls.max_file_size', default=None)
+            To abort, raise FileNotAllowed with a message explaining why.
+            '''
+        settings = self.orchestrator.settings
+        maximum = read_setting(settings, 'fls.max_file_size', default=None)
         if maximum is not None:
             maximum = int(maximum)
             if metadata['length'] > maximum:
                 raise FileNotAllowed(
                     'The file is {} KB long and the maximum is {} KB.'.format(
                         int(metadata['length'] / 1024), int(maximum / 1024)))
+        allow_empty = asbool(read_setting(
+            settings, 'fls.allow_empty_files', default=False))
+        if not allow_empty and metadata['length'] == 0:
+            raise FileNotAllowed('The file is empty.')
 
     def _compute_length(self, bytes_io, metadata):
         from bag.streams import get_file_size
@@ -144,3 +146,11 @@ class BaseFilesAction(object):
         # sm.delete_with_versions(self.namespace, original['md5'])
         for key in keys:
             sm.delete(self.namespace, key)
+
+    def gen_files(self, filters):
+        files = self.orchestrator.storage_metadata.gen(
+            self.namespace, filters=filters)
+        for fil in files:
+            fil['href'] = self.orchestrator.storage_file.get_url(
+                self.namespace, fil['md5'])
+            yield fil
