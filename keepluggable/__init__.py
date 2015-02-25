@@ -3,10 +3,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag import resolve
+REQUIRED = object()
 
 
-def read_setting(settings, key, default=None):
-    if default is None:
+def read_setting(settings, key, default=REQUIRED):
+    if default is REQUIRED:
         try:
             return settings[key]
         except KeyError:
@@ -16,6 +17,6 @@ def read_setting(settings, key, default=None):
         return settings.get(key, default)
 
 
-def resolve_setting(settings, key, default=None):
+def resolve_setting(settings, key, default=REQUIRED):
     resource_spec = read_setting(settings, key, default)
-    return resolve(resource_spec)
+    return None if resource_spec is None else resolve(resource_spec)

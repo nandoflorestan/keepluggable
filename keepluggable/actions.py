@@ -15,13 +15,16 @@
       can be uploaded. When absent, the system does not have a maximum size.
     - ``fls.allow_empty_files`` (boolean): whether to allow zero-length
       files to be uploaded.
+    - ``fls.update_schema`` (resource spec): Colander schema that validates
+      metadata being updated. Without it, no validation is done, which is
+      unsafe. So it is recommended that you implement a schema.
     '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag import asbool
 from bag.web.exceptions import Problem
-from keepluggable import read_setting
+from keepluggable import read_setting, resolve_setting
 from keepluggable.exceptions import FileNotAllowed
 
 
@@ -167,3 +170,12 @@ class BaseFilesAction(object):
         for version in fil['versions']:
             version['href'] = url(self.namespace, version['md5'])
         return fil
+
+    def update_metadata(self, id, adict):
+        schema_cls = resolve_setting(
+            self.orchestrator.settings, 'fls.update_schema', default=None)
+        if schema_cls is not None:
+            schema = schema_cls()
+            adict = schema.deserialize(adict)
+        return self.orchestrator.storage_metadata.update(
+            self.namespace, id, adict)

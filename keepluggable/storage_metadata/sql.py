@@ -123,6 +123,16 @@ class SQLAlchemyMetadataStorage(object):
         for key, value in metadata.items():
             setattr(entity, key, value)
 
+    def update(self, namespace, id, metadata, sas=None):
+        '''Updates a file metadata. It must already exist in the database.'''
+        sas = sas or self._get_session()
+        # entity = self._query(namespace, key=key, sas=sas).one()
+        # entity = self._query(namespace, sas=sas).get(id)
+        entity = sas.query(self.file_model_cls).get(id)
+        self._update(namespace, metadata, entity, sas=sas)
+        sas.flush()
+        return entity.to_dict()
+
     def gen_originals(self, namespace, filters=None, sas=None):
         filters = {} if filters is None else filters
         filters['version'] = 'original'
