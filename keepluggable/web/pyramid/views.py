@@ -15,22 +15,23 @@ from .resources import BaseFilesResource, BaseFileResource
 
 
 @view_config(context=BaseFilesResource, permission='kp_view_files',
-             request_method='GET', renderer='json')
+             accept='application/json', request_method='GET', renderer='json')
 def list_files(context, request):
     orchestrator = request.registry.settings['keepluggable']
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
+    # curl -i -H 'Accept: application/json' http://localhost:6543/divisions/1/files
 
 
 @view_config(context=BaseFilesResource, permission='kp_upload',
-             request_method='POST', renderer='json')
+             accept='application/json', request_method='POST', renderer='json')
 # @csrf
 def upload_multiple_files(context, request):
-    '''The response contains **items**, an array containing either
-        the metadata for each accepted file, or details of upload failure.
-        Each failure will have "upload_failed": true.
+    '''The response has **items**, an array in which each element is either
+        the metadata for an accepted file, or details of upload failure.
+        Each failure will have ``"upload_failed": true``.
         You can test failures by uploading zero-length files.
-        The order of the *items* is the same as the uploaded *files*.
+        The order in the ``items`` array is the same as the uploaded *files*.
         '''
     files = request.POST.getall('files')
     if not files:
@@ -63,6 +64,10 @@ def upload_multiple_files(context, request):
                 'mime_type': fieldStorage.type,
                 })
     return {'items': items}
+    # Usually this sort of thing returns "201 Created" with an empty body and
+    # an HTTP header containing the URL of the new resource::
+    # Location: http://<domain>/division/42/docs/45829867
+    # We don't do this because we support uploading multiple files.
 
 
 @view_config(context=BaseFileResource, permission='kp_upload',
@@ -77,7 +82,7 @@ def delete_file_and_its_versions(context, request):
     return Response(status_int=204)  # No content
 
 
-@view_config(context=BaseFileResource, name='metadata', #permission='kp_upload',
+@view_config(context=BaseFileResource, name='metadata', permission='kp_upload',
              accept='application/json', request_method='PUT', renderer='json')
 @ajax_view
 def update_metadata(context, request):
