@@ -21,11 +21,11 @@ if version_info[:2] < (3, 4):
 setup(
     name='keepluggable',
     version='0.1.0dev1',
-    description='Manages storage of images and other documents, with metadata.'
-    ' Also offers a Pyramid UI',
+    description='Manages storage of images and other files, with metadata.'
+    ' Also offers an HTTP API done on Pyramid.',
     long_description=long_description,
     classifiers=[  # http://pypi.python.org/pypi?:action=list_classifiers
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         # "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         'License :: OSI Approved :: MIT License',

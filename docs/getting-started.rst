@@ -114,3 +114,41 @@ Each component in the software has been factored to make it easy for you to
 subclass it. When you implement your subclass, just change the configuration
 so it points to your subclass rather than the original base class,
 and you're done!
+
+
+Concepts for developers
+=======================
+
+Whenever I speak of file **metadata**, I mean an entity that looks like this::
+
+    {
+     "id": 7,
+     "md5": "8b99d5f9c79bee5f300f35432477a853",
+     "created": "2015-02-26T18:54:23.541624",
+     "description": "",
+     "file_name": "20140913_153756.jpg",
+     "href": "http://some.address.com/path/to/the/image.jpg",
+     "image_format": "JPEG",
+     "image_width": 3264,
+     "image_height": 2448,
+     "length": 3803890,
+     "mime_type": "image/jpeg",
+     "devent_id": 1,
+     "room_id": null,
+     "original_id": null,
+     "version": "original",
+     "versions": [],
+    }
+
+The "id" and "md5" variables both serve as file identifiers.
+"length" contains the file size in bytes.
+When the file is not an image, the variables that start with "image_" are null.
+
+The file always belongs to a namespace which is usually expressed in the URL,
+not in the metadata entity.
+
+The file may be an original (something a user uploaded) or a version of it
+(such as a thumbnail). The version name is found in the "version" variable.
+Uploaded files have version == "original". Original files contain their
+versions in the "versions" array. Derivative files have their "versions"
+array empty, but they mention the "original_id".
