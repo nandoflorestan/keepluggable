@@ -142,7 +142,7 @@ Whenever I speak of file **metadata**, I mean an entity that looks like this::
 
 The "id" and "md5" variables both serve as file identifiers.
 "length" contains the file size in bytes.
-When the file is not an image, the variables that start with "image_" are null.
+When the file is not an image, the variables that start with "image\_" are null.
 
 The file always belongs to a namespace which is usually expressed in the URL,
 not in the metadata entity.
