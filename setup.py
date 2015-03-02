@@ -11,7 +11,9 @@ from setuptools import setup, find_packages
 with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
-requires = ['nine', 'bag']  # Each backend may have additional dependencies.
+requires = [  # Each backend may have additional dependencies.
+    'nine', 'bag>=0.5.0',
+    ]
 
 if version_info[:2] < (3, 4):
     requires.append('pathlib')  # 'enum34'
