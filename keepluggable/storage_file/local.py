@@ -20,13 +20,15 @@
     Configuration settings
     ======================
 
-    - ``local.base_directory``: Where to store payloads
+    Specify in which directory to store payloads like this::
+
+        local.storage_path = some.python.resource:relative/directory
     '''
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from pathlib import Path
 from time import time
+from bag import resolve_path
 from keepluggable import read_setting
 from . import BasePayloadStorage
 
@@ -37,8 +39,8 @@ class LocalFilesystemStorage(BasePayloadStorage):
     __doc__ = __doc__
 
     def __init__(self, settings):
-        self.directory = Path(
-            read_setting(settings, 'local.base_directory')).absolute()
+        self.storage_path = read_setting(settings, 'local.storage_path')
+        self.directory = resolve_path(self.storage_path).absolute()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
@@ -93,9 +95,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
         assert outfile.lstat().st_size == metadata['length']
 
     def get_url(self, namespace, key, seconds=3600, https=False):
-        '''Returns only a "file://" URL for local testing. For more adequate
-            URLs you should override this method and use your web framework.
+        '''Returns a Pyramid static URL.
+            If you use another web framework, please override this method.
             '''
-        # seconds = int(time()) + seconds
-        return 'file://{directory}/{namespace}/{key}'.format(
-                directory=self.directory, namespace=namespace, key=key)
+        from pyramid.threadlocal import get_current_request
+        return get_current_request().static_url(
+            '/'.join((self.storage_path, str(namespace), key)))
