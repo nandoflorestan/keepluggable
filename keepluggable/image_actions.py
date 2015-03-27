@@ -87,11 +87,13 @@ class ImageAction(BaseFilesAction):
         if not is_image:
             return self._store_file(bytes_io, metadata)  # from superclass
 
-        # Before anything else, ensure the image is not corrupt
+        # Probably don't need to verify the image since we are loading it
+        # original = self._img_from_stream(bytes_io)
+        # original.verify()  # TODO What does this raise?
+
+        # # If you need to load the image after verify(), must reopen it
+        # bytes_io.seek(0)
         original = self._img_from_stream(bytes_io)
-        original.verify()  # TODO Does this raise?
-        # Because verify() erases .fp, we put it back:
-        original.fp = bytes_io  # otherwise the img won't clone later!
 
         metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
@@ -124,11 +126,21 @@ class ImageAction(BaseFilesAction):
         # Store the new metadata and the new payload
         self._store_file(img.stream, metadata)
 
+    def _copy_img(self, original):
+        # if original.mode == 'RGBA':
+        #     background = Image.new("RGB", original.size, (255, 255, 255))
+        #     # 3 is the alpha channel:
+        #     background.paste(original, mask=original.split()[3])
+        #     return background
+        # else:
+        return original.convert('RGB')  # Creates a copy
+
     def _convert_img(self, original, metadata, version_config):
         '''Return a new image, converted from ``original``, using
             ``version_config`` and setting ``metadata``.
             '''
-        img = original.convert('RGB')  # Creates a copy
+        img = self._copy_img(original)
+
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))
 
