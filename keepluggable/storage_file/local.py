@@ -73,9 +73,8 @@ class LocalFilesystemStorage(BasePayloadStorage):
 
     def delete_namespace(self, namespace):
         '''Delete all files in ``namespace``'''
-        for key in self.gen_keys(namespace):
-            self.delete(namespace, key)
-        (self.directory / str(namespace)).rmdir()
+        from shutil import rmtree
+        rmtree(str(self.directory / str(namespace)))
 
     def get_reader(self, namespace, key):
         return open(str(self.directory / str(namespace) / key), 'rb')
