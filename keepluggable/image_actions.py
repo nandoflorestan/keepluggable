@@ -9,6 +9,32 @@
 
     It inherits from BaseFilesAction, whose docstring you should read too.
 
+
+    Installing Pillow
+    =================
+
+    To use this action, you need to install the Pillow imaging library::
+
+        sudo apt-get install libjpeg-dev zlib1g-dev libfreetype6-dev
+        # Create these links. If they already exist, remove them and readd them:
+        sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib
+        sudo ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib
+        sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib
+        easy_install -UZ Pillow
+
+    Pay attention to the desired supported formats near the end of the output::
+
+        *** TKINTER support not available
+        --- JPEG support available
+        *** OPENJPEG (JPEG2000) support not available
+        --- ZLIB (PNG/ZIP) support available
+        *** LIBTIFF support not available
+        --- FREETYPE2 support available
+        *** LITTLECMS2 support not available
+        *** WEBP support not available
+        *** WEBPMUX support not available
+
+
     Configuration settings
     ======================
 
