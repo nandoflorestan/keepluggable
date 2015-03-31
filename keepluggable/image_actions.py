@@ -134,12 +134,15 @@ class ImageAction(BaseFilesAction):
         # sizes smaller than the uploaded image, plus one (the original size).
         largest_version_created_so_far = 0
         original_area = original.size[0] * original.size[1]
+        metadatas = []
         for version_config in self.versions:
             current_area = version_config['width'] * version_config['height']
             if largest_version_created_so_far <= original_area:
                 # Do it
-                self._store_img_version(original, metadata, version_config)
+                metadatas.append(self._store_img_version(
+                    original, metadata, version_config))
                 largest_version_created_so_far = current_area
+        return metadatas  # of the versions just created
 
     def _store_img_version(self, original, original_metadata, version_config):
         metadata = copy(original_metadata)
@@ -151,6 +154,8 @@ class ImageAction(BaseFilesAction):
 
         # Store the new metadata and the new payload
         self._store_file(img.stream, metadata)
+
+        return metadata
 
     def _copy_img(self, original):
         # if original.mode == 'RGBA':

@@ -57,7 +57,7 @@ class BaseFilesAction(object):
         # Hook for subclasses to allow or forbid storing this file
         self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
 
-        self._store_versions(bytes_io, metadata)
+        metadata['versions'] = self._store_versions(bytes_io, metadata)
         return metadata
 
     def _guess_mime_type(self, bytes_io, metadata):
@@ -125,6 +125,7 @@ class BaseFilesAction(object):
             storage_file.delete(
                 namespace=self.namespace, keys=(metadata['md5'],))
             raise
+        return []  # no new versions are created in this case
 
     def _store_metadata(self, bytes_io, metadata):
         metadata['id'], is_new = \

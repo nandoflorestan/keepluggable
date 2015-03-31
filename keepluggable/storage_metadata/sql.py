@@ -131,13 +131,14 @@ class SQLAlchemyMetadataStorage(object):
         entity = sas.query(self.file_model_cls).get(id)
         self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
-        return entity.to_dict()
+        return entity.to_dict(sas)
 
     def gen_originals(self, namespace, filters=None, sas=None):
+        sas = sas or self._get_session()
         filters = {} if filters is None else filters
         filters['version'] = 'original'
         for entity in self._query(namespace, filters=filters, sas=sas):
-            yield entity.to_dict()
+            yield entity.to_dict(sas)
 
     # Not currently used, except by the local storage
     def gen_keys(self, namespace, filters=None, sas=None):
@@ -154,7 +155,7 @@ class SQLAlchemyMetadataStorage(object):
             '''
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
-        return entity.to_dict() if entity else None
+        return entity.to_dict(sas) if entity else None
 
     def delete_with_versions(self, namespace, key, sas=None):
         '''Delete a file along with all its versions.'''
@@ -202,19 +203,17 @@ class BaseFile(ID, MinimalBase):
     def get_original(self, sas):
         return sas.query(type(self)).get(self.original_id)
 
-    def q_versions(self, sas, order_by=created):
+    def q_versions(self, sas, order_by='image_width'):
         return sas.query(type(self)).filter_by(
-            original=self).order_by(order_by)
+            original_id=self.id).order_by(order_by)
 
     def __repr__(self):
         return '<{} #{} "{}" {}>'.format(
             type(self).__name__, self.id, self.file_name, self.version)
 
-    def to_dict(self, versions=True):
+    def to_dict(self, sas, versions=True):
         '''Convert this File, and optionally its versions, to a dictionary.'''
         d = super(BaseFile, self).to_dict()
-        if versions:
-            d['versions'] = []
-            for version in self.versions:
-                d['versions'].append(version.to_dict())
+        d['versions'] = [v.to_dict(sas) for v in self.q_versions(sas)] \
+            if versions else []
         return d
