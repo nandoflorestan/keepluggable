@@ -58,7 +58,7 @@ class BaseFilesAction(object):
         self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
 
         metadata['versions'] = self._store_versions(bytes_io, metadata)
-        return metadata
+        return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
         '''Fill in the mime_type if not already known.'''
