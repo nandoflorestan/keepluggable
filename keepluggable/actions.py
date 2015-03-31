@@ -139,7 +139,7 @@ class BaseFilesAction(object):
             raise Problem('The file was not found.', http_code=404)
 
         # Add itself to the list of hashes indicating the versions.
-        keys = list(original['versions'])
+        keys = [v['md5'] for v in original['versions']]
         keys.append(original['md5'])
 
         # Delete payloads
