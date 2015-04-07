@@ -160,17 +160,17 @@ class BaseFilesAction(object):
         for fil in files:
             yield self._complement(fil)
 
-    def _complement(self, fil):
+    def _complement(self, metadata):
         '''Add the links for downloading the original file and its versions.'''
         url = self.orchestrator.storage_file.get_url
 
         # Add the main *href*
-        fil['href'] = url(self.namespace, fil['md5'])
+        metadata['href'] = url(self.namespace, metadata['md5'])
 
         # Also add *href* for each version
-        for version in fil['versions']:
+        for version in metadata['versions']:
             version['href'] = url(self.namespace, version['md5'])
-        return fil
+        return metadata
 
     def update_metadata(self, id, adict):
         schema_cls = resolve_setting(
