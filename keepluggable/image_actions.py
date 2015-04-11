@@ -68,6 +68,7 @@ from copy import copy
 from io import BytesIO
 from PIL import Image
 from bag import asbool
+from .exceptions import FileNotAllowed
 from .actions import BaseFilesAction
 
 
@@ -102,8 +103,13 @@ class ImageAction(BaseFilesAction):
         # We want to process from smaller to bigger, so order versions by area:
         self.versions.sort(key=lambda d: d['width'] * d['height'])
 
-    def _img_from_stream(self, bytes_io):
-        img = Image.open(bytes_io)
+    def _img_from_stream(self, bytes_io, metadata):
+        try:
+            img = Image.open(bytes_io)
+        except OSError as e:
+            raise FileNotAllowed('Unable to store the image "{}" because '
+                'the server is unable to identify the image format.'.format(
+                metadata['file_name']))
         img.bytes_io = bytes_io
         return img
 
@@ -119,7 +125,7 @@ class ImageAction(BaseFilesAction):
 
         # # If you need to load the image after verify(), must reopen it
         # bytes_io.seek(0)
-        original = self._img_from_stream(bytes_io)
+        original = self._img_from_stream(bytes_io, metadata)
 
         metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
@@ -157,20 +163,25 @@ class ImageAction(BaseFilesAction):
 
         return metadata
 
-    def _copy_img(self, original):
-        # if original.mode == 'RGBA':
-        #     background = Image.new("RGB", original.size, (255, 255, 255))
-        #     # 3 is the alpha channel:
-        #     background.paste(original, mask=original.split()[3])
-        #     return background
-        # else:
-        return original.convert('RGB')  # Creates a copy
+    def _copy_img(self, original, metadata):
+        try:
+            # if original.mode == 'RGBA':
+            #     background = Image.new("RGB", original.size, (255, 255, 255))
+            #     # 3 is the alpha channel:
+            #     background.paste(original, mask=original.split()[3])
+            #     return background
+            # else:
+            return original.convert('RGB')  # Creates a copy
+        except OSError as e:
+            raise FileNotAllowed('Unable to store the image "{}" because '
+                'the server is unable to convert it.'.format(
+                metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
         '''Return a new image, converted from ``original``, using
             ``version_config`` and setting ``metadata``.
             '''
-        img = self._copy_img(original)
+        img = self._copy_img(original, metadata)
 
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))

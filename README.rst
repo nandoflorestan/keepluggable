@@ -58,6 +58,7 @@ Future
 
 We want the experience to be as convenient as possible for the user:
 
+- We need to add error logging.
 - CSRF protection
 - Detect image rotation and rotate it before creating thumbnails
 - Read EXIF data to fill in date and location, hopefully before the user types these

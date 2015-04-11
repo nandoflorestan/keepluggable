@@ -54,7 +54,7 @@ def upload_multiple_files(context, request):
                 bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
                 mime_type=fieldStorage.type, **other_posted_data)
             items.append(metadata)
-        except FileNotAllowed as e:
+        except (OSError, FileNotAllowed) as e:
             items.append({
                 'upload_failed': True,
                 'error_type': '"{}" was not stored. '.format(
