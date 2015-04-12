@@ -128,7 +128,7 @@ class BaseFilesAction(object):
         return []  # no new versions are created in this case
 
     def _store_metadata(self, bytes_io, metadata):
-        metadata['id'], is_new = \
+        metadata['id'], metadata['is_new'] = \
             self.orchestrator.storage_metadata.put(
                 namespace=self.namespace, metadata=metadata)
 

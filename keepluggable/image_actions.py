@@ -125,15 +125,16 @@ class ImageAction(BaseFilesAction):
 
         # # If you need to load the image after verify(), must reopen it
         # bytes_io.seek(0)
-        original = self._img_from_stream(bytes_io, metadata)
+        original = self._img_from_stream(bytes_io, metadata)  # may raise
+        self._copy_img(original, metadata)  # Try to raise before storing
 
+        #  No exceptions were raised,  so store the original file
         metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
-
         if self.store_original:  # Optionally store original payload
             self._store_file(bytes_io, metadata)
-        else:
-            self._store_metadata(bytes_io, metadata)  # Always store metadata
+        else:                        # Always store original metadata
+            self._store_metadata(bytes_io, metadata)
 
         # There is no point in enlarging an uploaded image, but some
         # configured sizes might be larger. We want to create only the
@@ -145,9 +146,10 @@ class ImageAction(BaseFilesAction):
             current_area = version_config['width'] * version_config['height']
             if largest_version_created_so_far <= original_area:
                 # Do it
-                metadatas.append(self._store_img_version(
+                metadatas.append(self._store_img_version(  # may raise
                     original, metadata, version_config))
                 largest_version_created_so_far = current_area
+
         return metadatas  # of the versions just created
 
     def _store_img_version(self, original, original_metadata, version_config):
@@ -173,7 +175,8 @@ class ImageAction(BaseFilesAction):
             # else:
             return original.convert('RGB')  # Creates a copy
         except OSError as e:
-            raise FileNotAllowed('Unable to store the image "{}" because '
+            raise FileNotAllowed(
+                'Unable to store the image "{}" because '
                 'the server is unable to convert it.'.format(
                 metadata['file_name']))
 

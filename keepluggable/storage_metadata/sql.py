@@ -91,8 +91,10 @@ class SQLAlchemyMetadataStorage(object):
         entity = self._query(namespace, key=metadata['md5'], sas=sas).first()
         is_new = entity is None
         if is_new:
+            is_new = metadata.pop('is_new', None)
             entity = self._instantiate(namespace, metadata, sas=sas)
             sas.add(entity)
+            metadata['is_new'] = is_new
         else:
             self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
