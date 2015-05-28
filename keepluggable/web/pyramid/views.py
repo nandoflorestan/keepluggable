@@ -4,6 +4,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
 from pyramid.response import Response
 from pyramid.view import view_config
@@ -11,7 +12,7 @@ from keepluggable.exceptions import FileNotAllowed
 from . import _
 from .resources import BaseFilesResource, BaseFileResource
 
-# TODO: Apply decorators only in *includeme* and according to configuration
+# TODO: Apply @csrf only in *includeme* and according to configuration
 
 
 @view_config(context=BaseFilesResource, permission='kp_view_files',
@@ -23,8 +24,45 @@ def list_files(context, request):
     # curl -i -H 'Accept: application/json' http://localhost:6543/divisions/1/files
 
 
-@view_config(context=BaseFilesResource, permission='kp_upload',
+@view_config(context=BaseFilesResource, name="single", permission='kp_upload',
              accept='application/json', request_method='POST', renderer='json')
+# @csrf
+@ajax_view
+def upload_single_file(context, request):
+    '''When happy, returns the uploaded file metadata as JSON.'''
+    fieldStorage = request.POST.getall('file')
+    if not fieldStorage:
+        raise Problem(
+            http_code=400,  # Bad request
+            error_type=_('Empty POST'),
+            error_msg=_('The server did not receive an uploaded file.'),
+            )
+
+    other_posted_data = dict(request.POST)  # a copy
+    del other_posted_data['file']
+
+    orchestrator = request.registry.settings['keepluggable']
+    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+
+    # encoding = fieldStorage.encoding
+    try:
+        return action.store_original_file(
+            bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
+            mime_type=fieldStorage.type, **other_posted_data)
+    except (OSError, FileNotAllowed) as e:
+        raise Problem(
+            http_code=400,  # Bad request
+            error_type='"{}" was not stored. '.format(
+                fieldStorage.filename),
+            error_msg=str(e),
+            file_name=fieldStorage.filename,
+            mime_type=fieldStorage.type,
+            )
+
+
+@view_config(
+    context=BaseFilesResource, name='multiple', permission='kp_upload',
+    accept='application/json', request_method='POST', renderer='json')
 # @csrf
 def upload_multiple_files(context, request):
     '''The response has **items**, an array in which each element is either
