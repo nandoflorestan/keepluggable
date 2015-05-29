@@ -30,8 +30,8 @@ def list_files(context, request):
 @ajax_view
 def upload_single_file(context, request):
     '''When happy, returns the uploaded file metadata as JSON.'''
-    fieldStorage = request.POST.getall('file')
-    if not fieldStorage:
+    fieldStorage = request.POST.get('file')
+    if not fieldStorage.bytes_read:
         raise Problem(
             http_code=400,  # Bad request
             error_type=_('Empty POST'),
