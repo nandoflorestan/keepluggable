@@ -137,7 +137,7 @@ class BaseFilesAction(object):
         sm = self.orchestrator.storage_metadata
         original = sm.get(namespace=self.namespace, key=key)
         if original is None:
-            raise Problem('The file was not found.', http_code=404)
+            raise Problem('The file was not found.', status_int=404)
 
         # Add itself to the list of hashes indicating the versions.
         keys = [v['md5'] for v in original['versions']]

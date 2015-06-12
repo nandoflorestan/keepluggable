@@ -33,9 +33,8 @@ def upload_single_file(context, request):
     fieldStorage = request.POST.getone('file')
     if not fieldStorage.bytes_read:
         raise Problem(
-            http_code=400,  # Bad request
-            error_type=_('Empty POST'),
-            error_msg=_('The server did not receive an uploaded file.'),
+            _('The server did not receive an uploaded file.'),
+            error_title=_('Empty POST'),
             )
 
     other_posted_data = dict(request.POST)  # a copy
@@ -51,10 +50,9 @@ def upload_single_file(context, request):
             mime_type=fieldStorage.type, **other_posted_data)
     except (OSError, FileNotAllowed) as e:
         raise Problem(
-            http_code=400,  # Bad request
-            error_type='"{}" was not stored. '.format(
+            str(e),
+            error_title='"{}" was not stored. '.format(
                 fieldStorage.filename),
-            error_msg=str(e),
             file_name=fieldStorage.filename,
             mime_type=fieldStorage.type,
             )
@@ -73,10 +71,10 @@ def upload_multiple_files(context, request):
         '''
     files = request.POST.getall('files')
     if not files:
-        request.response.status_int = 400  # Bad request
-        return dict(
-            error_type=_('Empty POST'),
-            error_msg=_('The server did not receive any uploaded files.'))
+        raise Problem(
+            _('The server did not receive any uploaded files.'),
+            error_title=_('Empty POST'),
+            )
 
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['files']
@@ -95,7 +93,7 @@ def upload_multiple_files(context, request):
         except (OSError, FileNotAllowed) as e:
             items.append({
                 'upload_failed': True,
-                'error_type': '"{}" was not stored. '.format(
+                'error_title': '"{}" was not stored. '.format(
                     fieldStorage.filename),
                 'error_msg': str(e),
                 'file_name': fieldStorage.filename,
