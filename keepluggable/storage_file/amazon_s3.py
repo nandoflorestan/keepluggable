@@ -136,24 +136,23 @@ class AmazonS3Storage(BasePayloadStorage):
         for k in subset.keys():
             subset[k] = str(subset[k])
 
-    # TODO https and bucket should be configuration settings
-    def get_url(self, namespace, key, seconds=DAY, https=False, bucket=None):
+    # TODO https should be a configuration setting
+    def get_url(self, namespace, key, seconds=DAY, https=False):
         """Return S3 authenticated URL sans network access or phatty
             dependencies like boto.
 
             Stolen from https://gist.github.com/kanevski/655022
             """
-        bucket = bucket or self.bucket_name
         composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
-            seconds, bucket, composite).encode('ascii')
+            seconds, self.bucket_name, composite).encode('ascii')
         digest = hmac.new(
             self.secret_access_key.encode('ascii'), to_sign, sha1).digest()
         return '{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId=' \
             '{access_key_id}&Expires={seconds}&Signature={signature}'.format(
                 scheme='https://' if https else 'http://',
-                bucket=bucket, key=composite,
+                bucket=self.bucket_name, key=composite,
                 access_key_id=self.access_key_id, seconds=seconds,
                 signature=quote(base64.encodestring(digest).strip()),
             )
