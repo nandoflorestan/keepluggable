@@ -184,18 +184,20 @@ class ImageAction(BaseFilesAction):
         '''Return a new image, converted from ``original``, using
             ``version_config`` and setting ``metadata``.
             '''
+        fmt = version_config['format']
+        assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
         img = self._copy_img(original, metadata)
 
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))
 
         stream = BytesIO()
-        img.save(stream, format=version_config['format'],
-                 quality=self.quality, optimize=1)
+        img.save(stream, format=fmt, quality=self.quality, optimize=1)
         img.stream = stream  # so we can recover it elsewhere
 
         # Fill in the metadata
-        metadata['image_format'] = version_config['format']
+        metadata['mime_type'] = 'image/' + fmt
+        metadata['image_format'] = fmt
         metadata['image_width'], metadata['image_height'] = img.size
         self._compute_length(stream, metadata)
         self._compute_md5(stream, metadata)
