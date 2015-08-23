@@ -7,4 +7,8 @@ from __future__ import (absolute_import, division, print_function,
 
 
 class BasePayloadStorage(object):
-    pass
+    def get_reader(self, namespace, key):
+        '''Returns an open "file" object from which the payload can be read.
+            Otherwise, raises KeyError.
+            '''
+        raise NotImplementedError()

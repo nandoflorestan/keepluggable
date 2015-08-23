@@ -25,6 +25,7 @@ from time import time
 from hashlib import sha1
 from bag import dict_subset
 # http://botocore.readthedocs.org/en/latest/
+from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
 from keepluggable import read_setting
 from . import BasePayloadStorage
@@ -114,8 +115,13 @@ class AmazonS3Storage(BasePayloadStorage):
             self.delete(namespace, key, bucket=bucket)
 
     def get_reader(self, namespace, key, bucket=None):
-        adict = self._get_object(namespace, key, bucket).get()
-        return adict['Body']
+        try:
+            adict = self._get_object(namespace, key, bucket).get()
+        except ClientError as e:  # amazon_s3: key not found
+            raise KeyError(
+                'Key not found: {} / {}'.format(namespace, key)) from e
+        else:
+            return adict['Body']
 
     def put(self, namespace, metadata, bytes_io, bucket=None):
         subset = dict_subset(metadata, lambda k, v: k in (

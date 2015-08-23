@@ -77,7 +77,11 @@ class LocalFilesystemStorage(BasePayloadStorage):
         rmtree(str(self.directory / str(namespace)))
 
     def get_reader(self, namespace, key):
-        return open(str(self.directory / str(namespace) / key), 'rb')
+        try:
+            return open(str(self.directory / str(namespace) / key), 'rb')
+        except FileNotFoundError as e:
+            raise KeyError(
+                'Key not found: {} / {}'.format(namespace, key)) from e
 
     def put(self, namespace, metadata, bytes_io):
         outdir = self.directory / str(namespace)
