@@ -128,7 +128,8 @@ class AmazonS3Storage(BasePayloadStorage):
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
         self._convert_values_to_str(subset)
-        bytes_io.seek(0)
+        if hasattr(bytes_io, 'seek'):
+            bytes_io.seek(0)
         result = self._get_bucket(bucket).put_object(
             Key=self._cat(namespace, metadata['md5']),
             # done automatically by botocore:  ContentMD5=encoded_md5,
