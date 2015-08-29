@@ -121,15 +121,15 @@ class AmazonS3Storage(BasePayloadStorage):
             raise KeyError(
                 'Key not found: {} / {}'.format(namespace, key)) from e
         else:
-            return adict['Body']
+            return adict['Body']  # botocore.response.StreamingBody has .read()
 
     def put(self, namespace, metadata, bytes_io, bucket=None):
         subset = dict_subset(metadata, lambda k, v: k in (
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
         self._convert_values_to_str(subset)
-        if hasattr(bytes_io, 'seek'):
-            bytes_io.seek(0)
+        if not hasattr(bytes_io, 'seek'):
+            bytes_io = bytes_io.read()
         result = self._get_bucket(bucket).put_object(
             Key=self._cat(namespace, metadata['md5']),
             # done automatically by botocore:  ContentMD5=encoded_md5,
