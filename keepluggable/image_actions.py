@@ -66,7 +66,7 @@ from __future__ import (absolute_import, division, print_function,
 # import imghdr  # imghdr.what(file)
 from copy import copy
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ExifTags
 from bag import asbool
 from .exceptions import FileNotAllowed
 from .actions import BaseFilesAction
@@ -74,6 +74,10 @@ from .actions import BaseFilesAction
 
 class ImageAction(BaseFilesAction):
     __doc__ = __doc__
+
+    EXIF_TAGS = {v: k for (k, v) in ExifTags.TAGS.items()}  # str to int map
+
+    EXIF_ROTATION_FIX = {1: 0, 8: 90, 3: 180, 6: 270}
 
     def __init__(self, *a, **kw):
         super(ImageAction, self).__init__(*a, **kw)
@@ -106,12 +110,28 @@ class ImageAction(BaseFilesAction):
     def _img_from_stream(self, bytes_io, metadata):
         try:
             img = Image.open(bytes_io)
-        except OSError as e:
-            raise FileNotAllowed('Unable to store the image "{}" because '
+        except OSError:
+            raise FileNotAllowed(
+                'Unable to store the image "{}" because '
                 'the server is unable to identify the image format.'.format(
-                metadata['file_name']))
+                    metadata['file_name']))
         img.bytes_io = bytes_io
         return img
+
+    def _rotate_exif_orientation(self, img):
+        '''Some cameras do not rotate the image, they just add orientation
+            metadata to the file, so we rotate it here.
+            '''
+        if not hasattr(img, '_getexif'):
+            return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
+        tags = img._getexif()
+        if tags is None:
+            return img
+        orientation = tags.get(self.EXIF_TAGS['Orientation'])
+        if orientation is None:
+            return img
+        degrees = self.EXIF_ROTATION_FIX.get(orientation)
+        return img.rotate(degrees) if degrees else img
 
     def _store_versions(self, bytes_io, metadata):
         # We override this method to deal with images.
@@ -126,6 +146,7 @@ class ImageAction(BaseFilesAction):
         # # If you need to load the image after verify(), must reopen it
         # bytes_io.seek(0)
         original = self._img_from_stream(bytes_io, metadata)  # may raise
+        original = self._rotate_exif_orientation(original)
         self._copy_img(original, metadata)  # Try to raise before storing
 
         #  No exceptions were raised,  so store the original file
@@ -178,7 +199,7 @@ class ImageAction(BaseFilesAction):
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
                 'the server is unable to convert it.'.format(
-                metadata['file_name']))
+                    metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
         '''Return a new image, converted from ``original``, using
