@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Installer for keepluggable'''
+"""Installer for keepluggable"""
 
 from codecs import open
 from sys import version_info

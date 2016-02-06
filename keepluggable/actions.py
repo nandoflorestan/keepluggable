@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Action class that coordinates the workflow. You are likely to need to
+"""Action class that coordinates the workflow. You are likely to need to
     subclass this.
 
     To enable this action, use this configuration::
@@ -18,7 +18,7 @@
     - ``fls.update_schema`` (resource spec): Colander schema that validates
       metadata being updated. Without it, no validation is done, which is
       unsafe. So it is recommended that you implement a schema.
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -36,7 +36,7 @@ class BaseFilesAction(object):
         self.namespace = namespace
 
     def store_original_file(self, bytes_io, **metadata):
-        '''Point of entry into the workflow of storing a file.
+        """Point of entry into the workflow of storing a file.
             You can override this method in subclasses to change the steps
             since it is a sort of coordinator that calls one method for
             each step.
@@ -44,7 +44,7 @@ class BaseFilesAction(object):
             The argument *bytes_io* is a file-like object with the payload.
             *metadata* is a dict with the information to be persisted in
             the metadata storage.
-            '''
+            """
         assert metadata['file_name']
 
         # This is not a derived file such as a resized image.
@@ -61,16 +61,16 @@ class BaseFilesAction(object):
         return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
-        '''Fill in the mime_type if not already known.'''
+        """Fill in the mime_type if not already known."""
         t = metadata.get('mime_type')
         if t is None:
             from mimetypes import guess_type
             metadata['mime_type'] = guess_type(metadata['file_name'])[0]
 
     def _allow_storage_of(self, bytes_io, metadata):
-        '''Override this method if you wish to abort storing some files.
+        """Override this method if you wish to abort storing some files.
             To abort, raise FileNotAllowed with a message explaining why.
-            '''
+            """
         settings = self.orchestrator.settings
         maximum = read_setting(settings, 'fls.max_file_size', default=None)
         if maximum is not None:
@@ -110,11 +110,11 @@ class BaseFilesAction(object):
         bytes_io.seek(0)  # ...so it can be read again
 
     def _store_versions(self, bytes_io, metadata):
-        '''Subclasses will have a complex workflow for storing versions.'''
+        """Subclasses will have a complex workflow for storing versions."""
         return self._store_file(bytes_io, metadata)
 
     def _store_file(self, bytes_io, metadata):
-        '''Saves the payload and the metadata on the 2 storage backends.'''
+        """Saves the payload and the metadata on the 2 storage backends."""
         storage_file = self.orchestrator.storage_file
         storage_file.put(
             namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
@@ -152,16 +152,16 @@ class BaseFilesAction(object):
             sm.delete(self.namespace, key)
 
     def gen_originals(self, filters=None):
-        '''Yields the original files in this namespace, optionally with
+        """Yields the original files in this namespace, optionally with
             further filters.
-            '''
+            """
         files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:
             yield self._complement(fil)
 
     def _complement(self, metadata):
-        '''Add the links for downloading the original file and its versions.'''
+        """Add the links for downloading the original file and its versions."""
         url = self.orchestrator.storage_file.get_url
 
         # Add the main *href*

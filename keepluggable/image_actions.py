@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Actions that involve images, such as converting formats, resizing etc.
+"""Actions that involve images, such as converting formats, resizing etc.
     go into ImageAction.
 
     To enable this action, use this configuration::
@@ -59,7 +59,7 @@
             jpeg  240  240 vignette
             jpeg  160  160 thumb
         img.versions_quality = 90
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -119,9 +119,9 @@ class ImageAction(BaseFilesAction):
         return img
 
     def _rotate_exif_orientation(self, img):
-        '''Some cameras do not rotate the image, they just add orientation
+        """Some cameras do not rotate the image, they just add orientation
             metadata to the file, so we rotate it here.
-            '''
+            """
         if not hasattr(img, '_getexif'):
             return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
         tags = img._getexif()
@@ -202,9 +202,9 @@ class ImageAction(BaseFilesAction):
                     metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
-        '''Return a new image, converted from ``original``, using
+        """Return a new image, converted from ``original``, using
             ``version_config`` and setting ``metadata``.
-            '''
+            """
         fmt = version_config['format']
         assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
         img = self._copy_img(original, metadata)
@@ -226,7 +226,7 @@ class ImageAction(BaseFilesAction):
         return img
 
     def _complement(self, fil):
-        '''Omit the main *href* if we are not storing original images.'''
+        """Omit the main *href* if we are not storing original images."""
         url = self.orchestrator.storage_file.get_url
 
         # Add main *href* if we are storing original images or if not image
