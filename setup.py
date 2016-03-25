@@ -12,7 +12,7 @@ with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 requires = [  # Each backend may have additional dependencies.
-    'nine', 'bag>=0.5.0',
+    'nine', 'bag>=0.8.0',
     ]
 
 if version_info[:2] < (3, 4):
@@ -36,9 +36,9 @@ setup(
         'Programming Language :: Python :: 2',
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         'Programming Language :: Python :: Implementation :: CPython',
         "Framework :: Pyramid",
         'Topic :: Database',

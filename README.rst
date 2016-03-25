@@ -50,6 +50,9 @@ to the JPEG format (so it will never store an unecessarily large BMP),
 optionally stores the original image in whatever size it is, then
 creates configurable smaller versions of it.
 
+Some cameras do not rotate the photo, they just add orientation metadata to the
+image file, so keepluggable rotates it for you, before creating the thumbnails.
+
 `Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_
 
 
@@ -58,15 +61,12 @@ Future
 
 We want the experience to be as convenient as possible for the user:
 
-- We need to add error logging.
 - CSRF protection
-- Detect image rotation and rotate it before creating thumbnails
 - Read EXIF data to fill in date and location, hopefully before the user types these
 - Read other EXIF, IPTC, and XMP metadata in photo files
 - Detect whether an image is already in the store and let the user edit it
 - Allow the user to draw a square on the image to generate the thumbnail
 - Configure what kinds of files are accepted (e. g. only images)
-- Define policies for formats: whether to convert/serve JPG, PNG, GIF
 - generate image tag with alt, title (maybe legend) etc.
 - trigger an event when image is uploaded
 - search images to edit or remove them
