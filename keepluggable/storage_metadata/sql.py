@@ -184,7 +184,8 @@ class BaseFile(ID, MinimalBase):
     file_name = Column(Unicode(300))  # includes the file_extension
     length = Column(Integer, nullable=False, doc='File size in bytes')
     created = now_column()  # Stores the moment the instance is created
-    mime_type = Column(Unicode(40), doc='MIME type; e.g. "image/jpeg"')
+    mime_type = Column(Unicode(255), doc='MIME type; e.g. "image/jpeg"')
+    # http://stackoverflow.com/questions/643690/maximum-mimetype-length-when-storing-type-in-db
     image_width = Column(Integer, doc='Image width in pixels')
     image_height = Column(Integer, doc='Image height in pixels')
     image_format = Column(Unicode(20), doc='JPEG, PNG, GIF etc.')

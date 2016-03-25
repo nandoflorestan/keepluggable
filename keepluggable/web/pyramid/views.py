@@ -17,7 +17,7 @@ def list_files(context, request):
     orchestrator = request.registry.settings['keepluggable']
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
-    # curl -i -H 'Accept: application/json' http://localhost:6543/divisions/1/files
+    # curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
 
 
 @ajax_view
@@ -110,7 +110,7 @@ def update_metadata(context, request):
     orchestrator = request.registry.settings['keepluggable']
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return action.update_metadata(context.__name__, adict)
-    # curl -i -H 'Content-Type: application/json' -H 'Accept: application/json' -X PUT -d '{"description": "Super knife", "asset_id": 1, "room_id": null, "user_id": 2}' http://localhost:6543/divisions/1/files/1/@@metadata
+    # curl -i -H 'Content-Type: application/json' -H 'Accept: application/json' -X PUT -d '{"description": "Super knife", "asset_id": 1, "room_id": null, "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
 
 
 def register_pyramid_views(config, angular_csrf=False):
