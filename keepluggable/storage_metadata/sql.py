@@ -60,24 +60,23 @@ from __future__ import (absolute_import, division, print_function,
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode
-from keepluggable import resolve_setting
 
 
 class SQLAlchemyMetadataStorage(object):
     __doc__ = __doc__
 
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self, orchestrator):
+        self.orchestrator = orchestrator
 
-        self.file_model_cls = resolve_setting(
-            self.settings, 'sql.file_model_cls')
+        self.file_model_cls = orchestrator.settings.resolve(
+            'sql.file_model_cls')
 
         # Instantiate a session at startup just to make sure it is configured
         self._get_session()
 
     def _get_session(self):
         '''Returns the SQLAlchemy session.'''
-        return resolve_setting(self.settings, 'sql.session')
+        return self.orchestrator.settings.resolve('sql.session')
 
     def put(self, namespace, metadata, sas=None):
         '''Create or update a file corresponding to the given ``metadata``.

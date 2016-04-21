@@ -27,7 +27,6 @@ from bag import dict_subset
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
-from keepluggable import read_setting
 from . import BasePayloadStorage
 from nine import nimport
 quote = nimport('urllib.parse:quote')
@@ -38,19 +37,22 @@ DAY = 60 * 60 * 24
 class AmazonS3Storage(BasePayloadStorage):
     __doc__ = __doc__
 
-    def __init__(self, settings):
-        self.access_key_id = read_setting(settings, 's3.access_key_id')
-        self.secret_access_key = read_setting(settings, 's3.secret_access_key')
-        session = Session(aws_access_key_id=self.access_key_id,
-                          aws_secret_access_key=self.secret_access_key,
-                          region_name=read_setting(settings, 's3.region_name'))
+    def __init__(self, orchestrator):
+        self.orchestrator = orchestrator
+        self.access_key_id = orchestrator.settings.read('s3.access_key_id')
+        self.secret_access_key = orchestrator.settings.read(
+            's3.secret_access_key')
+        session = Session(
+            aws_access_key_id=self.access_key_id,
+            aws_secret_access_key=self.secret_access_key,
+            region_name=orchestrator.settings.read('s3.region_name'))
         # self.s3 = resource('s3')
         self.s3 = session.resource('s3')
 
-        self._set_bucket(settings)
+        self._set_bucket(orchestrator.settings)
 
     def _set_bucket(self, settings):
-        self.bucket_name = read_setting(settings, 's3.bucket')
+        self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
     def create_bucket(self, name):

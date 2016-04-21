@@ -24,7 +24,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag import asbool
 from bag.web.exceptions import Problem
-from keepluggable import read_setting, resolve_setting
 from keepluggable.exceptions import FileNotAllowed
 
 
@@ -72,14 +71,14 @@ class BaseFilesAction(object):
             To abort, raise FileNotAllowed with a message explaining why.
             """
         settings = self.orchestrator.settings
-        maximum = read_setting(settings, 'fls.max_file_size', default=None)
+        maximum = settings.read('fls.max_file_size', default=None)
         if maximum is not None:
             maximum = int(maximum)
             if metadata['length'] > maximum:
                 raise FileNotAllowed(
                     'The file is {} KB long and the maximum is {} KB.'.format(
                         int(metadata['length'] / 1024), int(maximum / 1024)))
-        allow_empty = asbool(read_setting(
+        allow_empty = asbool(settings.read(
             settings, 'fls.allow_empty_files', default=False))
         if not allow_empty and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
@@ -173,8 +172,8 @@ class BaseFilesAction(object):
         return metadata
 
     def update_metadata(self, id, adict):
-        schema_cls = resolve_setting(
-            self.orchestrator.settings, 'fls.update_schema', default=None)
+        schema_cls = self.orchestrator.settings.resolve(
+            'fls.update_schema', default=None)
         if schema_cls is not None:
             schema = schema_cls()
             adict = schema.deserialize(adict)
