@@ -38,7 +38,7 @@ class AmazonS3Storage(BasePayloadStorage):
     __doc__ = __doc__
 
     def __init__(self, orchestrator):
-        self.orchestrator = orchestrator
+        super(AmazonS3Storage, self).__init__(orchestrator)
         self.access_key_id = orchestrator.settings.read('s3.access_key_id')
         self.secret_access_key = orchestrator.settings.read(
             's3.secret_access_key')

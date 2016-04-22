@@ -16,7 +16,7 @@
     To use this action, you need to install the Pillow imaging library::
 
         sudo apt-get install libjpeg-dev zlib1g-dev libfreetype6-dev
-        # Create these links. If they already exist, remove them and readd them:
+        # Create these links. If they already exist, remove and readd them:
         sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib
@@ -49,7 +49,7 @@
 
     Here is an example configuration::
 
-        [keepluggable]
+        [keepluggable_page_images]
         # (...)
         img.store_original = False
         img.versions =
@@ -83,11 +83,11 @@ class ImageAction(BaseFilesAction):
         super(ImageAction, self).__init__(*a, **kw)
 
         # Read configuration
-        self.store_original = asbool(self.orchestrator.settings.get(
-            'img.store_original', True))
-        self.quality = int(self.orchestrator.settings.get(
-            'img.versions_quality', 90))
-        versions = self.orchestrator.settings.get(
+        self.store_original = asbool(self.orchestrator.settings.read(
+            'img.store_original', default=True))
+        self.quality = int(self.orchestrator.settings.read(
+            'img.versions_quality', default=90))
+        versions = self.orchestrator.settings.read(
             'img.versions').strip().split('\n')
         self.versions = []
         for astring in versions:
@@ -195,7 +195,7 @@ class ImageAction(BaseFilesAction):
             #     return background
             # else:
             return original.convert('RGB')  # Creates a copy
-        except OSError as e:
+        except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
                 'the server is unable to convert it.'.format(

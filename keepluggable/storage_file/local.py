@@ -37,7 +37,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
     __doc__ = __doc__
 
     def __init__(self, orchestrator):
-        self.orchestrator = orchestrator
+        super(LocalFilesystemStorage, self).__init__(orchestrator)
         self.storage_path = orchestrator.settings.read('local.storage_path')
         self.directory = resolve_path(self.storage_path).absolute()
         if not self.directory.exists():

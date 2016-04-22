@@ -36,5 +36,6 @@ class Settings(object):
             return adict.get(key, default)
 
     def resolve(self, key, section=None, default=REQUIRED):
+        """For values that point to Python objects, this returns the object."""
         resource_spec = self.read(key, section, default)
         return None if resource_spec is None else resolve(resource_spec)

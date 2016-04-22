@@ -78,8 +78,8 @@ class BaseFilesAction(object):
                 raise FileNotAllowed(
                     'The file is {} KB long and the maximum is {} KB.'.format(
                         int(metadata['length'] / 1024), int(maximum / 1024)))
-        allow_empty = asbool(settings.read(
-            settings, 'fls.allow_empty_files', default=False))
+        allow_empty = asbool(settings.read('fls.allow_empty_files',
+                                           default=False))
         if not allow_empty and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
 

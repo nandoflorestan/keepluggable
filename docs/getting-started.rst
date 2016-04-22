@@ -2,14 +2,14 @@
 Getting started with keepluggable
 =================================
 
-TODO: Notes on installing Pillow
-
 ::
 
-	easy_install -UZ keepluggable
+    easy_install -UZ keepluggable
 
 After installing the Python package, you can select the components
-you are using and then create a configuration file.
+you are using and then create a configuration file.  Each component you
+decide to use has its own settings, so you must read the respective
+documentation section.
 
 
 Selecting components
@@ -41,30 +41,31 @@ Selecting components
 Understanding the configuration
 ===============================
 
-In my case, I am integrating keepluggable with an existing Pyramid web app.
-So I add a new ``[keepluggable]`` section to my Pyramid config file::
+In my case, I am integrating keepluggable with an existing Pyramid web app
+so it will store users' uploads. So I add a new ``[keepluggable_uploads]``
+section to my Pyramid config file::
 
-	[keepluggable]
-	# The components we chose:
-	storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
-	storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
-	action.files = keepluggable.actions:BaseFilesAction
+    [keepluggable_uploads]
+    # The components we chose:
+    storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
+    storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
+    action.files = keepluggable.actions:BaseFilesAction
 
-	# AmazonS3Storage configuration:
-	s3.access_key_id = SOME_KEY
-	s3.secret_access_key = SOME_SECRET
-	s3.region_name = SOME_REGION
-	s3.bucket = BUCKET_NAME
+    # AmazonS3Storage configuration:
+    s3.access_key_id = SOME_KEY
+    s3.secret_access_key = SOME_SECRET
+    s3.region_name = SOME_REGION
+    s3.bucket = BUCKET_NAME
 
-	# SQLAlchemyMetadataStorage configuration:
-	sql.file_model_cls = myapp.modules.uploads.models:File
-	sql.session = myapp.database:session
+    # SQLAlchemyMetadataStorage configuration:
+    sql.file_model_cls = myapp.modules.uploads.models:File
+    sql.session = myapp.database:session
 
-	# action.files configuration keys have a "fls." prefix:
-	fls.max_file_size = 23068672
+    # action.files configuration keys have a "fls." prefix:
+    fls.max_file_size = 23068672
 
-Above you see a few [key = value] pairs. The section of an INI file
-becomes a Python dictionary which is what the system actually uses as
+Above you see a few [key = value] pairs. At startup this INI file section
+is read into a Python dictionary which is what the system actually uses as
 configuration.
 
 The first group of settings define which components we are using.
@@ -133,8 +134,6 @@ Whenever I speak of file **metadata**, I mean an entity that looks like this::
      "image_height": 2448,
      "length": 3803890,
      "mime_type": "image/jpeg",
-     "devent_id": 1,
-     "room_id": null,
      "original_id": null,
      "version": "original",
      "versions": [],

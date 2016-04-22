@@ -9,12 +9,18 @@ from bag.web.pyramid.views import ajax_view, get_json_or_raise
 from bag.web.pyramid.angular_csrf import csrf
 from pyramid.response import Response
 from keepluggable.exceptions import FileNotAllowed
+from keepluggable.orchestrator import IOrchestrator
 from . import _
 from .resources import BaseFilesResource, BaseFileResource
 
 
+def get_orchestrator(context, request):
+    return request.registry.getUtility(
+        IOrchestrator, context.keepluggable_name)
+
+
 def list_files(context, request):
-    orchestrator = request.registry.settings['keepluggable']
+    orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
     # curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
@@ -33,7 +39,7 @@ def upload_single_file(context, request):
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['file']
 
-    orchestrator = request.registry.settings['keepluggable']
+    orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
 
     # encoding = fieldStorage.encoding
@@ -68,7 +74,7 @@ def upload_multiple_files(context, request):
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['files']
 
-    orchestrator = request.registry.settings['keepluggable']
+    orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
 
     items = []
@@ -97,7 +103,7 @@ def upload_multiple_files(context, request):
 
 @ajax_view
 def delete_file_and_its_versions(context, request):
-    orchestrator = request.registry.settings['keepluggable']
+    orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     key_to_delete = context.__name__
     action.delete_file(key_to_delete)
@@ -107,13 +113,13 @@ def delete_file_and_its_versions(context, request):
 @ajax_view
 def update_metadata(context, request):
     adict = get_json_or_raise(request)
-    orchestrator = request.registry.settings['keepluggable']
+    orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return action.update_metadata(context.__name__, adict)
     # curl -i -H 'Content-Type: application/json' -H 'Accept: application/json' -X PUT -d '{"description": "Super knife", "asset_id": 1, "room_id": null, "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
 
 
-def register_pyramid_views(config, angular_csrf=False):
+def register_pyramid_views(config, angular_csrf=False):  # TODO Args object
     config.add_view(
         view=csrf(list_files) if angular_csrf else list_files,
         context=BaseFilesResource, permission='kp_view_files',
