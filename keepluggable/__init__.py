@@ -4,6 +4,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag import resolve
 
+# TODO Move to bag
+
 
 def SettingsFromFiles(*paths, encoding='utf-8'):
     """Reads one or more INI files and returns a single Settings instance."""
