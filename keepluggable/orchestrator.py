@@ -13,7 +13,7 @@ class IOrchestrator(Interface):
 
 
 @implementer(IOrchestrator)
-class Orchestrator(object):  # TODO getUtility() instead of this
+class Orchestrator(object):
     """The coordinator of your configured components."""
 
     def __init__(self, name, settings):

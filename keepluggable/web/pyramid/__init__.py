@@ -34,7 +34,6 @@ def get_orchestrators(ini_path):
 
 
 def includeme(config):
-    # config.scan('keepluggable.web.pyramid')  # TODO Unnecessary?
     ini_path = config.registry.settings['__file__']
 
     # Instantiate the orchestrators and make them available to the Pyramid app:
