@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Local filesystem storage backend.
+"""Local filesystem storage backend.
 
     You should use this for testing only because it is not very robust.
     It stores files in a very simple directory scheme::
@@ -23,7 +23,7 @@
     Specify in which directory to store payloads like this::
 
         local.storage_path = some.python.resource:relative/directory
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -44,7 +44,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
             self.directory.mkdir(parents=True)
 
     def empty_bucket(self, bucket=None):
-        '''Empty the whole bucket.'''
+        """Empty the whole bucket."""
         for namespace in self.namespaces:
             self.delete_namespace(namespace)
 
@@ -60,18 +60,18 @@ class LocalFilesystemStorage(BasePayloadStorage):
         return (n.name for n in self._namespaces)
 
     def delete(self, namespace, keys, bucket=None):
-        '''Delete many files.'''
+        """Delete many files."""
         for key in keys:
             path = (self.directory / str(namespace) / key)
             if path.exists():
                 path.unlink()
 
     def gen_keys(self, namespace):
-        '''Generator of the keys in a namespace.'''
+        """Generator of the keys in a namespace."""
         return (d.name for d in (self.directory / str(namespace)).iterdir())
 
     def delete_namespace(self, namespace):
-        '''Delete all files in ``namespace``'''
+        """Delete all files in ``namespace``"""
         from shutil import rmtree
         rmtree(str(self.directory / str(namespace)))
 
@@ -97,9 +97,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
         assert outfile.lstat().st_size == metadata['length']
 
     def get_url(self, namespace, key, seconds=3600, https=False):
-        '''Returns a Pyramid static URL.
+        """Returns a Pyramid static URL.
             If you use another web framework, please override this method.
-            '''
+            """
         from pyramid.threadlocal import get_current_request
         return get_current_request().static_url(
             '/'.join((self.storage_path, str(namespace), key)))

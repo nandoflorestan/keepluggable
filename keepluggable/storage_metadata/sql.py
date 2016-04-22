@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''File metadata storage backend base class using SQLAlchemy.
+"""File metadata storage backend base class using SQLAlchemy.
 
     This class certainly needs to be subclassed for your specific use case.
     You must examine the source code and override methods as necessary.
@@ -53,7 +53,7 @@
         # a file can point to its original version:
         File.original_id, File.versions = fk_rel(File, nullable=True)
         # When original_id is null, this is the original file.
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -75,17 +75,17 @@ class SQLAlchemyMetadataStorage(object):
         self._get_session()
 
     def _get_session(self):
-        '''Returns the SQLAlchemy session.'''
+        """Returns the SQLAlchemy session."""
         return self.orchestrator.settings.resolve('sql.session')
 
     def put(self, namespace, metadata, sas=None):
-        '''Create or update a file corresponding to the given ``metadata``.
+        """Create or update a file corresponding to the given ``metadata``.
             This method returns a 2-tuple containing the ID of the entity
             and a boolean saying whether the entity is new or existing.
 
             Instead of overriding this method, it is probably better for
             you to override the methods it calls.
-            '''
+            """
         sas = sas or self._get_session()
         entity = self._query(namespace, key=metadata['md5'], sas=sas).first()
         is_new = entity is None
@@ -100,9 +100,9 @@ class SQLAlchemyMetadataStorage(object):
         return entity.id, is_new
 
     def _query(self, namespace, key=None, filters=None, what=None, sas=None):
-        '''Override this to search for an existing file.
+        """Override this to search for an existing file.
             You probably need to do something with the ``namespace``.
-            '''
+            """
         sas = sas or self._get_session()
         q = sas.query(what or self.file_model_cls)
         if key is not None:
@@ -112,20 +112,20 @@ class SQLAlchemyMetadataStorage(object):
         return q
 
     def _instantiate(self, namespace, metadata, sas=None):
-        '''Override this to add or delete arguments on the constructor call.
+        """Override this to add or delete arguments on the constructor call.
             You probably need to do something with the ``namespace``.
-            '''
+            """
         return self.file_model_cls(**metadata)
 
     def _update(self, namespace, metadata, entity, sas=None):
-        '''Override this to update the metadata of an existing entity.
+        """Override this to update the metadata of an existing entity.
             You might need to do something with the ``namespace``.
-            '''
+            """
         for key, value in metadata.items():
             setattr(entity, key, value)
 
     def update(self, namespace, id, metadata, sas=None):
-        '''Updates a file metadata. It must already exist in the database.'''
+        """Updates a file metadata. It must already exist in the database."""
         sas = sas or self._get_session()
         # entity = self._query(namespace, key=key, sas=sas).one()
         # entity = self._query(namespace, sas=sas).get(id)
@@ -143,7 +143,7 @@ class SQLAlchemyMetadataStorage(object):
 
     # Not currently used, except by the local storage
     def gen_keys(self, namespace, filters=None, sas=None):
-        '''Generator of the keys in a namespace.'''
+        """Generator of the keys in a namespace."""
         sas = sas or self._get_session()
         q = self._query(
             namespace, filters=filters, what=self.file_model_cls.md5, sas=sas)
@@ -151,15 +151,15 @@ class SQLAlchemyMetadataStorage(object):
             yield tup[0]
 
     def get(self, namespace, key, sas=None):
-        '''Returns a dict containing the metadata of one file,
+        """Returns a dict containing the metadata of one file,
             or None if not found.
-            '''
+            """
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
         return entity.to_dict(sas) if entity else None
 
     def delete_with_versions(self, namespace, key, sas=None):
-        '''Delete a file along with all its versions.'''
+        """Delete a file along with all its versions."""
         sas = sas or self._get_session()
         original = self._query(
             sas=sas, namespace=namespace, key=key).one()
@@ -168,15 +168,15 @@ class SQLAlchemyMetadataStorage(object):
         sas.delete(original)
 
     def delete(self, namespace, key, sas=None):
-        '''Delete one file.'''
+        """Delete one file."""
         sas = sas or self._get_session()
         self._query(sas=sas, namespace=namespace, key=key).delete()
 
 
 class BaseFile(ID, MinimalBase):
-    '''Base mixin class for a model that represents file metadata.
+    """Base mixin class for a model that represents file metadata.
         The file MAY be an image.
-        '''
+        """
     # id = Primary key that exists because we inherit from ID
     md5 = Column(Unicode(32), nullable=False,
                  doc='hashlib.md5(file_content).hexdigest()')
@@ -214,7 +214,7 @@ class BaseFile(ID, MinimalBase):
             type(self).__name__, self.id, self.file_name, self.version)
 
     def to_dict(self, sas, versions=True):
-        '''Convert this File, and optionally its versions, to a dictionary.'''
+        """Convert this File, and optionally its versions, to a dictionary."""
         d = super(BaseFile, self).to_dict()
         d['versions'] = [v.to_dict(sas) for v in self.q_versions(sas)] \
             if versions else []

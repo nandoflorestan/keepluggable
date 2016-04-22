@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Amazon S3 storage backend.
+"""Amazon S3 storage backend.
 
     To enable this backend, use this configuration::
 
@@ -15,7 +15,7 @@
     - ``s3.bucket``: name of the bucket in which to store objects. If you'd
       like to come up with the bucket name in code rather than configuration,
       you may omit this setting and override the _set_bucket() method.
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -72,7 +72,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     def delete_bucket(self, bucket=None):
-        '''Deletes the entire bucket.'''
+        """Deletes the entire bucket."""
         bucket = self._get_bucket(bucket)
         # All items must be deleted before the bucket itself
         self.empty_bucket(bucket)
@@ -105,14 +105,14 @@ class AmazonS3Storage(BasePayloadStorage):
         return resp
 
     def gen_keys(self, namespace, bucket=None):
-        '''Generator of the keys in a namespace. Too costly.'''
+        """Generator of the keys in a namespace. Too costly."""
         for o in self._get_bucket(bucket).objects.all():
             composite = o.key
             if composite.startswith(namespace + '/'):
                 yield composite.split(self.SEP, 1)[1]
 
     def delete_namespace(self, namespace, bucket=None):
-        '''Delete all files in ``namespace``. Too costly.'''
+        """Delete all files in ``namespace``. Too costly."""
         for key in self.gen_keys(namespace, bucket=bucket):
             self.delete(namespace, key, bucket=bucket)
 
@@ -141,7 +141,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return result
 
     def _convert_values_to_str(self, subset):
-        '''botocore requires all metadata values be strings, not ints  :('''
+        """botocore requires all metadata values be strings, not ints  :("""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
@@ -167,7 +167,7 @@ class AmazonS3Storage(BasePayloadStorage):
             )
 
     def delete(self, namespace, keys, bucket=None):
-        '''Delete many files'''
+        """Delete many files"""
         if isinstance(keys, (str, int)):
             keys = (keys,)
         number = len(keys)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-'''Integration with the Pyramid web framework. More details in the file
+"""Integration with the Pyramid web framework. More details in the file
     docs/integration_pyramid.rst
-    '''
+    """
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
