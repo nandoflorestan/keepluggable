@@ -101,7 +101,7 @@ class ImageAction(BaseFilesAction):
                 'width': int(parts[1]),
                 'height': int(parts[2]),
                 'name': parts[3],
-                }
+            }
             self.versions.append(adict)
 
         # We want to process from smaller to bigger, so order versions by area:

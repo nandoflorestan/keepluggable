@@ -60,11 +60,16 @@ class BaseFilesAction(object):
         return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
-        """Fill in the mime_type if not already known."""
-        t = metadata.get('mime_type')
-        if t is None:
-            from mimetypes import guess_type
-            metadata['mime_type'] = guess_type(metadata['file_name'])[0]
+        """Discover the MIME type from the file extension. Otherwise use the
+            browser-provided mime_type (which is probably less reliable).
+
+            If necessary someone might want to use
+            https://pypi.python.org/pypi/python-magic instead.
+            """
+        from mimetypes import guess_type
+        typ = guess_type(metadata['file_name'])[0]
+        if typ:
+            metadata['mime_type'] = typ
 
     def _allow_storage_of(self, bytes_io, metadata):
         """Override this method if you wish to abort storing some files.

@@ -83,6 +83,8 @@ class LocalFilesystemStorage(BasePayloadStorage):
                 'Key not found: {} / {}'.format(namespace, key)) from e
 
     def put(self, namespace, metadata, bytes_io):
+        if bytes_io.tell():
+            bytes_io.seek(0)
         outdir = self.directory / str(namespace)
         if not outdir.exists():
             outdir.mkdir()  # Create the namespace directory as needed
