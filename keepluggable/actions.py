@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 
-"""Action class that coordinates the workflow. You are likely to need to
-    subclass this.
+"""The Base Action class."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from bag import asbool
+from bag.web.exceptions import Problem
+from keepluggable.exceptions import FileNotAllowed
+
+
+class BaseFilesAction(object):
+    """Action class that coordinates the workflow.
+
+    You are likely to need to subclass this.
 
     To enable this action, use this configuration::
 
@@ -20,30 +31,21 @@
       unsafe. So it is recommended that you implement a schema.
     """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from bag import asbool
-from bag.web.exceptions import Problem
-from keepluggable.exceptions import FileNotAllowed
-
-
-class BaseFilesAction(object):
-    __doc__ = __doc__
-
     def __init__(self, orchestrator, namespace):
         self.orchestrator = orchestrator
         self.namespace = namespace
 
     def store_original_file(self, bytes_io, **metadata):
         """Point of entry into the workflow of storing a file.
-            You can override this method in subclasses to change the steps
-            since it is a sort of coordinator that calls one method for
-            each step.
 
-            The argument *bytes_io* is a file-like object with the payload.
-            *metadata* is a dict with the information to be persisted in
-            the metadata storage.
-            """
+        You can override this method in subclasses to change the steps
+        since it is a sort of coordinator that calls one method for
+        each step.
+
+        The argument *bytes_io* is a file-like object with the payload.
+        *metadata* is a dict with the information to be persisted in
+        the metadata storage.
+        """
         assert metadata['file_name']
 
         # This is not a derived file such as a resized image.

@@ -35,6 +35,8 @@ DAY = 60 * 60 * 24
 
 
 class AmazonS3Storage(BasePayloadStorage):
+    """Storage strategy that keeps files in AWS S3."""
+
     __doc__ = __doc__
 
     def __init__(self, orchestrator):
@@ -72,7 +74,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     def delete_bucket(self, bucket=None):
-        """Deletes the entire bucket."""
+        """Delete the entire bucket."""
         bucket = self._get_bucket(bucket)
         # All items must be deleted before the bucket itself
         self.empty_bucket(bucket)

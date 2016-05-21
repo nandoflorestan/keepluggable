@@ -5,4 +5,4 @@ from __future__ import (absolute_import, division, print_function,
 
 
 class FileNotAllowed(Exception):
-    'Thrown when a file should not be stored. The message must explain why.'
+    """Thrown when a file shouldn't be stored. The message must explain why."""

@@ -7,6 +7,7 @@ from zope.interface import Interface, implementer, Attribute
 
 class IOrchestrator(Interface):
     """Represents the materialization of the components chosen in settings."""
+
     storage_file = Attribute('payload storage strategy')
     storage_metadata = Attribute('metadata storage strategy')
     files_action_cls = Attribute('action strategy')
@@ -24,15 +25,12 @@ class Orchestrator(object):
         self._resolve_files_action_class()
 
     def _instantiate_payload_storage(self):
-        """Instantiate a payload storage strategy based on configuration."""
         storage_cls = self.settings.resolve('storage.file')
         self.storage_file = storage_cls(self)
 
     def _instantiate_metadata_storage(self):
-        """Instantiate a metadata storage strategy based on configuration."""
         storage_cls = self.settings.resolve('storage.metadata')
         self.storage_metadata = storage_cls(self)
 
     def _resolve_files_action_class(self):
-        """Get the files action class based on configuration."""
         self.files_action_cls = self.settings.resolve('action.files')

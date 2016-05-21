@@ -71,7 +71,7 @@ class SQLAlchemyMetadataStorage(object):
         self.file_model_cls = orchestrator.settings.resolve(
             'sql.file_model_cls')
 
-        # Instantiate a session at startup just to make sure it is configured
+        # Get a session at startup just to make sure it is configured
         self._get_session()
 
     def _get_session(self):
@@ -215,7 +215,7 @@ class BaseFile(ID, MinimalBase):
 
     def to_dict(self, sas, versions=True):
         """Convert this File, and optionally its versions, to a dictionary."""
-        d = super(BaseFile, self).to_dict()
-        d['versions'] = [v.to_dict(sas) for v in self.q_versions(sas)] \
+        dic = super(BaseFile, self).to_dict()
+        dic['versions'] = [v.to_dict(sas) for v in self.q_versions(sas)] \
             if versions else []
-        return d
+        return dic
