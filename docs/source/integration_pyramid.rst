@@ -2,7 +2,7 @@
 Pyramid integration
 ===================
 
-This documents describes how to integrate **keepluggable** into
+This page describes how to integrate **keepluggable** into
 your existing Pyramid application by reusing the code in the
 ``keepluggable.web.pyramid`` package.
 
@@ -36,7 +36,7 @@ INI file section(s) which it must read at start time. The problem
 is, Pyramid does not, by default, allow applications to read arbitrary
 configuration sections or to know the INI file path.
 
-The solution we have found is for the Pyramid settings to be populated with
+The solution we have found is to include in the Pyramid settings dictionary
 a ``__file__`` variable whose value is the INI file path. You can ensure this
 by adding the following to the top of your app's WSGI function::
 
