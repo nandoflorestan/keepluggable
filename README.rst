@@ -1,14 +1,10 @@
-============
-keepluggable
+Introduction
 ============
 
-Scope
-=====
-
-**keepluggable** is an open source,
-`(MIT licensed) <http://github.com/nandoflorestan/keepluggable/blob/master/docs/LICENSE.rst>`_,
-highly configurable Python library to **manage storage of images and
-other documents** (any kind of file, really), with metadata.
+`keepluggable <https://pypi.python.org/pypi/keepluggable>`_
+is an open source (MIT licensed), highly configurable Python library
+to **manage storage of images and other documents**
+(any kind of file, really), with metadata.
 
 The file **metadata** can be stored in a different place than the file payload.
 This is recommended because many operations, such as listing files,
@@ -53,31 +49,12 @@ creates configurable smaller versions of it.
 Some cameras do not rotate the photo, they just add orientation metadata to the
 image file, so keepluggable rotates it for you, before creating the thumbnails.
 
-`Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_
 
+Development
+-----------
 
-Future
-======
-
-We want the experience to be as convenient as possible for the user:
-
-- CSRF protection
-- Read EXIF data to fill in date and location, hopefully before the user types these
-- Read other EXIF, IPTC, and XMP metadata in photo files
-- Detect whether an image is already in the store and let the user edit it
-- Allow the user to draw a square on the image to generate the thumbnail
-- Configure what kinds of files are accepted (e. g. only images)
-- generate image tag with alt, title (maybe legend) etc.
-- trigger an event when image is uploaded
-- search images to edit or remove them
-- http caching
-- tags
-- Integrate with Celery to create image versions in a background task
-
-
-Collaboration
-=============
-
-We want your help. We are open to bug reports, feature requests, suggestions
-and (especially) pull requests. Reach us at
-https://github.com/nandoflorestan/keepluggable/issues
+We want your help. We are open to feature requests, suggestions,
+`bug reports <https://github.com/nandoflorestan/keepluggable/issues>`_
+and
+`pull requests <https://github.com/nandoflorestan/keepluggable>`_,
+in reverse order of openness.

@@ -7,8 +7,7 @@
     The most important reason for this is that each application will need
     to namespace the stored files differently.
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``sql.file_model_cls`` must point to a certain model class to store
       the file metadata.
@@ -16,8 +15,7 @@
       But instead of using this setting, you may override the
       ``_get_session()`` method.
 
-    Creating your File model class
-    ==============================
+    **Creating your File model class**
 
     Your File model class must inherit from the BaseFile mixin class that
     we provide. Here is an example in which files are separated by user::

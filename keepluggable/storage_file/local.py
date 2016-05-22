@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 
-"""Local filesystem storage backend.
+"""This module contains a simple local filesystem storage backend."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from bag import resolve_path
+from . import BasePayloadStorage
+
+MEGABYTE = 1048576
+
+
+class LocalFilesystemStorage(BasePayloadStorage):
+    """Local filesystem storage backend.
 
     You should use this for testing only because it is not very robust.
     It stores files in a very simple directory scheme::
@@ -17,24 +28,12 @@
 
         storage.file = keepluggable.storage_file.local:LocalFilesystemStorage
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     Specify in which directory to store payloads like this::
 
         local.storage_path = some.python.resource:relative/directory
     """
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from bag import resolve_path
-from . import BasePayloadStorage
-
-MEGABYTE = 1048576
-
-
-class LocalFilesystemStorage(BasePayloadStorage):
-    __doc__ = __doc__
 
     def __init__(self, orchestrator):
         super(LocalFilesystemStorage, self).__init__(orchestrator)
@@ -49,14 +48,16 @@ class LocalFilesystemStorage(BasePayloadStorage):
             self.delete_namespace(namespace)
 
     def create_bucket(self, name):
-        pass  # This backend ignores buckets.
+        """Do nothing -- this backend ignores buckets."""
+        pass
 
     @property
     def _namespaces(self):  # generator of Path objects
         return (d for d in self.directory.iterdir() if d.is_dir())
 
     @property
-    def namespaces(self):  # generator of namespace names
+    def namespaces(self):
+        """Generator of namespace names."""
         return (n.name for n in self._namespaces)
 
     def delete(self, namespace, keys, bucket=None):
@@ -71,11 +72,12 @@ class LocalFilesystemStorage(BasePayloadStorage):
         return (d.name for d in (self.directory / str(namespace)).iterdir())
 
     def delete_namespace(self, namespace):
-        """Delete all files in ``namespace``"""
+        """Delete all files in ``namespace``."""
         from shutil import rmtree
         rmtree(str(self.directory / str(namespace)))
 
     def get_reader(self, namespace, key):
+        """Return a stream for the file content."""
         try:
             return open(str(self.directory / str(namespace) / key), 'rb')
         except FileNotFoundError as e:
@@ -99,9 +101,10 @@ class LocalFilesystemStorage(BasePayloadStorage):
         assert outfile.lstat().st_size == metadata['length']
 
     def get_url(self, namespace, key, seconds=3600, https=False):
-        """Returns a Pyramid static URL.
-            If you use another web framework, please override this method.
-            """
+        """Return a Pyramid static URL.
+
+        If you use another web framework, please override this method.
+        """
         from pyramid.threadlocal import get_current_request
         return get_current_request().static_url(
             '/'.join((self.storage_path, str(namespace), key)))

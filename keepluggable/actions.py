@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""The Base Action class."""
+"""This module contains the base Action class."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -19,8 +19,7 @@ class BaseFilesAction(object):
         action.files = keepluggable.actions:BaseFilesAction
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
       can be uploaded. When absent, the system does not have a maximum size.

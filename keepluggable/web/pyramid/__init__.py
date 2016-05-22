@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Integration with the Pyramid web framework. More details in the file
-    docs/integration_pyramid.rst
-    """
+"""Integration with the Pyramid web framework. More details in the docs."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -15,10 +13,7 @@ del TranslationStringFactory
 
 
 def get_orchestrators(ini_path):
-    """Reads the INI file looking for sections whose name starts with
-        "keepluggable_" and returns a dictionary containing an Orchestrator
-        instance for each one.
-        """
+    """Based on the configuration file, return a dict of Orchestrators."""
     PREFIX = 'keepluggable_'
     config = SettingsFromFiles(ini_path)
     orchestrators = []
@@ -34,6 +29,7 @@ def get_orchestrators(ini_path):
 
 
 def includeme(config):
+    """Hook for Pyramid initialization of keepluggable."""
     ini_path = config.registry.settings['__file__']
 
     # Instantiate the orchestrators and make them available to the Pyramid app:

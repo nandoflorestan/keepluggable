@@ -1,21 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Amazon S3 storage backend.
-
-    To enable this backend, use this configuration::
-
-        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
-
-    Configuration settings
-    ======================
-
-    - ``s3.access_key_id``: part of your Amazon credentials
-    - ``s3.secret_access_key``: part of your Amazon credentials
-    - ``s3.region_name``: part of your Amazon credentials
-    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
-      like to come up with the bucket name in code rather than configuration,
-      you may omit this setting and override the _set_bucket() method.
-    """
+"""This module contains a storage strategy that keeps files in AWS S3."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -35,9 +20,21 @@ DAY = 60 * 60 * 24
 
 
 class AmazonS3Storage(BasePayloadStorage):
-    """Storage strategy that keeps files in AWS S3."""
+    """Amazon S3 storage backend.
 
-    __doc__ = __doc__
+    To enable this backend, use this configuration::
+
+        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
+
+    **Configuration settings**
+
+    - ``s3.access_key_id``: part of your Amazon credentials
+    - ``s3.secret_access_key``: part of your Amazon credentials
+    - ``s3.region_name``: part of your Amazon credentials
+    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
+      like to come up with the bucket name in code rather than configuration,
+      you may omit this setting and override the _set_bucket() method.
+    """
 
     def __init__(self, orchestrator):
         super(AmazonS3Storage, self).__init__(orchestrator)

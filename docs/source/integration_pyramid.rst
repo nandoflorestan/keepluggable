@@ -12,7 +12,7 @@ Configuration
 
 **keepluggable** is a pluggable sub-application that can be integrated into
 your app **multiple times**. Each time you start by creating a section in
-your INI file. Section names must start with "keepluggable_". Example::
+your INI file. Section names must start with "keepluggable\_". Example::
 
     [app:main]
     # Pyramid application settings go in this section.

@@ -1,17 +1,31 @@
 # -*- coding: utf-8 -*-
 
-"""Actions that involve images, such as converting formats, resizing etc.
-    go into ImageAction.
+"""This module contains an Action class that deals with images."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+# import imghdr  # imghdr.what(file)
+from copy import copy
+from io import BytesIO
+from PIL import Image, ExifTags
+from bag import asbool
+from .exceptions import FileNotAllowed
+from .actions import BaseFilesAction
+
+
+class ImageAction(BaseFilesAction):
+    """A specialized Action class that deals with images.
+
+    It converts formats, rotates and resizes images etc.
 
     To enable this action, use this configuration::
 
         action.files = keepluggable.image_actions:ImageAction
 
-    It inherits from BaseFilesAction, whose docstring you should read too.
+    It inherits from BaseFilesAction, so read its documentation too.
 
 
-    Installing Pillow
-    =================
+    **Installing Pillow**
 
     To use this action, you need to install the Pillow imaging library::
 
@@ -35,8 +49,7 @@
         *** WEBPMUX support not available
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``img.store_original``: a boolean; if False, the original upload will
       not have its payload stored. The metadata is always stored in an effort
@@ -60,20 +73,6 @@
             jpeg  160  160 thumb
         img.versions_quality = 90
     """
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-# import imghdr  # imghdr.what(file)
-from copy import copy
-from io import BytesIO
-from PIL import Image, ExifTags
-from bag import asbool
-from .exceptions import FileNotAllowed
-from .actions import BaseFilesAction
-
-
-class ImageAction(BaseFilesAction):
-    __doc__ = __doc__
 
     EXIF_TAGS = {v: k for (k, v) in ExifTags.TAGS.items()}  # str to int map
 
