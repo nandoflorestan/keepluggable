@@ -34,7 +34,7 @@ Releaser(
     EnsureGitClean,   # There are no uncommitted changes in tracked files.
     EnsureGitBranch,  # I must be in the branch specified in config
     # InteractivelyEnsureChangesDocumented,     # Did you update CHANGES.rst?
-    Shell('./build_docs.sh'),  # You can write it easily
+    Shell('./build_sphinx_documentation.sh'),
     InteractivelyApproveDistribution,  # Generate sdist, let user verify it
     InteractivelyApproveWheel,         # Let user verify a temp wheel
     # CheckTravis,  # We run this late, so travis-ci has more time to build
