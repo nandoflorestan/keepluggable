@@ -40,12 +40,12 @@ Releaser(
 
     # ======================  All checks pass. RELEASE!  ======================
     SetVersionNumberInteractively,  # Ask for version and write to source code
+    Shell('./build_sphinx_documentation.sh'),
     GitCommitVersionNumber,
     GitTag,  # Locally tag the current commit with the new version number
     PypiRegister,  # Creates the new release at http://pypi.python.org
     PypiUpload,  # Uploads a source distribution to http://pypi.python.org
     PypiUploadWheel,  # Make and upload source wheel to https://pypi.python.org
-    Shell('./build_sphinx_documentation.sh'),
 
     # ===========  Post-release: set development version and push  ============
     SetFutureVersion,  # Writes incremented version, now with 'dev' suffix
