@@ -34,7 +34,6 @@ Releaser(
     EnsureGitClean,   # There are no uncommitted changes in tracked files.
     EnsureGitBranch,  # I must be in the branch specified in config
     # InteractivelyEnsureChangesDocumented,     # Did you update CHANGES.rst?
-    Shell('./build_sphinx_documentation.sh'),
     InteractivelyApproveDistribution,  # Generate sdist, let user verify it
     InteractivelyApproveWheel,         # Let user verify a temp wheel
     # CheckTravis,  # We run this late, so travis-ci has more time to build
@@ -46,6 +45,7 @@ Releaser(
     PypiRegister,  # Creates the new release at http://pypi.python.org
     PypiUpload,  # Uploads a source distribution to http://pypi.python.org
     PypiUploadWheel,  # Make and upload source wheel to https://pypi.python.org
+    Shell('./build_sphinx_documentation.sh'),
 
     # ===========  Post-release: set development version and push  ============
     SetFutureVersion,  # Writes incremented version, now with 'dev' suffix
