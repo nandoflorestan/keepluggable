@@ -17,29 +17,30 @@ Selecting components
 
 **File payload storage backends:**
 
-- `AmazonS3Storage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/amazon_s3.py>`_ is recommended for production.
-- `LocalFilesystemStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_file/local.py>`_
-  is a (too simple) storage backend using the local file system,
+- :py:class:`keepluggable.storage_file.amazon_s3.AmazonS3Storage`
+  is recommended for production.
+- :py:class:`keepluggable.storage_file.local.LocalFilesystemStorage`
+  is a storage backend using the local file system. It is too simple,
   useful during development.
 - You can write a new payload storage backend. I hear Rackspace also has a
   nice file storage solution...
 
 **File metadata storage backends:**
 
-- `SQLAlchemyMetadataStorage <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/storage_metadata/sql.py>`_
+- :py:class:`keepluggable.storage_metadata.sql.SQLAlchemyMetadataStorage`
 - You can write a new metadata storage backend. ZODB, Mongo, gdbm, anyone?
 
 **Action (workflow) backends:**
 
-- `BaseFilesAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/actions.py>`_
+- :py:class:`keepluggable.actions.BaseFilesAction`
   is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
-- `ImageAction <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/image_actions.py>`_
+- :py:class:`keepluggable.image_actions.ImageAction`
   is a workflow class that does everything that BaseFilesAction does, but has
   additional features for image files.
 
 
-Understanding the configuration
-===============================
+Understanding configuration
+===========================
 
 In my case, I am integrating keepluggable with an existing Pyramid web app
 so it will store users' uploads. So I add a new ``[keepluggable_uploads]``
@@ -64,7 +65,7 @@ section to my Pyramid config file::
     # action.files configuration keys have a "fls." prefix:
     fls.max_file_size = 23068672
 
-Above you see a few [key = value] pairs. At startup this INI file section
+Above you see a few ``[key = value]`` pairs. At startup this INI file section
 is read into a Python dictionary which is what the system actually uses as
 configuration.
 
@@ -85,9 +86,7 @@ the Amazon S3 backend has settings beginning with "s3." and the
 SQLAlchemy metadata storage has settings beginning with "sql.".
 
 To configure each component you selected, please refer to that component's
-own docstring -- it should mention all the possible settings.
-You can see the source code by clicking on the component in
-the list at the top of this document.
+own documentation -- it should mention all the possible settings.
 
 
 Integration with UI frameworks
@@ -105,7 +104,7 @@ wherever you want in your URL scheme. For instance:
 - /somewhere/down/the/url/my-img-store/1 (GET, PUT, DELETE)
 - /somewhere/down/the/url/my-img-store/1?w=960&h=600 (GET)
 
-`Read more about Pyramid integration. <http://github.com/nandoflorestan/keepluggable/blob/master/docs/integration_pyramid.rst>`_
+:doc:`Read more about Pyramid integration<integration_pyramid>`.
 
 
 Modifying a component for your use case
