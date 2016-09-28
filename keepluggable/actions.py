@@ -38,8 +38,7 @@ class BaseFilesAction(object):
         """Point of entry into the workflow of storing a file.
 
         You can override this method in subclasses to change the steps
-        since it is a sort of coordinator that calls one method for
-        each step.
+        since it is a sort of coordinator that calls one method for each step.
 
         The argument *bytes_io* is a file-like object with the payload.
         *metadata* is a dict with the information to be persisted in
@@ -61,12 +60,13 @@ class BaseFilesAction(object):
         return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
-        """Discover the MIME type from the file extension. Otherwise use the
-            browser-provided mime_type (which is probably less reliable).
+        """Discover the MIME type from the file extension.
 
-            If necessary someone might want to use
-            https://pypi.python.org/pypi/python-magic instead.
-            """
+        Otherwise just keep the browser-provided mime_type (less reliable).
+
+        If necessary, one might override this to use
+        https://pypi.python.org/pypi/python-magic instead.
+        """
         from mimetypes import guess_type
         typ = guess_type(metadata['file_name'])[0]
         if typ:
@@ -74,8 +74,9 @@ class BaseFilesAction(object):
 
     def _allow_storage_of(self, bytes_io, metadata):
         """Override this method if you wish to abort storing some files.
-            To abort, raise FileNotAllowed with a message explaining why.
-            """
+
+        To abort, raise FileNotAllowed with a message explaining why.
+        """
         settings = self.orchestrator.settings
         maximum = settings.read('fls.max_file_size', default=None)
         if maximum is not None:
@@ -157,9 +158,7 @@ class BaseFilesAction(object):
             sm.delete(self.namespace, key)
 
     def gen_originals(self, filters=None):
-        """Yields the original files in this namespace, optionally with
-            further filters.
-            """
+        """Yield original files in this namespace, optionally with filters."""
         files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:
@@ -178,6 +177,7 @@ class BaseFilesAction(object):
         return metadata
 
     def update_metadata(self, id, adict):
+        """Replace the metadata for key *id* with *adict*."""
         schema_cls = self.orchestrator.settings.resolve(
             'fls.update_schema', default=None)
         if schema_cls is not None:

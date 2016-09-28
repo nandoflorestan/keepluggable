@@ -119,8 +119,8 @@ class ImageAction(BaseFilesAction):
 
     def _rotate_exif_orientation(self, img):
         """Some cameras do not rotate the image, they just add orientation
-            metadata to the file, so we rotate it here.
-            """
+        metadata to the file, so we rotate it here.
+        """
         if not hasattr(img, '_getexif'):
             return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
         tags = img._getexif()
@@ -202,8 +202,8 @@ class ImageAction(BaseFilesAction):
 
     def _convert_img(self, original, metadata, version_config):
         """Return a new image, converted from ``original``, using
-            ``version_config`` and setting ``metadata``.
-            """
+        ``version_config`` and setting ``metadata``.
+        """
         fmt = version_config['format']
         assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
         img = self._copy_img(original, metadata)

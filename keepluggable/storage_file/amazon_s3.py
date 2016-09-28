@@ -37,6 +37,7 @@ class AmazonS3Storage(BasePayloadStorage):
     """
 
     def __init__(self, orchestrator):
+        """Read settings and instantiate an S3 Session."""
         super(AmazonS3Storage, self).__init__(orchestrator)
         self.access_key_id = orchestrator.settings.read('s3.access_key_id')
         self.secret_access_key = orchestrator.settings.read(
@@ -45,7 +46,6 @@ class AmazonS3Storage(BasePayloadStorage):
             aws_access_key_id=self.access_key_id,
             aws_secret_access_key=self.secret_access_key,
             region_name=orchestrator.settings.read('s3.region_name'))
-        # self.s3 = resource('s3')
         self.s3 = session.resource('s3')
 
         self._set_bucket(orchestrator.settings)
@@ -62,7 +62,8 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.buckets.all()
 
     @property
-    def bucket_names(self):  # generator
+    def bucket_names(self):
+        """A generator of bucket names."""
         return (b.name for b in self._buckets)
 
     def _get_bucket(self, bucket=None):
@@ -82,7 +83,8 @@ class AmazonS3Storage(BasePayloadStorage):
     SEP = '-'
 
     @property
-    def namespaces(self):  # generator of namespace names
+    def namespaces(self):
+        """A set of namespace names."""
         return set((o.split(self.SEP, 1)[0]
                     for o in self.bucket.objects.all()))
 
@@ -93,6 +95,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
     def empty_bucket(self, bucket=None):
+        """Delete all files in the specified bucket. DANGEROUS"""
         # TODO Request up to 1000 files at a time
         bucket = self._get_bucket(bucket)
         items = list(bucket.objects.all())
@@ -125,6 +128,7 @@ class AmazonS3Storage(BasePayloadStorage):
             return adict['Body']  # botocore.response.StreamingBody has .read()
 
     def put(self, namespace, metadata, bytes_io, bucket=None):
+        """Store a file."""
         subset = dict_subset(metadata, lambda k, v: k in (
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
@@ -146,11 +150,10 @@ class AmazonS3Storage(BasePayloadStorage):
 
     # TODO https should be a configuration setting
     def get_url(self, namespace, key, seconds=DAY, https=False):
-        """Return S3 authenticated URL sans network access or phatty
-            dependencies like boto.
+        """Return S3 authenticated URL without making a request.
 
-            Stolen from https://gist.github.com/kanevski/655022
-            """
+        Stolen from https://gist.github.com/kanevski/655022
+        """
         composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
@@ -166,7 +169,7 @@ class AmazonS3Storage(BasePayloadStorage):
             )
 
     def delete(self, namespace, keys, bucket=None):
-        """Delete many files"""
+        """Delete up to 1000 files."""
         if isinstance(keys, (str, int)):
             keys = (keys,)
         number = len(keys)

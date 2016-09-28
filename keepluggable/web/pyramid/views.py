@@ -15,11 +15,13 @@ from .resources import BaseFilesResource, BaseFileResource
 
 
 def get_orchestrator(context, request):
+    """Return the orchestrator that is relevant to the current request."""
     return request.registry.getUtility(
         IOrchestrator, context.keepluggable_name)
 
 
 def list_files(context, request):
+    """Return a dict with an *items* list containing original files."""
     orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
@@ -56,12 +58,14 @@ def upload_single_file(context, request):
 
 
 def upload_multiple_files(context, request):
-    """The response has **items**, an array in which each element is either
-        the metadata for an accepted file, or details of upload failure.
-        Each failure will have ``"upload_failed": true``.
-        You can test failures by uploading zero-length files.
-        The order in the ``items`` array is the same as the uploaded *files*.
-        """
+    """Store multiple uploads from the POST variable "files".
+
+    The response has **items**, an array in which each element is either
+    the metadata for an accepted file, or details of upload failure.
+    Each failure will have ``"upload_failed": true``.
+    You can test failures by uploading zero-length files.
+    The order in the ``items`` array is the same as the uploaded *files*.
+    """
     files = request.POST.getall('files')
     if not files:
         raise Problem(
@@ -100,6 +104,7 @@ def upload_multiple_files(context, request):
 
 @ajax_view
 def delete_file_and_its_versions(context, request):
+    """Delete a file and its derived versions."""
     orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     key_to_delete = context.__name__
@@ -117,6 +122,7 @@ def update_metadata(context, request):
 
 
 def get_operations(base_url=''):
+    """A dict containing all information about our views and URLs."""
     return {
         'List division files': dict(
             url_templ='{}'.format(base_url),
@@ -141,7 +147,7 @@ def get_operations(base_url=''):
 
 
 def register_pyramid_views(config, base_url='', angular_csrf=False):
-    """Registers keepluggable views with plain Pyramid."""
+    """Register keepluggable views with plain Pyramid."""
     for op in get_operations(base_url=base_url).values():
         view = op['view']
         config.add_view(
@@ -152,7 +158,7 @@ def register_pyramid_views(config, base_url='', angular_csrf=False):
 
 
 def register_operations_with_burla(ops, base_url='', angular_csrf=False):
-    """More featureful registration of the views using bag.web.burla"""
+    """More featureful registration of the views using ``bag.web.burla``."""
     for op_name, adict in get_operations(base_url=base_url).items():
         view = adict.pop('view')
         ops.op(op_name=op_name, section='Files', **adict)(
@@ -160,4 +166,5 @@ def register_operations_with_burla(ops, base_url='', angular_csrf=False):
 
 
 def includeme(config):
+    """Hook for Pyramid integration."""
     register_pyramid_views(config)

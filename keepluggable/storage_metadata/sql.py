@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""File metadata storage backend base class using SQLAlchemy.
+"""Component that stores file metadata in a relational database."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
+from sqlalchemy import Column
+from sqlalchemy.types import Integer, Unicode
+
+
+class SQLAlchemyMetadataStorage(object):
+    """File metadata storage backend base class using SQLAlchemy.
 
     This class certainly needs to be subclassed for your specific use case.
     You must examine the source code and override methods as necessary.
@@ -53,17 +63,8 @@
         # When original_id is null, this is the original file.
     """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
-from sqlalchemy import Column
-from sqlalchemy.types import Integer, Unicode
-
-
-class SQLAlchemyMetadataStorage(object):
-    __doc__ = __doc__
-
     def __init__(self, orchestrator):
+        """Read settings and ensure a SQLAlchemy session can be obtained."""
         self.orchestrator = orchestrator
 
         self.file_model_cls = orchestrator.settings.resolve(
@@ -73,17 +74,18 @@ class SQLAlchemyMetadataStorage(object):
         self._get_session()
 
     def _get_session(self):
-        """Returns the SQLAlchemy session."""
+        """Return the SQLAlchemy session."""
         return self.orchestrator.settings.resolve('sql.session')
 
     def put(self, namespace, metadata, sas=None):
         """Create or update a file corresponding to the given ``metadata``.
-            This method returns a 2-tuple containing the ID of the entity
-            and a boolean saying whether the entity is new or existing.
 
-            Instead of overriding this method, it is probably better for
-            you to override the methods it calls.
-            """
+        Return a 2-tuple containing the ID of the entity
+        and a boolean saying whether the entity is new or existing.
+
+        Instead of overriding this method, it is probably better for
+        you to override the methods it calls.
+        """
         sas = sas or self._get_session()
         entity = self._query(namespace, key=metadata['md5'], sas=sas).first()
         is_new = entity is None
@@ -99,8 +101,9 @@ class SQLAlchemyMetadataStorage(object):
 
     def _query(self, namespace, key=None, filters=None, what=None, sas=None):
         """Override this to search for an existing file.
-            You probably need to do something with the ``namespace``.
-            """
+
+        You probably need to do something with the ``namespace``.
+        """
         sas = sas or self._get_session()
         q = sas.query(what or self.file_model_cls)
         if key is not None:
@@ -110,20 +113,23 @@ class SQLAlchemyMetadataStorage(object):
         return q
 
     def _instantiate(self, namespace, metadata, sas=None):
-        """Override this to add or delete arguments on the constructor call.
-            You probably need to do something with the ``namespace``.
-            """
+        """Return an instance of the file model.
+
+        Override this to add or delete arguments on the constructor call.
+        You probably need to do something with the ``namespace``.
+        """
         return self.file_model_cls(**metadata)
 
     def _update(self, namespace, metadata, entity, sas=None):
-        """Override this to update the metadata of an existing entity.
-            You might need to do something with the ``namespace``.
-            """
+        """Update the metadata of an existing entity.
+
+        You might need to override and do something with the ``namespace``.
+        """
         for key, value in metadata.items():
             setattr(entity, key, value)
 
     def update(self, namespace, id, metadata, sas=None):
-        """Updates a file metadata. It must already exist in the database."""
+        """Update a file metadata. It must already exist in the database."""
         sas = sas or self._get_session()
         # entity = self._query(namespace, key=key, sas=sas).one()
         # entity = self._query(namespace, sas=sas).get(id)
@@ -133,6 +139,7 @@ class SQLAlchemyMetadataStorage(object):
         return entity.to_dict(sas)
 
     def gen_originals(self, namespace, filters=None, sas=None):
+        """Generator of original files (not derived versions)."""
         sas = sas or self._get_session()
         filters = {} if filters is None else filters
         filters['version'] = 'original'
@@ -149,9 +156,8 @@ class SQLAlchemyMetadataStorage(object):
             yield tup[0]
 
     def get(self, namespace, key, sas=None):
-        """Returns a dict containing the metadata of one file,
-            or None if not found.
-            """
+        """Dict containing the metadata of one file, or None if not found.
+        """
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
         return entity.to_dict(sas) if entity else None
@@ -173,8 +179,10 @@ class SQLAlchemyMetadataStorage(object):
 
 class BaseFile(ID, MinimalBase):
     """Base mixin class for a model that represents file metadata.
-        The file MAY be an image.
-        """
+
+    The file MAY be an image.
+    """
+
     # id = Primary key that exists because we inherit from ID
     md5 = Column(Unicode(32), nullable=False,
                  doc='hashlib.md5(file_content).hexdigest()')
@@ -190,20 +198,25 @@ class BaseFile(ID, MinimalBase):
 
     @property
     def is_image(self):
+        """self.image_width is not None"""
         return self.image_width is not None
 
     @property
     def aspect_ratio(self):
+        """self.image_width / self.image_height"""
         return self.image_width / self.image_height
 
     @property
     def is_the_original(self):
+        """self.original_id is None"""
         return self.original_id is None
 
     def get_original(self, sas):
+        """Return the file this instance is derived from."""
         return sas.query(type(self)).get(self.original_id)
 
     def q_versions(self, sas, order_by='image_width'):
+        """Query that returns files derived from this instance."""
         return sas.query(type(self)).filter_by(
             original_id=self.id).order_by(order_by)
 
