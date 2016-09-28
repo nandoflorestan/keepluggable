@@ -1,5 +1,8 @@
 *.py[cod]
 
+docs/source/api/
+docs/docs.zip
+
 # C extensions
 *.so
 

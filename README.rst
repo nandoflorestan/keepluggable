@@ -6,6 +6,8 @@ is an open source (MIT licensed), highly configurable Python library
 to **manage storage of images and other documents**
 (any kind of file, really), with metadata.
 
+`Documentation website <http://pythonhosted.org/keepluggable/>`_
+
 The file **metadata** can be stored in a different place than the file payload.
 This is recommended because many operations, such as listing files,
 do not involve actual file content, so you should avoid loading it.
