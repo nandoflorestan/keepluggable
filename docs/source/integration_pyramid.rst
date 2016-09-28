@@ -4,7 +4,7 @@ Pyramid integration
 
 This page describes how to integrate **keepluggable** into
 your existing Pyramid application by reusing the code in the
-``keepluggable.web.pyramid`` package.
+:py:mod:`keepluggable.web.pyramid` package.
 
 
 Configuration
@@ -73,15 +73,15 @@ class variable, but it need not be so static. It could be a Python property,
 or an instance variable set by the constructor. Your code might
 calculate the namespace based on the URL.
 
-More information is available on the
-`BaseFilesResource docstring <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/resources.py>`_.
+More information is available on the component documentation:
+:py:mod:`keepluggable.web.pyramid.resources`
 
 
 We provide a RESTful HTTP API done with Pyramid
 ===============================================
 
 Once you have a resource, you can attach views to it. See
-`views.py <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/views.py>`_.
+:py:mod:`keepluggable.web.pyramid.views`.
 
 Below we provide a description of what the HTTP API does.
 
