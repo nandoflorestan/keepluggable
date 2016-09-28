@@ -6,6 +6,8 @@ This page describes how to integrate **keepluggable** into
 your existing Pyramid application by reusing the code in the
 :py:mod:`keepluggable.web.pyramid` package.
 
+Of course you can always write your own Pyramid integration reusing our code.
+
 
 Configuration
 =============
@@ -49,6 +51,9 @@ Problem solved.  Now simply include keepluggable after the Pyramid's
 Configurator is instantiated::
 
         config.include('keepluggable.web.pyramid')
+
+**keepluggable** will now try to initialize one storage for each configuration
+section whose name starts with "keepluggable\_".
 
 
 Create a resource for the file storage

@@ -114,6 +114,7 @@ def delete_file_and_its_versions(context, request):
 
 @ajax_view
 def update_metadata(context, request):
+    """Store new metadata for an existing file."""
     adict = get_json_or_raise(request)
     orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)

@@ -147,6 +147,6 @@ not in the metadata entity.
 
 The file may be an original (something a user uploaded) or a version of it
 (such as a thumbnail). The version name is found in the "version" variable.
-Uploaded files have version == "original". Original files contain their
+Uploaded files have ``version == "original"``. Original files contain their
 versions in the "versions" array. Derivative files have their "versions"
 array empty, but they mention the "original_id".

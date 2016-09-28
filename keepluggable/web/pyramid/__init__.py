@@ -13,8 +13,8 @@ del TranslationStringFactory
 
 
 def get_orchestrators(ini_path):
-    """Based on the configuration file, return a dict of Orchestrators."""
-    PREFIX = 'keepluggable_'
+    """Based on the configuration file, return a list of Orchestrators."""
+    PREFIX = 'keepluggable_'  # we'll read INI sections starting with this
     config = SettingsFromFiles(ini_path)
     orchestrators = []
     for section_name, section_dict in config.adict.items():

@@ -31,6 +31,7 @@ class BaseFilesAction(object):
     """
 
     def __init__(self, orchestrator, namespace):
+        """Just store orchestrator and namespace."""
         self.orchestrator = orchestrator
         self.namespace = namespace
 
@@ -116,11 +117,14 @@ class BaseFilesAction(object):
         bytes_io.seek(0)  # ...so it can be read again
 
     def _store_versions(self, bytes_io, metadata):
-        """Subclasses will have a complex workflow for storing versions."""
+        """In this base class, just call _store_file().
+
+        But any subclass will have a complex workflow for storing versions.
+        """
         return self._store_file(bytes_io, metadata)
 
     def _store_file(self, bytes_io, metadata):
-        """Saves the payload and the metadata on the 2 storage backends."""
+        """Save the payload and the metadata on the 2 storage backends."""
         storage_file = self.orchestrator.storage_file
         storage_file.put(
             namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
@@ -139,6 +143,7 @@ class BaseFilesAction(object):
                 namespace=self.namespace, metadata=metadata)
 
     def delete_file(self, key):
+        """Delete a file's metadata and payload, including derived versions."""
         # Obtain the original file.
         sm = self.orchestrator.storage_metadata
         original = sm.get(namespace=self.namespace, key=key)

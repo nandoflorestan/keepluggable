@@ -79,6 +79,7 @@ class ImageAction(BaseFilesAction):
     EXIF_ROTATION_FIX = {1: 0, 8: 90, 3: 180, 6: 270}
 
     def __init__(self, *a, **kw):
+        """Store configuration settings, especially about the versions."""
         super(ImageAction, self).__init__(*a, **kw)
 
         # Read configuration
@@ -118,7 +119,9 @@ class ImageAction(BaseFilesAction):
         return img
 
     def _rotate_exif_orientation(self, img):
-        """Some cameras do not rotate the image, they just add orientation
+        """Rotate the image according to metadata in the payload.
+
+        Some cameras do not rotate the image, they just add orientation
         metadata to the file, so we rotate it here.
         """
         if not hasattr(img, '_getexif'):
@@ -201,8 +204,9 @@ class ImageAction(BaseFilesAction):
                     metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
-        """Return a new image, converted from ``original``, using
-        ``version_config`` and setting ``metadata``.
+        """Return a new image, converted from ``original``.
+
+        Do it using ``version_config`` and setting ``metadata``.
         """
         fmt = version_config['format']
         assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)

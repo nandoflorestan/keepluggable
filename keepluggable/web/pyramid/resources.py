@@ -27,7 +27,7 @@ completely separate integration of keepluggable into your app.
 Therefore, subclasses of this resource must provide:
 
 - ``keepluggable_name``: The suffix of the INI section (the part
-  after "keepluggable_").
+  after "keepluggable\_").
 
 Resources must also provide ``__name__`` and ``__parent__``. You can
 read more about this in the Pyramid docs.
@@ -37,18 +37,16 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-
 class BaseFilesResource(object):
-    """Base class for a Pyramid traversal resource representing a file store.
-    """
+    """Base for a Pyramid traversal resource representing a file store."""
+
     pass
 
 
 class BaseFileResource(object):
-    """Base class for a Pyramid traversal resource representing a
-    specific file within a file store.
+    """Pyramid traversal resource representing a specific file.
 
-    Here is an example resource::
+    Here is an example resource using this as a base class::
 
         class FileResource(BaseFileResource):
             # This resource is governed by configuration section "[keepluggable_file]":
@@ -58,4 +56,5 @@ class BaseFileResource(object):
             def namespace(self):
                 return parent(self).id
     """
+
     pass
