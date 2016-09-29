@@ -43,10 +43,10 @@ Understanding configuration
 ===========================
 
 In my case, I am integrating keepluggable with an existing Pyramid web app
-so it will store users' uploads. So I add a new ``[keepluggable_uploads]``
+so it will store users' docs. So I add a new ``[keepluggable docs]``
 section to my Pyramid config file::
 
-    [keepluggable_uploads]
+    [keepluggable docs]
     # The components we chose:
     storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
     storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
@@ -59,7 +59,7 @@ section to my Pyramid config file::
     s3.bucket = BUCKET_NAME
 
     # SQLAlchemyMetadataStorage configuration:
-    sql.file_model_cls = myapp.modules.uploads.models:File
+    sql.file_model_cls = myapp.modules.docs.models:File
     sql.session = myapp.database:session
 
     # action.files configuration keys have a "fls." prefix:

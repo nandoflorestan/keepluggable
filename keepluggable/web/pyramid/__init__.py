@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""Integration with the Pyramid web framework. More details in the docs."""
+"""Integration with the Pyramid web framework.
+
+Usage is described in the "Pyramid integration" page of the documentation.
+"""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from keepluggable import SettingsFromFiles, Settings
+from nine import basestring
+from keepluggable import Settings
 from keepluggable.orchestrator import IOrchestrator, Orchestrator
 
 from pyramid.i18n import TranslationStringFactory
@@ -12,29 +16,38 @@ _ = TranslationStringFactory('keepluggable')
 del TranslationStringFactory
 
 
-def get_orchestrators(ini_path):
-    """Based on the configuration file, return a list of Orchestrators."""
-    PREFIX = 'keepluggable_'  # we'll read INI sections starting with this
-    config = SettingsFromFiles(ini_path)
-    orchestrators = []
-    for section_name, section_dict in config.adict.items():
-        if not section_name.startswith(PREFIX):
-            continue
-        name = section_name[len(PREFIX):]
-        orchestrators.append(Orchestrator(name, Settings(section_dict)))
-    if not orchestrators:
-        raise RuntimeError('In the config file there is no section starting '
-                           'with "keepluggable_".')
-    return orchestrators
+def add_keepluggable(config, dict_or_path, storage_name, encoding='utf-8'):
+    """Add a keepluggable storage to this web app.
+
+    ``dict_or_path`` must be either a dictionary-like object containing the
+    configuration settings for this keepluggable storage, or the path to an
+    INI file containing those settings.
+
+    ``storage_name`` must be a string, a unique ID for this storage in the app.
+    """
+    if isinstance(dict_or_path, basestring):
+        ini_path = dict_or_path
+        from configparser import ConfigParser
+        parser = ConfigParser()
+        parser.read(ini_path, encoding=encoding)
+        config_section_name = 'keepluggable ' + storage_name
+        adict = parser[config_section_name]
+    elif hasattr(dict_or_path, '__getitem__'):
+        adict = dict_or_path
+    else:
+        raise RuntimeError('The argument dict_or_path may not be {}'.format(
+            type(dict_or_path).__name__))
+    _register_orchestrator(config, storage_name, adict)
+
+
+def _register_orchestrator(config, name, adict):
+    orchestrator = Orchestrator(name, Settings(adict))
+    config.registry.registerUtility(
+        component=orchestrator,
+        provided=IOrchestrator,
+        name=orchestrator.name)
 
 
 def includeme(config):
-    """Hook for Pyramid initialization of keepluggable."""
-    ini_path = config.registry.settings['__file__']
-
-    # Instantiate the orchestrators and make them available to the Pyramid app:
-    for orchestrator in get_orchestrators(ini_path):
-        config.registry.registerUtility(
-            component=orchestrator,
-            provided=IOrchestrator,
-            name=orchestrator.name)
+    """Pyramid integration. Add a configurator directive to be used next."""
+    config.add_directive('add_keepluggable', add_keepluggable)

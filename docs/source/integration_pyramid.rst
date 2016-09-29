@@ -14,17 +14,18 @@ Configuration
 
 **keepluggable** is a pluggable sub-application that can be integrated into
 your app **multiple times**. Each time you start by creating a section in
-your INI file. Section names must start with "keepluggable\_". Example::
+your INI file. Section names must start with "keepluggable ".
+In the following example 2 keepluggable storages are configured::
 
     [app:main]
     # Pyramid application settings go in this section.
     # (...)
 
-    [keepluggable_avatars]
+    [keepluggable avatars]
     # User images storage settings here
     # (...)
 
-    [keepluggable_products]
+    [keepluggable products]
     # The storage for product images is configured in this section.
     # (...)
 
@@ -32,28 +33,31 @@ your INI file. Section names must start with "keepluggable\_". Example::
 At application startup
 ======================
 
-**keepluggable** needs to know the path to the current configuration .ini file.
-This is because the keepluggable settings are put in separate
-INI file section(s) which it must read at start time. The problem
-is, Pyramid does not, by default, allow applications to read arbitrary
-configuration sections or to know the INI file path.
+Start by including **keepluggable** after Pyramid's Configurator
+is instantiated::
 
-The solution we have found is to include in the Pyramid settings dictionary
-a ``__file__`` variable whose value is the INI file path. You can ensure this
-by adding the following to the top of your app's WSGI function::
+    config.include('keepluggable.web.pyramid')
 
-    def get_wsgi_app(global_settings, **settings):
-        # global_settings contains the __file__, so make it available:
-        for k, v in global_settings.items():
-            settings.setdefault(k, v)
+This does almost nothing: it only makes a new config method available.
+You have to use it next::
 
-Problem solved.  Now simply include keepluggable after the Pyramid's
-Configurator is instantiated::
+    config.add_keepluggable(  # Directive that adds a keepluggable storage
+        global_settings['__file__'],  # Path to your INI configuration file
+        'avatars',                    # A unique name for this storage.
+        )
 
-        config.include('keepluggable.web.pyramid')
+This will cause **keepluggable** to read the "[keepluggable avatars]"
+section you created earlier and set it up.
 
-**keepluggable** will now try to initialize one storage for each configuration
-section whose name starts with "keepluggable\_".
+Repeat the call for each separate storage::
+
+    config.add_keepluggable(  # Directive that adds a keepluggable storage
+        global_settings['__file__'],  # Path to your INI configuration file
+        'products',                   # A unique name for this storage.
+        )
+
+The first argument can be a settings dictionary, too -- but we recommend
+you set things up with INI sections as described above.
 
 
 Create a resource for the file storage
@@ -66,11 +70,11 @@ must inherit in your own resource class::
 
 
     class FilesResource(YourBaseResourceClass, BaseFilesResource):
-        keepluggable_name = "file"  # points to INI section [keepluggable_file]
+        keepluggable_name = "avatars"  # name of the storage for this resource
         namespace = 'myapp42'
 
 The ``keepluggable_name`` variable above lets the resource determine which
-INI section contains the relevant configuration.
+of the keepluggable storages is "mounted" on this URL.
 
 You can use the ``namespace`` setting to further separate files. So this
 resource knows which namespace it manages. It was done above through a static

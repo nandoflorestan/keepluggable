@@ -19,15 +19,15 @@ Here is an example implementation that simply returns an integer::
 You can have keepluggable integrated in your Pyramid application
 multiple times, each time with different settings (expressed in a
 different configuration section). For instance, you could have a
-``[keepluggable_avatars]`` INI section for users' images and also
-a ``[keepluggable_homes]`` INI section that would store a photo for
+``[keepluggable avatars]`` INI section for users' images and also
+a ``[keepluggable homes]`` INI section that would store a photo for
 each address of these users. Each configuration section captures a
 completely separate integration of keepluggable into your app.
 
 Therefore, subclasses of this resource must provide:
 
 - ``keepluggable_name``: The suffix of the INI section (the part
-  after "keepluggable\_").
+  after "keepluggable ").
 
 Resources must also provide ``__name__`` and ``__parent__``. You can
 read more about this in the Pyramid docs.
@@ -49,7 +49,7 @@ class BaseFileResource(object):
     Here is an example resource using this as a base class::
 
         class FileResource(BaseFileResource):
-            # This resource is governed by configuration section "[keepluggable_file]":
+            # This resource is governed by INI section "[keepluggable_file]":
             keepluggable_name = "file"
 
             @reify
