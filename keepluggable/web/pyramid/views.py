@@ -6,7 +6,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
-from bag.web.pyramid.angular_csrf import csrf
 from pyramid.response import Response
 from keepluggable.exceptions import FileNotAllowed
 from keepluggable.orchestrator import IOrchestrator
@@ -147,25 +146,24 @@ def get_operations(base_url=''):
     }
 
 
-def register_pyramid_views(config, base_url='', angular_csrf=False):
+def register_pyramid_views(config, base_url=''):
     """Register keepluggable views with plain Pyramid."""
     for op in get_operations(base_url=base_url).values():
         view = op['view']
         config.add_view(
-            view=csrf(view) if angular_csrf else view,
+            view=view,
             context=op['context'], name=op.get('name'),
             permission=op['permission'], accept=op.get('accept'),
             request_method=op['request_method'], renderer=op.get('renderer'))
 
 
-def register_operations_with_burla(ops, base_url='', angular_csrf=False):
+def register_operations_with_burla(ops, base_url=''):
     """More featureful registration of the views using ``bag.web.burla``."""
     for op_name, adict in get_operations(base_url=base_url).items():
         view = adict.pop('view')
-        ops.op(op_name=op_name, section='Files', **adict)(
-            csrf(view) if angular_csrf else view)
+        ops.op(op_name=op_name, section='Files', **adict)(view)
 
 
 def includeme(config):
-    """Hook for Pyramid integration."""
+    """Pyramid integration."""
     register_pyramid_views(config)
