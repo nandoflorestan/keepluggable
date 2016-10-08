@@ -51,6 +51,8 @@ class ImageAction(BaseFilesAction):
 
     **Configuration settings**
 
+    - ``img.upload_must_be_img``: a boolean; if True, uploads will only be
+      accepted if they are image files. The default for this setting is False.
     - ``img.store_original``: a boolean; if False, the original upload will
       not have its payload stored. The metadata is always stored in an effort
       to recognize repeated uploads of the same file. The default for this
@@ -83,6 +85,8 @@ class ImageAction(BaseFilesAction):
         super(ImageAction, self).__init__(*a, **kw)
 
         # Read configuration
+        self.upload_must_be_img = asbool(self.orchestrator.settings.read(
+            'img.upload_must_be_img', default=False))
         self.store_original = asbool(self.orchestrator.settings.read(
             'img.store_original', default=True))
         self.quality = int(self.orchestrator.settings.read(
@@ -139,7 +143,12 @@ class ImageAction(BaseFilesAction):
         # We override this method to deal with images.
         is_image = metadata['mime_type'].startswith('image')
         if not is_image:
-            return self._store_file(bytes_io, metadata)  # from superclass
+            if self.upload_must_be_img:
+                raise FileNotAllowed(
+                    'The file "{}" is not an image, so it was not stored.'
+                    .format(metadata['file_name']))
+            else:
+                return self._store_file(bytes_io, metadata)  # from superclass
 
         # Probably don't need to verify the image since we are loading it
         # original = self._img_from_stream(bytes_io)
