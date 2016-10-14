@@ -48,6 +48,18 @@ def _register_orchestrator(config, name, adict):
         name=orchestrator.name)
 
 
+def get_orchestrator(context, request):
+    """Return the orchestrator that is relevant to the current request.
+
+    The first parameter, ``context``, can be the request context or the
+    keepluggable storage name.
+    """
+    return request.registry.getUtility(
+        IOrchestrator,
+        context if isinstance(context, basestring)
+        else context.keepluggable_name)
+
+
 def includeme(config):
     """Pyramid integration. Add a configurator directive to be used next."""
     config.add_directive('add_keepluggable', add_keepluggable)

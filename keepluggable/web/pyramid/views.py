@@ -8,15 +8,8 @@ from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
 from pyramid.response import Response
 from keepluggable.exceptions import FileNotAllowed
-from keepluggable.orchestrator import IOrchestrator
-from . import _
+from . import _, get_orchestrator
 from .resources import BaseFilesResource, BaseFileResource
-
-
-def get_orchestrator(context, request, name=None):  # TODO Move to .
-    """Return the orchestrator that is relevant to the current request."""
-    return request.registry.getUtility(
-        IOrchestrator, name or context.keepluggable_name)
 
 
 def list_files(context, request):
@@ -113,12 +106,19 @@ def delete_file_and_its_versions(context, request):
 
 @ajax_view
 def update_metadata(context, request):
-    """Store new metadata for an existing file."""
+    """Store new metadata for an existing file.
+
+    Example request using the ``curl`` command::
+
+        curl -i -H 'Content-Type: application/json'
+        -H 'Accept: application/json' -X PUT
+        -d '{"description": "Super knife", "asset_id": 1, "room_id": null,
+        "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
+    """
     adict = get_json_or_raise(request)
     orchestrator = get_orchestrator(context, request)
     action = orchestrator.files_action_cls(orchestrator, context.namespace)
     return action.update_metadata(context.__name__, adict)
-    # curl -i -H 'Content-Type: application/json' -H 'Accept: application/json' -X PUT -d '{"description": "Super knife", "asset_id": 1, "room_id": null, "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
 
 
 def get_operations(base_url=''):
