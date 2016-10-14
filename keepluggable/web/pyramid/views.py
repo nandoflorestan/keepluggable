@@ -13,10 +13,10 @@ from . import _
 from .resources import BaseFilesResource, BaseFileResource
 
 
-def get_orchestrator(context, request):
+def get_orchestrator(context, request, name=None):  # TODO Move to .
     """Return the orchestrator that is relevant to the current request."""
     return request.registry.getUtility(
-        IOrchestrator, context.keepluggable_name)
+        IOrchestrator, name or context.keepluggable_name)
 
 
 def list_files(context, request):

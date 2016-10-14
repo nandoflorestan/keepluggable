@@ -6,7 +6,17 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag import asbool
 from bag.web.exceptions import Problem
+import colander as c
 from keepluggable.exceptions import FileNotAllowed
+
+
+class BaseFilesActionConfig(c.Schema):
+    """Schema to validate the configuration settings for BaseFilesAction."""
+
+    max_file_size = c.SchemaNode(
+        c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
+The maximum file length, in bytes, that can be uploaded. \
+When zero, the system does not have a maximum size.""")
 
 
 class BaseFilesAction(object):
@@ -22,7 +32,7 @@ class BaseFilesAction(object):
     **Configuration settings**
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
-      can be uploaded. When absent, the system does not have a maximum size.
+      can be uploaded. When zero, the system does not have a maximum size.
     - ``fls.allow_empty_files`` (boolean): whether to allow zero-length
       files to be uploaded.
     - ``fls.update_schema`` (resource spec): Colander schema that validates
@@ -31,9 +41,16 @@ class BaseFilesAction(object):
     """
 
     def __init__(self, orchestrator, namespace):
-        """Just store orchestrator and namespace."""
+        """Store orchestrator and namespace; validate our settings."""
         self.orchestrator = orchestrator
         self.namespace = namespace
+
+        # TODO Validate settings at startup, not here
+        settings = {  # Select settings that start with "fls."
+            key[4:]: val for key, val in orchestrator.settings.adict.items()
+            if key.startswith('fls.')}
+        schema = BaseFilesActionConfig()  # Use the schema to validate them
+        self.settings = schema.deserialize(settings)
 
     def store_original_file(self, bytes_io, **metadata):
         """Point of entry into the workflow of storing a file.
@@ -78,14 +95,13 @@ class BaseFilesAction(object):
 
         To abort, raise FileNotAllowed with a message explaining why.
         """
+        maximum = self.settings['max_file_size']
+        if maximum and metadata['length'] > maximum:
+            raise FileNotAllowed(
+                'The file is {} KB long and the maximum is {} KB.'.format(
+                    int(metadata['length'] / 1024), int(maximum / 1024)))
+
         settings = self.orchestrator.settings
-        maximum = settings.read('fls.max_file_size', default=None)
-        if maximum is not None:
-            maximum = int(maximum)
-            if metadata['length'] > maximum:
-                raise FileNotAllowed(
-                    'The file is {} KB long and the maximum is {} KB.'.format(
-                        int(metadata['length'] / 1024), int(maximum / 1024)))
         allow_empty = asbool(settings.read('fls.allow_empty_files',
                                            default=False))
         if not allow_empty and metadata['length'] == 0:
