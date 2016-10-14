@@ -84,6 +84,7 @@ class ImageAction(BaseFilesAction):
         """Store configuration settings, especially about the versions."""
         super(ImageAction, self).__init__(*a, **kw)
 
+        # TODO: Schema for these configuration settings
         # Read configuration
         self.upload_must_be_img = asbool(self.orchestrator.settings.read(
             'img.upload_must_be_img', default=False))

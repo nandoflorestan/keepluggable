@@ -10,15 +10,6 @@ import colander as c
 from keepluggable.exceptions import FileNotAllowed
 
 
-class BaseFilesActionConfig(c.Schema):
-    """Schema to validate the configuration settings for BaseFilesAction."""
-
-    max_file_size = c.SchemaNode(
-        c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
-The maximum file length, in bytes, that can be uploaded. \
-When zero, the system does not have a maximum size.""")
-
-
 class BaseFilesAction(object):
     """Action class that coordinates the workflow.
 
@@ -40,17 +31,21 @@ class BaseFilesAction(object):
       unsafe. So it is recommended that you implement a schema.
     """
 
+    SETTINGS_PREFIX = 'fls.'
+
+    class ConfigurationSchema(c.Schema):
+        """Schema to validate the configuration settings for BaseFilesAction."""
+
+        max_file_size = c.SchemaNode(
+            c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
+The maximum file length, in bytes, that can be uploaded. \
+When zero, the system does not have a maximum size.""")
+
     def __init__(self, orchestrator, namespace):
-        """Store orchestrator and namespace; validate our settings."""
+        """Store orchestrator, namespace and the settings for this action."""
         self.orchestrator = orchestrator
         self.namespace = namespace
-
-        # TODO Validate settings at startup, not here
-        settings = {  # Select settings that start with "fls."
-            key[4:]: val for key, val in orchestrator.settings.adict.items()
-            if key.startswith('fls.')}
-        schema = BaseFilesActionConfig()  # Use the schema to validate them
-        self.settings = schema.deserialize(settings)
+        self.settings = orchestrator.action_configuration
 
     def store_original_file(self, bytes_io, **metadata):
         """Point of entry into the workflow of storing a file.

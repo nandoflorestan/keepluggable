@@ -15,7 +15,7 @@ from .resources import BaseFilesResource, BaseFileResource
 def list_files(context, request):
     """Return a dict with an *items* list containing original files."""
     orchestrator = get_orchestrator(context, request)
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    action = orchestrator.get_action(context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
     # curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
 
@@ -33,7 +33,7 @@ def upload_single_file(context, request):
     del other_posted_data['file']
 
     orchestrator = get_orchestrator(context, request)
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    action = orchestrator.get_action(context.namespace)
 
     # encoding = fieldStorage.encoding
     try:
@@ -68,7 +68,7 @@ def upload_multiple_files(context, request):
     del other_posted_data['files']
 
     orchestrator = get_orchestrator(context, request)
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    action = orchestrator.get_action(context.namespace)
 
     items = []
     for fieldStorage in files:
@@ -98,7 +98,7 @@ def upload_multiple_files(context, request):
 def delete_file_and_its_versions(context, request):
     """Delete a file and its derived versions."""
     orchestrator = get_orchestrator(context, request)
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    action = orchestrator.get_action(context.namespace)
     key_to_delete = context.__name__
     action.delete_file(key_to_delete)
     return Response(status_int=204)  # No content
@@ -117,7 +117,7 @@ def update_metadata(context, request):
     """
     adict = get_json_or_raise(request)
     orchestrator = get_orchestrator(context, request)
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    action = orchestrator.get_action(context.namespace)
     return action.update_metadata(context.__name__, adict)
 
 
