@@ -34,12 +34,15 @@ class BaseFilesAction(object):
     SETTINGS_PREFIX = 'fls.'
 
     class ConfigurationSchema(c.Schema):
-        """Schema to validate the configuration settings for BaseFilesAction."""
+        """Schema to validate configuration settings for BaseFilesAction."""
 
         max_file_size = c.SchemaNode(
             c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
 The maximum file length, in bytes, that can be uploaded. \
 When zero, the system does not have a maximum size.""")
+        allow_empty_files = c.SchemaNode(
+            c.Bool(), default=False, missing=False,
+            doc="Whether to allow zero-length files to be uploaded.")
 
     def __init__(self, orchestrator, namespace):
         """Store orchestrator, namespace and the settings for this action."""
@@ -96,9 +99,7 @@ When zero, the system does not have a maximum size.""")
                 'The file is {} KB long and the maximum is {} KB.'.format(
                     int(metadata['length'] / 1024), int(maximum / 1024)))
 
-        settings = self.orchestrator.settings
-        allow_empty = asbool(settings.read('fls.allow_empty_files',
-                                           default=False))
+        allow_empty = self.settings['allow_empty_files']
         if not allow_empty and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
 
