@@ -124,7 +124,7 @@ def update_metadata(context, request):
 def get_operations(base_url=''):
     """A dict containing all information about our views and URLs."""
     return {
-        'List division files': dict(
+        'List files in storage': dict(
             url_templ='{}'.format(base_url),
             context=BaseFilesResource,
             permission='kp_view_files', accept='application/json',
