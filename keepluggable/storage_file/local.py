@@ -4,6 +4,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import mimetypes
 from bag import resolve_path
 from . import BasePayloadStorage
 
@@ -85,12 +86,13 @@ class LocalFilesystemStorage(BasePayloadStorage):
                 'Key not found: {} / {}'.format(namespace, key)) from e
 
     def put(self, namespace, metadata, bytes_io):
+        """Store a file (``bytes_io``) inside ``namespace``."""
         if bytes_io.tell():
             bytes_io.seek(0)
         outdir = self.directory / str(namespace)
         if not outdir.exists():
             outdir.mkdir()  # Create the namespace directory as needed
-        outfile = outdir / metadata['md5']
+        outfile = outdir / (metadata['md5'] + self._get_extension(metadata))
         with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
             while True:
                 chunk = bytes_io.read(MEGABYTE)
@@ -100,11 +102,17 @@ class LocalFilesystemStorage(BasePayloadStorage):
                     break
         assert outfile.lstat().st_size == metadata['length']
 
-    def get_url(self, namespace, key, seconds=3600, https=False):
+    def _get_extension(self, metadata):
+        return mimetypes.guess_extension(
+            metadata['mime_type'], strict=False) or ''
+
+    def get_url(self, namespace, metadata, seconds=3600, https=False):
         """Return a Pyramid static URL.
 
         If you use another web framework, please override this method.
         """
         from pyramid.threadlocal import get_current_request
-        return get_current_request().static_url(
-            '/'.join((self.storage_path, str(namespace), key)))
+        return get_current_request().static_url('/'.join((
+            self.storage_path,
+            str(namespace),
+            metadata['md5'] + self._get_extension(metadata))))

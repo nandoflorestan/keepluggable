@@ -244,9 +244,9 @@ class ImageAction(BaseFilesAction):
 
         # Add main *href* if we are storing original images or if not image
         if fil.get('image_width') is None or self.store_original:
-            fil['href'] = url(self.namespace, fil['md5'])
+            fil['href'] = url(self.namespace, fil)
 
         # Also add *href* for each version
         for version in fil['versions']:
-            version['href'] = url(self.namespace, version['md5'])
+            version['href'] = url(self.namespace, version)
         return fil

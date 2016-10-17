@@ -4,7 +4,6 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from bag import asbool
 from bag.web.exceptions import Problem
 import colander as c
 from keepluggable.exceptions import FileNotAllowed
@@ -186,11 +185,11 @@ When zero, the system does not have a maximum size.""")
         url = self.orchestrator.storage_file.get_url
 
         # Add the main *href*
-        metadata['href'] = url(self.namespace, metadata['md5'])
+        metadata['href'] = url(self.namespace, metadata)
 
         # Also add *href* for each version
         for version in metadata['versions']:
-            version['href'] = url(self.namespace, version['md5'])
+            version['href'] = url(self.namespace, version)
         return metadata
 
     def update_metadata(self, id, adict):

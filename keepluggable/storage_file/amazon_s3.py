@@ -149,11 +149,12 @@ class AmazonS3Storage(BasePayloadStorage):
             subset[k] = str(subset[k])
 
     # TODO https should be a configuration setting
-    def get_url(self, namespace, key, seconds=DAY, https=False):
+    def get_url(self, namespace, metadata, seconds=DAY, https=False):
         """Return S3 authenticated URL without making a request.
 
         Stolen from https://gist.github.com/kanevski/655022
         """
+        key = metadata['md5']
         composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
