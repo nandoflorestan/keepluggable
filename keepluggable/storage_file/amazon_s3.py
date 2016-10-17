@@ -118,7 +118,8 @@ class AmazonS3Storage(BasePayloadStorage):
         for key in self.gen_keys(namespace, bucket=bucket):
             self.delete(namespace, key, bucket=bucket)
 
-    def get_reader(self, namespace, key, bucket=None):
+    def get_reader(self, namespace, metadata, bucket=None):
+        key = metadata['md5']
         try:
             adict = self._get_object(namespace, key, bucket).get()
         except ClientError as e:  # amazon_s3: key not found

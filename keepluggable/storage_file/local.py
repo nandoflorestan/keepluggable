@@ -77,13 +77,16 @@ class LocalFilesystemStorage(BasePayloadStorage):
         from shutil import rmtree
         rmtree(str(self.directory / str(namespace)))
 
-    def get_reader(self, namespace, key):
+    def get_reader(self, namespace, metadata):
         """Return a stream for the file content."""
         try:
-            return open(str(self.directory / str(namespace) / key), 'rb')
+            return open(str(
+                self.directory / str(namespace) / self._get_filename(
+                    metadata)), 'rb')
         except FileNotFoundError as e:
             raise KeyError(
-                'Key not found: {} / {}'.format(namespace, key)) from e
+                'Key not found: {} / {}'.format(
+                    namespace, metadata['md5'])) from e
 
     def put(self, namespace, metadata, bytes_io):
         """Store a file (``bytes_io``) inside ``namespace``."""
@@ -92,7 +95,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         outdir = self.directory / str(namespace)
         if not outdir.exists():
             outdir.mkdir()  # Create the namespace directory as needed
-        outfile = outdir / (metadata['md5'] + self._get_extension(metadata))
+        outfile = outdir / self._get_filename(metadata)
         with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
             while True:
                 chunk = bytes_io.read(MEGABYTE)
@@ -103,8 +106,12 @@ class LocalFilesystemStorage(BasePayloadStorage):
         assert outfile.lstat().st_size == metadata['length']
 
     def _get_extension(self, metadata):
-        return mimetypes.guess_extension(
-            metadata['mime_type'], strict=False) or ''
+        extensions = sorted(mimetypes.guess_all_extensions(
+            metadata['mime_type'], strict=False))
+        return extensions[0] if extensions else ''
+
+    def _get_filename(self, metadata):
+        return metadata['md5'] + self._get_extension(metadata)
 
     def get_url(self, namespace, metadata, seconds=3600, https=False):
         """Return a Pyramid static URL.
@@ -115,4 +122,4 @@ class LocalFilesystemStorage(BasePayloadStorage):
         return get_current_request().static_url('/'.join((
             self.storage_path,
             str(namespace),
-            metadata['md5'] + self._get_extension(metadata))))
+            self._get_filename(metadata))))

@@ -11,7 +11,7 @@ class BasePayloadStorage(object):
         """The constructor just stores the orchestrator instance."""
         self.orchestrator = orchestrator
 
-    def get_reader(self, namespace, key):
+    def get_reader(self, namespace, metadata):
         """Return an open "file" object from which the payload can be read.
 
         Otherwise, raise KeyError.
