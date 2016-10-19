@@ -13,11 +13,15 @@ from .resources import BaseFilesResource, BaseFileResource
 
 
 def list_files(context, request):
-    """Return a dict with an *items* list containing original files."""
+    """Return a dict with an *items* list containing original files.
+
+    Example request with the ``curl`` command::
+
+        curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
+    """
     orchestrator = get_orchestrator(context, request)
     action = orchestrator.get_action(context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
-    # curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
 
 
 @ajax_view
