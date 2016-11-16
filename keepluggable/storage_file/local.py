@@ -28,7 +28,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from time import time
-from bag import resolve_path
+from bag.settings import resolve_path
 from keepluggable import read_setting
 from . import BasePayloadStorage
 

@@ -2,7 +2,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from bag import resolve
+from bag.settings import resolve  # TODO Replace
 REQUIRED = object()
 
 
