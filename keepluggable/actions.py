@@ -22,7 +22,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from bag import asbool
+from bag.settings import asbool
 from bag.web.exceptions import Problem
 from keepluggable import read_setting, resolve_setting
 from keepluggable.exceptions import FileNotAllowed

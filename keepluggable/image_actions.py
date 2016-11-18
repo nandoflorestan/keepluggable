@@ -67,7 +67,7 @@ from __future__ import (absolute_import, division, print_function,
 from copy import copy
 from io import BytesIO
 from PIL import Image, ExifTags
-from bag import asbool
+from bag.settings import asbool
 from .exceptions import FileNotAllowed
 from .actions import BaseFilesAction
 
