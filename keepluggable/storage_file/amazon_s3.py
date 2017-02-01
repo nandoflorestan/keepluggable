@@ -1,21 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Amazon S3 storage backend.
-
-    To enable this backend, use this configuration::
-
-        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
-
-    Configuration settings
-    ======================
-
-    - ``s3.access_key_id``: part of your Amazon credentials
-    - ``s3.secret_access_key``: part of your Amazon credentials
-    - ``s3.region_name``: part of your Amazon credentials
-    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
-      like to come up with the bucket name in code rather than configuration,
-      you may omit this setting and override the _set_bucket() method.
-    '''
+"""This module contains a storage strategy that keeps files in AWS S3."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -27,7 +12,6 @@ from bag import dict_subset
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
-from keepluggable import read_setting
 from . import BasePayloadStorage
 from nine import nimport
 quote = nimport('urllib.parse:quote')
@@ -36,21 +20,38 @@ DAY = 60 * 60 * 24
 
 
 class AmazonS3Storage(BasePayloadStorage):
-    __doc__ = __doc__
+    """Amazon S3 storage backend.
 
-    def __init__(self, settings):
-        self.access_key_id = read_setting(settings, 's3.access_key_id')
-        self.secret_access_key = read_setting(settings, 's3.secret_access_key')
-        session = Session(aws_access_key_id=self.access_key_id,
-                          aws_secret_access_key=self.secret_access_key,
-                          region_name=read_setting(settings, 's3.region_name'))
-        # self.s3 = resource('s3')
+    To enable this backend, use this configuration::
+
+        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
+
+    **Configuration settings**
+
+    - ``s3.access_key_id``: part of your Amazon credentials
+    - ``s3.secret_access_key``: part of your Amazon credentials
+    - ``s3.region_name``: part of your Amazon credentials
+    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
+      like to come up with the bucket name in code rather than configuration,
+      you may omit this setting and override the _set_bucket() method.
+    """
+
+    def __init__(self, orchestrator):
+        """Read settings and instantiate an S3 Session."""
+        super(AmazonS3Storage, self).__init__(orchestrator)
+        self.access_key_id = orchestrator.settings.read('s3.access_key_id')
+        self.secret_access_key = orchestrator.settings.read(
+            's3.secret_access_key')
+        session = Session(
+            aws_access_key_id=self.access_key_id,
+            aws_secret_access_key=self.secret_access_key,
+            region_name=orchestrator.settings.read('s3.region_name'))
         self.s3 = session.resource('s3')
 
-        self._set_bucket(settings)
+        self._set_bucket(orchestrator.settings)
 
     def _set_bucket(self, settings):
-        self.bucket_name = read_setting(settings, 's3.bucket')
+        self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
     def create_bucket(self, name):
@@ -61,7 +62,8 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.buckets.all()
 
     @property
-    def bucket_names(self):  # generator
+    def bucket_names(self):
+        """A generator of bucket names."""
         return (b.name for b in self._buckets)
 
     def _get_bucket(self, bucket=None):
@@ -70,7 +72,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     def delete_bucket(self, bucket=None):
-        '''Deletes the entire bucket.'''
+        """Delete the entire bucket."""
         bucket = self._get_bucket(bucket)
         # All items must be deleted before the bucket itself
         self.empty_bucket(bucket)
@@ -81,7 +83,8 @@ class AmazonS3Storage(BasePayloadStorage):
     SEP = '-'
 
     @property
-    def namespaces(self):  # generator of namespace names
+    def namespaces(self):
+        """A set of namespace names."""
         return set((o.split(self.SEP, 1)[0]
                     for o in self.bucket.objects.all()))
 
@@ -92,6 +95,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
     def empty_bucket(self, bucket=None):
+        """Delete all files in the specified bucket. DANGEROUS"""
         # TODO Request up to 1000 files at a time
         bucket = self._get_bucket(bucket)
         items = list(bucket.objects.all())
@@ -103,18 +107,19 @@ class AmazonS3Storage(BasePayloadStorage):
         return resp
 
     def gen_keys(self, namespace, bucket=None):
-        '''Generator of the keys in a namespace. Too costly.'''
+        """Generator of the keys in a namespace. Too costly."""
         for o in self._get_bucket(bucket).objects.all():
             composite = o.key
             if composite.startswith(namespace + '/'):
                 yield composite.split(self.SEP, 1)[1]
 
     def delete_namespace(self, namespace, bucket=None):
-        '''Delete all files in ``namespace``. Too costly.'''
+        """Delete all files in ``namespace``. Too costly."""
         for key in self.gen_keys(namespace, bucket=bucket):
             self.delete(namespace, key, bucket=bucket)
 
-    def get_reader(self, namespace, key, bucket=None):
+    def get_reader(self, namespace, metadata, bucket=None):
+        key = metadata['md5']
         try:
             adict = self._get_object(namespace, key, bucket).get()
         except ClientError as e:  # amazon_s3: key not found
@@ -124,6 +129,7 @@ class AmazonS3Storage(BasePayloadStorage):
             return adict['Body']  # botocore.response.StreamingBody has .read()
 
     def put(self, namespace, metadata, bytes_io, bucket=None):
+        """Store a file."""
         subset = dict_subset(metadata, lambda k, v: k in (
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
@@ -139,17 +145,17 @@ class AmazonS3Storage(BasePayloadStorage):
         return result
 
     def _convert_values_to_str(self, subset):
-        '''botocore requires all metadata values be strings, not ints  :('''
+        """botocore requires all metadata values be strings, not ints  :("""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
     # TODO https should be a configuration setting
-    def get_url(self, namespace, key, seconds=DAY, https=False):
-        """Return S3 authenticated URL sans network access or phatty
-            dependencies like boto.
+    def get_url(self, namespace, metadata, seconds=DAY, https=False):
+        """Return S3 authenticated URL without making a request.
 
-            Stolen from https://gist.github.com/kanevski/655022
-            """
+        Stolen from https://gist.github.com/kanevski/655022
+        """
+        key = metadata['md5']
         composite = self._cat(namespace, key)
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
@@ -165,7 +171,7 @@ class AmazonS3Storage(BasePayloadStorage):
             )
 
     def delete(self, namespace, keys, bucket=None):
-        '''Delete many files'''
+        """Delete up to 1000 files."""
         if isinstance(keys, (str, int)):
             keys = (keys,)
         number = len(keys)

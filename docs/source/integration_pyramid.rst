@@ -2,28 +2,62 @@
 Pyramid integration
 ===================
 
-This documents describes how to integrate **keepluggable** with
-your existing Pyramid application.
+This page describes how to integrate **keepluggable** into
+your existing Pyramid application by reusing the code in the
+:py:mod:`keepluggable.web.pyramid` package.
+
+Of course you can always write your own Pyramid integration reusing our code.
 
 
-In the configuration phase
-==========================
+Configuration
+=============
 
-**keepluggable** needs to know the path to the current configuration .ini file.
-This is because the keepluggable settings are put in a separate
-``[keepluggable]`` section which it must read at startup.
-So the Pyramid settings must contain a ``__file__`` variable whose value is
-the ini file path. You can ensure this by adding the following to
-the top of your app's WSGI function::
+**keepluggable** is a pluggable sub-application that can be integrated into
+your app **multiple times**. Each time you start by creating a section in
+your INI file. Section names must start with "keepluggable ".
+In the following example 2 keepluggable storages are configured::
 
-    def get_wsgi_app(global_settings, **settings):
-        # global_settings contains the __file__, so make it available:
-        for k, v in global_settings.items():
-            settings.setdefault(k, v)
+    [app:main]
+    # Pyramid application settings go in this section.
+    # (...)
 
-        # (...)
-        # Then, after the Configurator is instantiated:
-        config.include('keepluggable.web.pyramid')
+    [keepluggable avatars]
+    # User images storage settings here
+    # (...)
+
+    [keepluggable products]
+    # The storage for product images is configured in this section.
+    # (...)
+
+
+At application startup
+======================
+
+Start by including **keepluggable** after Pyramid's Configurator
+is instantiated::
+
+    config.include('keepluggable.web.pyramid')
+
+This does almost nothing: it only makes a new config method available.
+You have to use it next::
+
+    config.add_keepluggable(  # Directive that adds a keepluggable storage
+        global_settings['__file__'],  # Path to your INI configuration file
+        'avatars',                    # A unique name for this storage.
+        )
+
+This will cause **keepluggable** to read the "[keepluggable avatars]"
+section you created earlier and set it up.
+
+Repeat the call for each separate storage::
+
+    config.add_keepluggable(  # Directive that adds a keepluggable storage
+        global_settings['__file__'],  # Path to your INI configuration file
+        'products',                   # A unique name for this storage.
+        )
+
+The first argument can be a settings dictionary, too -- but we recommend
+you set things up with INI sections as described above.
 
 
 Create a resource for the file storage
@@ -36,23 +70,27 @@ must inherit in your own resource class::
 
 
     class FilesResource(YourBaseResourceClass, BaseFilesResource):
+        keepluggable_name = "avatars"  # name of the storage for this resource
         namespace = 'myapp42'
 
-The important thing is for this resource's instances to know which
-namespace they should manage. It was done above through a static
+The ``keepluggable_name`` variable above lets the resource determine which
+of the keepluggable storages is "mounted" on this URL.
+
+You can use the ``namespace`` setting to further separate files. So this
+resource knows which namespace it manages. It was done above through a static
 class variable, but it need not be so static. It could be a Python property,
 or an instance variable set by the constructor. Your code might
 calculate the namespace based on the URL.
 
-More information is available on the
-`BaseFilesResource docstring <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/resources.py>`_.
+More information is available on the component documentation:
+:py:mod:`keepluggable.web.pyramid.resources`
 
 
 We provide a RESTful HTTP API done with Pyramid
 ===============================================
 
 Once you have a resource, you can attach views to it. See
-`views.py <http://github.com/nandoflorestan/keepluggable/blob/master/keepluggable/web/pyramid/views.py>`_.
+:py:mod:`keepluggable.web.pyramid.views`.
 
 Below we provide a description of what the HTTP API does.
 

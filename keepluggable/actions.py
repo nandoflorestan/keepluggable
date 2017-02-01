@@ -1,18 +1,30 @@
 # -*- coding: utf-8 -*-
 
-"""Action class that coordinates the workflow. You are likely to need to
-    subclass this.
+"""This module contains the base Action class."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from bag.settings import asbool
+from bag.web.exceptions import Problem
+import colander as c
+from keepluggable import read_setting, resolve_setting
+from keepluggable.exceptions import FileNotAllowed
+
+
+class BaseFilesAction(object):
+    """Action class that coordinates the workflow.
+
+    You are likely to need to subclass this.
 
     To enable this action, use this configuration::
 
         action.files = keepluggable.actions:BaseFilesAction
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
-      can be uploaded. When absent, the system does not have a maximum size.
+      can be uploaded. When zero, the system does not have a maximum size.
     - ``fls.allow_empty_files`` (boolean): whether to allow zero-length
       files to be uploaded.
     - ``fls.update_schema`` (resource spec): Colander schema that validates
@@ -20,31 +32,35 @@
       unsafe. So it is recommended that you implement a schema.
     """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from bag.settings import asbool
-from bag.web.exceptions import Problem
-from keepluggable import read_setting, resolve_setting
-from keepluggable.exceptions import FileNotAllowed
+    SETTINGS_PREFIX = 'fls.'
 
+    class ConfigurationSchema(c.Schema):
+        """Schema to validate configuration settings for BaseFilesAction."""
 
-class BaseFilesAction(object):
-    __doc__ = __doc__
+        max_file_size = c.SchemaNode(
+            c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
+The maximum file length, in bytes, that can be uploaded. \
+When zero, the system does not have a maximum size.""")
+        allow_empty_files = c.SchemaNode(
+            c.Bool(), default=False, missing=False,
+            doc="Whether to allow zero-length files to be uploaded.")
 
     def __init__(self, orchestrator, namespace):
+        """Store orchestrator, namespace and the settings for this action."""
         self.orchestrator = orchestrator
         self.namespace = namespace
+        self.settings = orchestrator.action_configuration
 
     def store_original_file(self, bytes_io, **metadata):
         """Point of entry into the workflow of storing a file.
-            You can override this method in subclasses to change the steps
-            since it is a sort of coordinator that calls one method for
-            each step.
 
-            The argument *bytes_io* is a file-like object with the payload.
-            *metadata* is a dict with the information to be persisted in
-            the metadata storage.
-            """
+        You can override this method in subclasses to change the steps
+        since it is a sort of coordinator that calls one method for each step.
+
+        The argument *bytes_io* is a file-like object with the payload.
+        *metadata* is a dict with the information to be persisted in
+        the metadata storage.
+        """
         assert metadata['file_name']
 
         # This is not a derived file such as a resized image.
@@ -61,26 +77,30 @@ class BaseFilesAction(object):
         return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
-        """Fill in the mime_type if not already known."""
-        t = metadata.get('mime_type')
-        if t is None:
-            from mimetypes import guess_type
-            metadata['mime_type'] = guess_type(metadata['file_name'])[0]
+        """Discover the MIME type from the file extension.
+
+        Otherwise just keep the browser-provided mime_type (less reliable).
+
+        If necessary, one might override this to use
+        https://pypi.python.org/pypi/python-magic instead.
+        """
+        from mimetypes import guess_type
+        typ = guess_type(metadata['file_name'])[0]
+        if typ:
+            metadata['mime_type'] = typ
 
     def _allow_storage_of(self, bytes_io, metadata):
         """Override this method if you wish to abort storing some files.
-            To abort, raise FileNotAllowed with a message explaining why.
-            """
-        settings = self.orchestrator.settings
-        maximum = read_setting(settings, 'fls.max_file_size', default=None)
-        if maximum is not None:
-            maximum = int(maximum)
-            if metadata['length'] > maximum:
-                raise FileNotAllowed(
-                    'The file is {} KB long and the maximum is {} KB.'.format(
-                        int(metadata['length'] / 1024), int(maximum / 1024)))
-        allow_empty = asbool(read_setting(
-            settings, 'fls.allow_empty_files', default=False))
+
+        To abort, raise FileNotAllowed with a message explaining why.
+        """
+        maximum = self.settings['max_file_size']
+        if maximum and metadata['length'] > maximum:
+            raise FileNotAllowed(
+                'The file is {} KB long and the maximum is {} KB.'.format(
+                    int(metadata['length'] / 1024), int(maximum / 1024)))
+
+        allow_empty = self.settings['allow_empty_files']
         if not allow_empty and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
 
@@ -110,11 +130,14 @@ class BaseFilesAction(object):
         bytes_io.seek(0)  # ...so it can be read again
 
     def _store_versions(self, bytes_io, metadata):
-        """Subclasses will have a complex workflow for storing versions."""
+        """In this base class, just call _store_file().
+
+        But any subclass will have a complex workflow for storing versions.
+        """
         return self._store_file(bytes_io, metadata)
 
     def _store_file(self, bytes_io, metadata):
-        """Saves the payload and the metadata on the 2 storage backends."""
+        """Save the payload and the metadata on the 2 storage backends."""
         storage_file = self.orchestrator.storage_file
         storage_file.put(
             namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
@@ -133,6 +156,7 @@ class BaseFilesAction(object):
                 namespace=self.namespace, metadata=metadata)
 
     def delete_file(self, key):
+        """Delete a file's metadata and payload, including derived versions."""
         # Obtain the original file.
         sm = self.orchestrator.storage_metadata
         original = sm.get(namespace=self.namespace, key=key)
@@ -152,9 +176,7 @@ class BaseFilesAction(object):
             sm.delete(self.namespace, key)
 
     def gen_originals(self, filters=None):
-        """Yields the original files in this namespace, optionally with
-            further filters.
-            """
+        """Yield original files in this namespace, optionally with filters."""
         files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:
@@ -165,16 +187,17 @@ class BaseFilesAction(object):
         url = self.orchestrator.storage_file.get_url
 
         # Add the main *href*
-        metadata['href'] = url(self.namespace, metadata['md5'])
+        metadata['href'] = url(self.namespace, metadata)
 
         # Also add *href* for each version
         for version in metadata['versions']:
-            version['href'] = url(self.namespace, version['md5'])
+            version['href'] = url(self.namespace, version)
         return metadata
 
     def update_metadata(self, id, adict):
-        schema_cls = resolve_setting(
-            self.orchestrator.settings, 'fls.update_schema', default=None)
+        """Replace the metadata for key *id* with *adict*."""
+        schema_cls = self.orchestrator.settings.resolve(
+            'fls.update_schema', default=None)
         if schema_cls is not None:
             schema = schema_cls()
             adict = schema.deserialize(adict)

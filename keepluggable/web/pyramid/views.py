@@ -1,40 +1,43 @@
 # -*- coding: utf-8 -*-
 
-'''Pyramid calls its controllers "views".'''
+"""Pyramid calls its controllers "views"."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
-from bag.web.pyramid.angular_csrf import csrf
 from pyramid.response import Response
 from keepluggable.exceptions import FileNotAllowed
-from . import _
+from . import _, get_orchestrator
 from .resources import BaseFilesResource, BaseFileResource
 
 
 def list_files(context, request):
-    orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    """Return a dict with an *items* list containing original files.
+
+    Example request with the ``curl`` command::
+
+        curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
+    """
+    orchestrator = get_orchestrator(context, request)
+    action = orchestrator.get_action(context.namespace)
     return {'items': list(action.gen_originals(filters=context.filters))}
-    # curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
 
 
 @ajax_view
 def upload_single_file(context, request):
-    '''When happy, returns the uploaded file metadata as JSON.'''
+    """When happy, returns the uploaded file metadata as JSON."""
     fieldStorage = request.POST.getone('file')
     if not fieldStorage.bytes_read:
         raise Problem(
             _('The server did not receive an uploaded file.'),
-            error_title=_('Empty POST'),
-            )
+            error_title=_('Empty POST'))
 
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['file']
 
-    orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    orchestrator = get_orchestrator(context, request)
+    action = orchestrator.get_action(context.namespace)
 
     # encoding = fieldStorage.encoding
     try:
@@ -47,29 +50,29 @@ def upload_single_file(context, request):
             error_title='"{}" was not stored. '.format(
                 fieldStorage.filename),
             file_name=fieldStorage.filename,
-            mime_type=fieldStorage.type,
-            )
+            mime_type=fieldStorage.type)
 
 
 def upload_multiple_files(context, request):
-    '''The response has **items**, an array in which each element is either
-        the metadata for an accepted file, or details of upload failure.
-        Each failure will have ``"upload_failed": true``.
-        You can test failures by uploading zero-length files.
-        The order in the ``items`` array is the same as the uploaded *files*.
-        '''
+    """Store multiple uploads from the POST variable "files".
+
+    The response has **items**, an array in which each element is either
+    the metadata for an accepted file, or details of upload failure.
+    Each failure will have ``"upload_failed": true``.
+    You can test failures by uploading zero-length files.
+    The order in the ``items`` array is the same as the uploaded *files*.
+    """
     files = request.POST.getall('files')
     if not files:
         raise Problem(
             _('The server did not receive any uploaded files.'),
-            error_title=_('Empty POST'),
-            )
+            error_title=_('Empty POST'))
 
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['files']
 
-    orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    orchestrator = get_orchestrator(context, request)
+    action = orchestrator.get_action(context.namespace)
 
     items = []
     for fieldStorage in files:
@@ -87,7 +90,7 @@ def upload_multiple_files(context, request):
                 'error_msg': str(e),
                 'file_name': fieldStorage.filename,
                 'mime_type': fieldStorage.type,
-                })
+            })
     return {'items': items}
     # Usually this sort of thing returns "201 Created" with an empty body and
     # an HTTP header containing the URL of the new resource::
@@ -97,8 +100,9 @@ def upload_multiple_files(context, request):
 
 @ajax_view
 def delete_file_and_its_versions(context, request):
-    orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    """Delete a file and its derived versions."""
+    orchestrator = get_orchestrator(context, request)
+    action = orchestrator.get_action(context.namespace)
     key_to_delete = context.__name__
     action.delete_file(key_to_delete)
     return Response(status_int=204)  # No content
@@ -106,35 +110,64 @@ def delete_file_and_its_versions(context, request):
 
 @ajax_view
 def update_metadata(context, request):
+    """Store new metadata for an existing file.
+
+    Example request using the ``curl`` command::
+
+        curl -i -H 'Content-Type: application/json'
+        -H 'Accept: application/json' -X PUT
+        -d '{"description": "Super knife", "asset_id": 1, "room_id": null,
+        "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
+    """
     adict = get_json_or_raise(request)
-    orchestrator = request.registry.settings['keepluggable']
-    action = orchestrator.files_action_cls(orchestrator, context.namespace)
+    orchestrator = get_orchestrator(context, request)
+    action = orchestrator.get_action(context.namespace)
     return action.update_metadata(context.__name__, adict)
-    # curl -i -H 'Content-Type: application/json' -H 'Accept: application/json' -X PUT -d '{"description": "Super knife", "asset_id": 1, "room_id": null, "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
 
 
-def register_pyramid_views(config, angular_csrf=False):
-    config.add_view(
-        view=csrf(list_files) if angular_csrf else list_files,
-        context=BaseFilesResource, permission='kp_view_files',
-        accept='application/json', request_method='GET', renderer='json')
+def get_operations(base_url=''):
+    """A dict containing all information about our views and URLs."""
+    return {
+        'List files in storage': dict(
+            url_templ='{}'.format(base_url),
+            context=BaseFilesResource,
+            permission='kp_view_files', accept='application/json',
+            request_method='GET', renderer='json', view=list_files),
+        'Upload a single file': dict(
+            url_templ='{}/@@single'.format(base_url),
+            context=BaseFilesResource, name='single', permission='kp_upload',
+            accept='application/json', request_method='POST',
+            renderer='json', view=upload_single_file),
+        'Delete a file': dict(
+            url_templ='{}/:md5'.format(base_url),
+            context=BaseFileResource, permission='kp_upload',
+            request_method='DELETE', view=delete_file_and_its_versions),
+        'Update file metadata': dict(
+            url_templ='{}/:file_id/@@metadata'.format(base_url),
+            context=BaseFileResource, name='metadata', permission='kp_upload',
+            accept='application/json', request_method='PUT',
+            renderer='json', view=update_metadata),
+    }
 
-    config.add_view(
-        view=csrf(upload_single_file) if angular_csrf else upload_single_file,
-        context=BaseFilesResource, name='single', permission='kp_upload',
-        accept='application/json', request_method='POST', renderer='json')
 
-    config.add_view(
-        view=csrf(delete_file_and_its_versions) if angular_csrf
-        else delete_file_and_its_versions,
-        context=BaseFileResource, permission='kp_upload',
-        request_method='DELETE')
+def register_pyramid_views(config, base_url=''):
+    """Register keepluggable views with plain Pyramid."""
+    for op in get_operations(base_url=base_url).values():
+        view = op['view']
+        config.add_view(
+            view=view,
+            context=op['context'], name=op.get('name'),
+            permission=op['permission'], accept=op.get('accept'),
+            request_method=op['request_method'], renderer=op.get('renderer'))
 
-    config.add_view(
-        view=csrf(update_metadata) if angular_csrf else update_metadata,
-        context=BaseFileResource, name='metadata', permission='kp_upload',
-        accept='application/json', request_method='PUT', renderer='json')
+
+def register_operations_with_burla(ops, base_url=''):
+    """More featureful registration of the views using ``bag.web.burla``."""
+    for op_name, adict in get_operations(base_url=base_url).items():
+        view = adict.pop('view')
+        ops.op(op_name=op_name, section='Files', **adict)(view)
 
 
 def includeme(config):
+    """Pyramid integration."""
     register_pyramid_views(config)

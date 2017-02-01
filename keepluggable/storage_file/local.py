@@ -1,6 +1,19 @@
 # -*- coding: utf-8 -*-
 
-'''Local filesystem storage backend.
+"""This module contains a simple local filesystem storage backend."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+import mimetypes
+from bag.settings import resolve_path
+from keepluggable import read_setting
+from . import BasePayloadStorage
+
+MEGABYTE = 1048576
+
+
+class LocalFilesystemStorage(BasePayloadStorage):
+    """Local filesystem storage backend.
 
     You should use this for testing only because it is not very robust.
     It stores files in a very simple directory scheme::
@@ -17,77 +30,74 @@
 
         storage.file = keepluggable.storage_file.local:LocalFilesystemStorage
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     Specify in which directory to store payloads like this::
 
         local.storage_path = some.python.resource:relative/directory
-    '''
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from time import time
-from bag.settings import resolve_path
-from keepluggable import read_setting
-from . import BasePayloadStorage
-
-MEGABYTE = 1048576
-
-
-class LocalFilesystemStorage(BasePayloadStorage):
-    __doc__ = __doc__
+    """
 
     def __init__(self, settings):
+        # super(LocalFilesystemStorage, self).__init__(orchestrator)
+        # self.storage_path = orchestrator.settings.read('local.storage_path')
         self.storage_path = read_setting(settings, 'local.storage_path')
         self.directory = resolve_path(self.storage_path).absolute()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
     def empty_bucket(self, bucket=None):
-        '''Empty the whole bucket.'''
+        """Empty the whole bucket."""
         for namespace in self.namespaces:
             self.delete_namespace(namespace)
 
     def create_bucket(self, name):
-        pass  # This backend ignores buckets.
+        """Do nothing -- this backend ignores buckets."""
+        pass
 
     @property
     def _namespaces(self):  # generator of Path objects
         return (d for d in self.directory.iterdir() if d.is_dir())
 
     @property
-    def namespaces(self):  # generator of namespace names
+    def namespaces(self):
+        """Generator of namespace names."""
         return (n.name for n in self._namespaces)
 
     def delete(self, namespace, keys, bucket=None):
-        '''Delete many files.'''
+        """Delete many files."""
         for key in keys:
             path = (self.directory / str(namespace) / key)
             if path.exists():
                 path.unlink()
 
     def gen_keys(self, namespace):
-        '''Generator of the keys in a namespace.'''
+        """Generator of the keys in a namespace."""
         return (d.name for d in (self.directory / str(namespace)).iterdir())
 
     def delete_namespace(self, namespace):
-        '''Delete all files in ``namespace``'''
+        """Delete all files in ``namespace``."""
         from shutil import rmtree
         rmtree(str(self.directory / str(namespace)))
 
-    def get_reader(self, namespace, key):
+    def get_reader(self, namespace, metadata):
+        """Return a stream for the file content."""
         try:
-            return open(str(self.directory / str(namespace) / key), 'rb')
+            return open(str(
+                self.directory / str(namespace) / self._get_filename(
+                    metadata)), 'rb')
         except FileNotFoundError as e:
             raise KeyError(
-                'Key not found: {} / {}'.format(namespace, key)) from e
+                'Key not found: {} / {}'.format(
+                    namespace, metadata['md5'])) from e
 
     def put(self, namespace, metadata, bytes_io):
+        """Store a file (``bytes_io``) inside ``namespace``."""
+        if bytes_io.tell():
+            bytes_io.seek(0)
         outdir = self.directory / str(namespace)
         if not outdir.exists():
             outdir.mkdir()  # Create the namespace directory as needed
-        outfile = outdir / metadata['md5']
+        outfile = outdir / self._get_filename(metadata)
         with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
             while True:
                 chunk = bytes_io.read(MEGABYTE)
@@ -97,10 +107,21 @@ class LocalFilesystemStorage(BasePayloadStorage):
                     break
         assert outfile.lstat().st_size == metadata['length']
 
-    def get_url(self, namespace, key, seconds=3600, https=False):
-        '''Returns a Pyramid static URL.
-            If you use another web framework, please override this method.
-            '''
+    def _get_extension(self, metadata):
+        extensions = sorted(mimetypes.guess_all_extensions(
+            metadata['mime_type'], strict=False))
+        return extensions[0] if extensions else ''
+
+    def _get_filename(self, metadata):
+        return metadata['md5'] + self._get_extension(metadata)
+
+    def get_url(self, namespace, metadata, seconds=3600, https=False):
+        """Return a Pyramid static URL.
+
+        If you use another web framework, please override this method.
+        """
         from pyramid.threadlocal import get_current_request
-        return get_current_request().static_url(
-            '/'.join((self.storage_path, str(namespace), key)))
+        return get_current_request().static_url('/'.join((
+            self.storage_path,
+            str(namespace),
+            self._get_filename(metadata))))

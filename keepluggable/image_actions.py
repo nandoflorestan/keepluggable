@@ -1,22 +1,36 @@
 # -*- coding: utf-8 -*-
 
-"""Actions that involve images, such as converting formats, resizing etc.
-    go into ImageAction.
+"""This module contains an Action class that deals with images."""
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+# import imghdr  # imghdr.what(file)
+from copy import copy
+from io import BytesIO
+from PIL import Image, ExifTags
+from bag.settings import asbool
+from .exceptions import FileNotAllowed
+from .actions import BaseFilesAction
+
+
+class ImageAction(BaseFilesAction):
+    """A specialized Action class that deals with images.
+
+    It converts formats, rotates and resizes images etc.
 
     To enable this action, use this configuration::
 
         action.files = keepluggable.image_actions:ImageAction
 
-    It inherits from BaseFilesAction, whose docstring you should read too.
+    It inherits from BaseFilesAction, so read its documentation too.
 
 
-    Installing Pillow
-    =================
+    **Installing Pillow**
 
     To use this action, you need to install the Pillow imaging library::
 
         sudo apt-get install libjpeg-dev zlib1g-dev libfreetype6-dev
-        # Create these links. If they already exist, remove them and readd them:
+        # Create these links. If they already exist, remove and readd them:
         sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib
@@ -35,9 +49,10 @@
         *** WEBPMUX support not available
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
+    - ``img.upload_must_be_img``: a boolean; if True, uploads will only be
+      accepted if they are image files. The default for this setting is False.
     - ``img.store_original``: a boolean; if False, the original upload will
       not have its payload stored. The metadata is always stored in an effort
       to recognize repeated uploads of the same file. The default for this
@@ -49,7 +64,7 @@
 
     Here is an example configuration::
 
-        [keepluggable]
+        [keepluggable_page_images]
         # (...)
         img.store_original = False
         img.versions =
@@ -61,33 +76,23 @@
         img.versions_quality = 90
     """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-# import imghdr  # imghdr.what(file)
-from copy import copy
-from io import BytesIO
-from PIL import Image, ExifTags
-from bag.settings import asbool
-from .exceptions import FileNotAllowed
-from .actions import BaseFilesAction
-
-
-class ImageAction(BaseFilesAction):
-    __doc__ = __doc__
-
     EXIF_TAGS = {v: k for (k, v) in ExifTags.TAGS.items()}  # str to int map
 
     EXIF_ROTATION_FIX = {1: 0, 8: 90, 3: 180, 6: 270}
 
     def __init__(self, *a, **kw):
+        """Store configuration settings, especially about the versions."""
         super(ImageAction, self).__init__(*a, **kw)
 
+        # TODO: Schema for these configuration settings
         # Read configuration
-        self.store_original = asbool(self.orchestrator.settings.get(
-            'img.store_original', True))
-        self.quality = int(self.orchestrator.settings.get(
-            'img.versions_quality', 90))
-        versions = self.orchestrator.settings.get(
+        self.upload_must_be_img = asbool(self.orchestrator.settings.read(
+            'img.upload_must_be_img', default=False))
+        self.store_original = asbool(self.orchestrator.settings.read(
+            'img.store_original', default=True))
+        self.quality = int(self.orchestrator.settings.read(
+            'img.versions_quality', default=90))
+        versions = self.orchestrator.settings.read(
             'img.versions').strip().split('\n')
         self.versions = []
         for astring in versions:
@@ -101,7 +106,7 @@ class ImageAction(BaseFilesAction):
                 'width': int(parts[1]),
                 'height': int(parts[2]),
                 'name': parts[3],
-                }
+            }
             self.versions.append(adict)
 
         # We want to process from smaller to bigger, so order versions by area:
@@ -119,9 +124,11 @@ class ImageAction(BaseFilesAction):
         return img
 
     def _rotate_exif_orientation(self, img):
-        """Some cameras do not rotate the image, they just add orientation
-            metadata to the file, so we rotate it here.
-            """
+        """Rotate the image according to metadata in the payload.
+
+        Some cameras do not rotate the image, they just add orientation
+        metadata to the file, so we rotate it here.
+        """
         if not hasattr(img, '_getexif'):
             return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
         tags = img._getexif()
@@ -137,7 +144,12 @@ class ImageAction(BaseFilesAction):
         # We override this method to deal with images.
         is_image = metadata['mime_type'].startswith('image')
         if not is_image:
-            return self._store_file(bytes_io, metadata)  # from superclass
+            if self.upload_must_be_img:
+                raise FileNotAllowed(
+                    'The file "{}" is not an image, so it was not stored.'
+                    .format(metadata['file_name']))
+            else:
+                return self._store_file(bytes_io, metadata)  # from superclass
 
         # Probably don't need to verify the image since we are loading it
         # original = self._img_from_stream(bytes_io)
@@ -195,16 +207,17 @@ class ImageAction(BaseFilesAction):
             #     return background
             # else:
             return original.convert('RGB')  # Creates a copy
-        except OSError as e:
+        except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
                 'the server is unable to convert it.'.format(
                     metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
-        """Return a new image, converted from ``original``, using
-            ``version_config`` and setting ``metadata``.
-            """
+        """Return a new image, converted from ``original``.
+
+        Do it using ``version_config`` and setting ``metadata``.
+        """
         fmt = version_config['format']
         assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
         img = self._copy_img(original, metadata)
@@ -231,9 +244,9 @@ class ImageAction(BaseFilesAction):
 
         # Add main *href* if we are storing original images or if not image
         if fil.get('image_width') is None or self.store_original:
-            fil['href'] = url(self.namespace, fil['md5'])
+            fil['href'] = url(self.namespace, fil)
 
         # Also add *href* for each version
         for version in fil['versions']:
-            version['href'] = url(self.namespace, version['md5'])
+            version['href'] = url(self.namespace, version)
         return fil
