@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 
-"""Actions that involve images, such as converting formats, resizing etc.
-    go into ImageAction.
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+# import imghdr  # imghdr.what(file)
+from copy import copy
+from io import BytesIO
+from PIL import Image, ExifTags
+from bag.settings import asbool
+from .exceptions import FileNotAllowed
+from .actions import BaseFilesAction
+
+
+class ImageAction(BaseFilesAction):
+    """Actions that involve images, such as converting formats, resizing etc.
 
     To enable this action, use this configuration::
 
@@ -10,8 +21,7 @@
     It inherits from BaseFilesAction, whose docstring you should read too.
 
 
-    Installing Pillow
-    =================
+    **Installing Pillow**
 
     To use this action, you need to install the Pillow imaging library::
 
@@ -35,8 +45,7 @@
         *** WEBPMUX support not available
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``img.store_original``: a boolean; if False, the original upload will
       not have its payload stored. The metadata is always stored in an effort
@@ -60,20 +69,6 @@
             jpeg  160  160 thumb
         img.versions_quality = 90
     """
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-# import imghdr  # imghdr.what(file)
-from copy import copy
-from io import BytesIO
-from PIL import Image, ExifTags
-from bag.settings import asbool
-from .exceptions import FileNotAllowed
-from .actions import BaseFilesAction
-
-
-class ImageAction(BaseFilesAction):
-    __doc__ = __doc__
 
     EXIF_TAGS = {v: k for (k, v) in ExifTags.TAGS.items()}  # str to int map
 
@@ -119,9 +114,11 @@ class ImageAction(BaseFilesAction):
         return img
 
     def _rotate_exif_orientation(self, img):
-        """Some cameras do not rotate the image, they just add orientation
-            metadata to the file, so we rotate it here.
-            """
+        """Rotate the image if necessary.
+
+        Some cameras do not rotate the image, they just add orientation
+        metadata to the file, so we rotate it here.
+        """
         if not hasattr(img, '_getexif'):
             return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
         tags = img._getexif()
@@ -202,9 +199,10 @@ class ImageAction(BaseFilesAction):
                     metadata['file_name']))
 
     def _convert_img(self, original, metadata, version_config):
-        """Return a new image, converted from ``original``, using
-            ``version_config`` and setting ``metadata``.
-            """
+        """Return a new image, converted from ``original``.
+
+        ...using ``version_config`` and setting ``metadata``.
+        """
         fmt = version_config['format']
         assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
         img = self._copy_img(original, metadata)

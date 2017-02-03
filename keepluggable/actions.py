@@ -1,15 +1,24 @@
 # -*- coding: utf-8 -*-
 
-"""Action class that coordinates the workflow. You are likely to need to
-    subclass this.
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from bag.settings import asbool
+from bag.web.exceptions import Problem
+from keepluggable import read_setting, resolve_setting
+from keepluggable.exceptions import FileNotAllowed
+
+
+class BaseFilesAction(object):
+    """Action class that coordinates the workflow.
+
+    You are likely to need to subclass this.
 
     To enable this action, use this configuration::
 
         action.files = keepluggable.actions:BaseFilesAction
 
 
-    Configuration settings
-    ======================
+    **Configuration settings**
 
     - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
       can be uploaded. When absent, the system does not have a maximum size.
@@ -20,31 +29,21 @@
       unsafe. So it is recommended that you implement a schema.
     """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from bag.settings import asbool
-from bag.web.exceptions import Problem
-from keepluggable import read_setting, resolve_setting
-from keepluggable.exceptions import FileNotAllowed
-
-
-class BaseFilesAction(object):
-    __doc__ = __doc__
-
     def __init__(self, orchestrator, namespace):
         self.orchestrator = orchestrator
         self.namespace = namespace
 
     def store_original_file(self, bytes_io, **metadata):
         """Point of entry into the workflow of storing a file.
-            You can override this method in subclasses to change the steps
-            since it is a sort of coordinator that calls one method for
-            each step.
 
-            The argument *bytes_io* is a file-like object with the payload.
-            *metadata* is a dict with the information to be persisted in
-            the metadata storage.
-            """
+        You can override this method in subclasses to change the steps
+        since it is a sort of coordinator that calls one method for
+        each step.
+
+        The argument *bytes_io* is a file-like object with the payload.
+        *metadata* is a dict with the information to be persisted in
+        the metadata storage.
+        """
         assert metadata['file_name']
 
         # This is not a derived file such as a resized image.
@@ -69,8 +68,9 @@ class BaseFilesAction(object):
 
     def _allow_storage_of(self, bytes_io, metadata):
         """Override this method if you wish to abort storing some files.
-            To abort, raise FileNotAllowed with a message explaining why.
-            """
+
+        To abort, raise FileNotAllowed with a message explaining why.
+        """
         settings = self.orchestrator.settings
         maximum = read_setting(settings, 'fls.max_file_size', default=None)
         if maximum is not None:
@@ -114,7 +114,7 @@ class BaseFilesAction(object):
         return self._store_file(bytes_io, metadata)
 
     def _store_file(self, bytes_io, metadata):
-        """Saves the payload and the metadata on the 2 storage backends."""
+        """Save the payload and the metadata on the 2 storage backends."""
         storage_file = self.orchestrator.storage_file
         storage_file.put(
             namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
@@ -152,9 +152,10 @@ class BaseFilesAction(object):
             sm.delete(self.namespace, key)
 
     def gen_originals(self, filters=None):
-        """Yields the original files in this namespace, optionally with
-            further filters.
-            """
+        """Yield the original files in this namespace
+
+        ...optionally with further filters.
+        """
         files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:

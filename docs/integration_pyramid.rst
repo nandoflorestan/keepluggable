@@ -2,7 +2,7 @@
 Pyramid integration
 ===================
 
-This documents describes how to integrate **keepluggable** with
+This document describes how to integrate **keepluggable** with
 your existing Pyramid application.
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''Integration with the Pyramid web framework.'''
+"""Integration with the Pyramid web framework."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -13,7 +13,7 @@ del TranslationStringFactory
 
 
 def get_orchestrator(ini_path):
-    '''Returns an Orchestrator instance.'''
+    """Return an Orchestrator instance."""
     parser = ConfigParser()
     parser.read(ini_path)
     try:

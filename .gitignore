@@ -7,6 +7,8 @@
 *.egg
 *.egg-info
 dist
+docs/_build/
+docs/source/
 build
 eggs
 parts
