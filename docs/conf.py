@@ -312,3 +312,23 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+
+
+# Hack to make crummy readthedocs generate the API:
+# =================================================
+
+def run_apidoc(_):
+    """Event handler that executes apidoc to create the API directory."""
+    print('AAAAAAAAAAAAAAAAAAAAHHHHHHAAAAAAAAAAAAAAAAAAAAA!!!!!!!!!!!111')
+    from sphinx.apidoc import main as generate_api
+    import os
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    sys.path.append(os.path.join(cur_dir, '..'))
+    module = '.'
+    output_path = os.path.join(cur_dir, 'source')
+    generate_api(['-e', '-o', output_path, module, '--force'])
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
