@@ -314,7 +314,7 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-
+'''
 # Hack to make crummy readthedocs generate the API:
 # =================================================
 
@@ -325,10 +325,12 @@ def run_apidoc(_):
     import os
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     sys.path.append(os.path.join(cur_dir, '..'))
-    module = '.'
+    module = '../keepluggable'
     output_path = os.path.join(cur_dir, 'source')
     generate_api(['-e', '-o', output_path, module, '--force'])
+    print('EEEEEEEEEEEEEEEEEEENNNNNNNNNNNNDDDDDDDDDD!!!!!!!!!!!!11111')
 
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
+'''

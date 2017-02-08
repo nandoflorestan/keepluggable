@@ -6,9 +6,11 @@ Scope
 =====
 
 **keepluggable** is an open source,
-`(MIT licensed) <http://github.com/nandoflorestan/keepluggable/blob/master/docs/LICENSE.rst>`_,
+`(MIT licensed) <http://docs.nando.audio/keepluggable/latest/LICENSE.html>`_,
 highly configurable Python library to **manage storage of images and
 other documents** (any kind of file, really), with metadata.
+
+The documentation is at http://docs.nando.audio/keepluggable/latest/
 
 The file **metadata** can be stored in a different place than the file payload.
 This is recommended because many operations, such as listing files,
@@ -53,7 +55,7 @@ creates configurable smaller versions of it.
 Some cameras do not rotate the photo, they just add orientation metadata to the
 image file, so keepluggable rotates it for you, before creating the thumbnails.
 
-`Get started with keepluggable! <http://github.com/nandoflorestan/keepluggable/blob/master/docs/getting-started.rst>`_
+`Get started with keepluggable! <http://docs.nando.audio/keepluggable/latest/getting-started.html>`_
 
 
 Future
