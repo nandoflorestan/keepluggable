@@ -131,6 +131,8 @@ class SQLAlchemyMetadataStorage(object):
         # entity = self._query(namespace, key=key, sas=sas).one()
         # entity = self._query(namespace, sas=sas).get(id)
         entity = sas.query(self.file_model_cls).get(id)
+        assert entity is not None, "Unknown file #{} in namespace {}".format(
+            id, namespace)
         self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
         return entity.to_dict(sas)
