@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Integration with the Pyramid web framework.
 
 Usage is described in the "Pyramid integration" page of the documentation.

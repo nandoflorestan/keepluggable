@@ -1,6 +1,6 @@
-===============
-Getting started
-===============
+=================================
+Getting started with keepluggable
+=================================
 
 ::
 
@@ -36,7 +36,7 @@ Selecting components
   is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
 - :py:class:`keepluggable.image_actions.ImageAction`
   is a workflow class that does everything that BaseFilesAction does, but has
-  additional features for image files.
+  additional features for image files. You must install Pillow to use this.
 
 
 Understanding configuration

@@ -10,4 +10,4 @@ rm -r $API
 sphinx-apidoc -H "keepluggable API" --separate -o $API $PACKAGE && \
 make html && \
 cd - > /dev/null && \
-echo "To read the local docs, type:  xdg-open docs/build/html/index.html"
+echo "To read the local docs, type:  xdg-open docs/_build/html/index.html"

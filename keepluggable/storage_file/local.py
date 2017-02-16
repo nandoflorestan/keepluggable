@@ -6,7 +6,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import mimetypes
 from bag.settings import resolve_path
-from keepluggable import read_setting
 from . import BasePayloadStorage
 
 MEGABYTE = 1048576
@@ -37,10 +36,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
         local.storage_path = some.python.resource:relative/directory
     """
 
-    def __init__(self, settings):
-        # super(LocalFilesystemStorage, self).__init__(orchestrator)
-        # self.storage_path = orchestrator.settings.read('local.storage_path')
-        self.storage_path = read_setting(settings, 'local.storage_path')
+    def __init__(self, orchestrator):
+        super(LocalFilesystemStorage, self).__init__(orchestrator)
+        self.storage_path = orchestrator.settings.read('local.storage_path')
         self.directory = resolve_path(self.storage_path).absolute()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)

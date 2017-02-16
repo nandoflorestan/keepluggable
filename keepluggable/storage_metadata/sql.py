@@ -80,7 +80,7 @@ class SQLAlchemyMetadataStorage(object):
     def put(self, namespace, metadata, sas=None):
         """Create or update a file corresponding to the given ``metadata``.
 
-        Return a 2-tuple containing the ID of the entity
+        This method returns a 2-tuple containing the ID of the entity
         and a boolean saying whether the entity is new or existing.
 
         Instead of overriding this method, it is probably better for
@@ -134,6 +134,8 @@ class SQLAlchemyMetadataStorage(object):
         # entity = self._query(namespace, key=key, sas=sas).one()
         # entity = self._query(namespace, sas=sas).get(id)
         entity = sas.query(self.file_model_cls).get(id)
+        assert entity is not None, "Unknown file #{} in namespace {}".format(
+            id, namespace)
         self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
         return entity.to_dict(sas)
@@ -156,8 +158,7 @@ class SQLAlchemyMetadataStorage(object):
             yield tup[0]
 
     def get(self, namespace, key, sas=None):
-        """Dict containing the metadata of one file, or None if not found.
-        """
+        """Dict containing the metadata of one file, or None if not found."""
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
         return entity.to_dict(sas) if entity else None

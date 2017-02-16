@@ -12,8 +12,8 @@ with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 requires = [  # Each backend may have additional dependencies.
-    'nine', 'bag>=0.8.0',
-    ]
+    'nine', 'bag>=1.0.0',
+]
 
 if version_info[:2] < (3, 4):
     requires.append('pathlib')  # 'enum34'
@@ -22,7 +22,7 @@ if version_info[:2] < (3, 4):
 
 setup(
     name='keepluggable',
-    version='0.3.1.dev1',
+    version='0.3.3.dev1',
     description='Manages storage of images and other files, with metadata.'
     ' Also offers an HTTP API done on Pyramid.',
     long_description=long_description,
@@ -36,9 +36,9 @@ setup(
         'Programming Language :: Python :: 2',
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         'Programming Language :: Python :: Implementation :: CPython',
         "Framework :: Pyramid",
         'Topic :: Database',

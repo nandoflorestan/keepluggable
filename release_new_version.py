@@ -28,8 +28,8 @@ Releaser(
 
     # ==================  Before releasing, do some checks  ===================
     Shell('python setup.py test'),  # First of all ensure tests pass
-    CheckRstFiles,  # Documentation: recursively verify ALL .rst files, or:
-    # CheckRstFiles('README.rst', 'CHANGES.rst', 'LICENSE.rst'),  # just a few.
+    # CheckRstFiles,  # Documentation: recursively verify ALL .rst files, or:
+    CheckRstFiles('README.rst', 'docs/LICENSE.rst'),  # just a few.
     # TODO IMPLEMENT CompileAndVerifyTranslations,
     EnsureGitClean,   # There are no uncommitted changes in tracked files.
     EnsureGitBranch,  # I must be in the branch specified in config
@@ -43,8 +43,8 @@ Releaser(
     Shell('./build_sphinx_documentation.sh'),
     GitCommitVersionNumber,
     GitTag,  # Locally tag the current commit with the new version number
-    PypiRegister,  # Creates the new release at http://pypi.python.org
-    PypiUpload,  # Uploads a source distribution to http://pypi.python.org
+    PypiRegister,           # Create the new release at https://pypi.python.org
+    PypiUpload,   # Make and upload a source .tar.gz to https://pypi.python.org
     PypiUploadWheel,  # Make and upload source wheel to https://pypi.python.org
 
     # ===========  Post-release: set development version and push  ============

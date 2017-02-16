@@ -7,7 +7,6 @@ from __future__ import (absolute_import, division, print_function,
 from bag.settings import asbool
 from bag.web.exceptions import Problem
 import colander as c
-from keepluggable import read_setting, resolve_setting
 from keepluggable.exceptions import FileNotAllowed
 
 
@@ -176,7 +175,10 @@ When zero, the system does not have a maximum size.""")
             sm.delete(self.namespace, key)
 
     def gen_originals(self, filters=None):
-        """Yield original files in this namespace, optionally with filters."""
+        """Yield the original files in this namespace.
+
+        ...optionally with further filters.
+        """
         files = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)
         for fil in files:

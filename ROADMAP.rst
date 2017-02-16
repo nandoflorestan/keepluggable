@@ -6,9 +6,6 @@ ROADMAP
 This version
 ============
 
-- Build wheel
-- Upload Sphinx docs with releaser
-
 
 Urgent
 ======
