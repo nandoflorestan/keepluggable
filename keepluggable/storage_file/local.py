@@ -44,7 +44,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
             self.directory.mkdir(parents=True)
 
     def empty_bucket(self, bucket=None):
-        """Empty the whole bucket."""
+        """Empty the whole bucket, deleting namespaces and files."""
         for namespace in self.namespaces:
             self.delete_namespace(namespace)
 

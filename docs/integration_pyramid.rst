@@ -44,7 +44,7 @@ You have to use it next::
     config.add_keepluggable(  # Directive that adds a keepluggable storage
         global_settings['__file__'],  # Path to your INI configuration file
         'avatars',                    # A unique name for this storage.
-        )
+    )
 
 This will cause **keepluggable** to read the "[keepluggable avatars]"
 section you created earlier and set it up.
@@ -54,7 +54,7 @@ Repeat the call for each separate storage::
     config.add_keepluggable(  # Directive that adds a keepluggable storage
         global_settings['__file__'],  # Path to your INI configuration file
         'products',                   # A unique name for this storage.
-        )
+    )
 
 The first argument can be a settings dictionary, too -- but we recommend
 you set things up with INI sections as described above.

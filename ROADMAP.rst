@@ -6,20 +6,21 @@ ROADMAP
 This version
 ============
 
+- Locally, store files with their extension so webservers know the MIME type
+
 
 Urgent
 ======
 
 - Use reg instead of subclassing
-- Tests
+- Add automated tests
 - Use / instead of - to separate the namespace in the filename
-- Store files with their extension so webservers know the MIME type
 
 
 Ideas
 =====
 
-- CSRF protection
+- Review CSRF protection
 - Read EXIF data to fill in date and location, hopefully before the user types these
 - Read other EXIF, IPTC, and XMP metadata in photo files
 - Detect whether an image is already in the store and let the user edit it

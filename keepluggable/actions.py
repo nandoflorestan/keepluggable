@@ -4,7 +4,6 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from bag.settings import asbool
 from bag.web.exceptions import Problem
 import colander as c
 from keepluggable.exceptions import FileNotAllowed
@@ -76,7 +75,7 @@ When zero, the system does not have a maximum size.""")
         return self._complement(metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
-        """Discover the MIME type from the file extension.
+        """Discover the MIME type from the uploaded file extension.
 
         Otherwise just keep the browser-provided mime_type (less reliable).
 

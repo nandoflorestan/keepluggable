@@ -95,7 +95,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
     def empty_bucket(self, bucket=None):
-        """Delete all files in the specified bucket. DANGEROUS"""
+        """Delete all files in the specified bucket. DANGEROUS."""
         # TODO Request up to 1000 files at a time
         bucket = self._get_bucket(bucket)
         items = list(bucket.objects.all())
@@ -155,8 +155,7 @@ class AmazonS3Storage(BasePayloadStorage):
 
         Stolen from https://gist.github.com/kanevski/655022
         """
-        key = metadata['md5']
-        composite = self._cat(namespace, key)
+        composite = self._cat(namespace, metadata['md5'])
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
             seconds, self.bucket_name, composite).encode('ascii')

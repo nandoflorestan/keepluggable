@@ -187,29 +187,31 @@ class BaseFile(ID, MinimalBase):
     # id = Primary key that exists because we inherit from ID
     md5 = Column(Unicode(32), nullable=False,
                  doc='hashlib.md5(file_content).hexdigest()')
-    file_name = Column(Unicode(300))  # includes the file_extension
+    file_name = Column(
+        Unicode(300),
+        doc="Name of the original uploaded file, including extension")
     length = Column(Integer, nullable=False, doc='File size in bytes')
     created = now_column()  # Stores the moment the instance is created
     mime_type = Column(Unicode(255), doc='MIME type; e.g. "image/jpeg"')
     # http://stackoverflow.com/questions/643690/maximum-mimetype-length-when-storing-type-in-db
     image_width = Column(Integer, doc='Image width in pixels')
     image_height = Column(Integer, doc='Image height in pixels')
-    image_format = Column(Unicode(20), doc='JPEG, PNG, GIF etc.')
+    image_format = Column(Unicode(20), doc='jpeg, png, gif etc.')
     version = Column(Unicode(20), default='original')
 
     @property
     def is_image(self):
-        """self.image_width is not None"""
+        """self.image_width is not None."""
         return self.image_width is not None
 
     @property
     def aspect_ratio(self):
-        """self.image_width / self.image_height"""
+        """self.image_width / self.image_height."""
         return self.image_width / self.image_height
 
     @property
     def is_the_original(self):
-        """self.original_id is None"""
+        """self.original_id is None."""
         return self.original_id is None
 
     def get_original(self, sas):

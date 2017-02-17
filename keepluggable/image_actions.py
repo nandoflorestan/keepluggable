@@ -102,7 +102,7 @@ class ImageAction(BaseFilesAction):
                 'The configuration line "{}" should have 4 parts'.format(
                     astring)
             adict = {
-                'format': parts[0].upper(),
+                'format': parts[0].lower(),
                 'width': int(parts[1]),
                 'height': int(parts[2]),
                 'name': parts[3],
@@ -146,8 +146,8 @@ class ImageAction(BaseFilesAction):
         if not is_image:
             if self.upload_must_be_img:
                 raise FileNotAllowed(
-                    'The file "{}" is not an image, so it was not stored.'
-                    .format(metadata['file_name']))
+                    'The file name "{}" lacks a supported image extension, '
+                    'so it was not stored.'.format(metadata['file_name']))
             else:
                 return self._store_file(bytes_io, metadata)  # from superclass
 
@@ -219,14 +219,14 @@ class ImageAction(BaseFilesAction):
         Do it using ``version_config`` and setting ``metadata``.
         """
         fmt = version_config['format']
-        assert fmt in ('PNG', 'JPEG', 'GIF'), 'Unknown format {}'.format(fmt)
+        assert fmt in ('png', 'jpeg', 'gif'), 'Unknown format: {}'.format(fmt)
         img = self._copy_img(original, metadata)
 
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))
 
         stream = BytesIO()
-        img.save(stream, format=fmt, quality=self.quality, optimize=1)
+        img.save(stream, format=fmt.upper(), quality=self.quality, optimize=1)
         img.stream = stream  # so we can recover it elsewhere
 
         # Fill in the metadata
