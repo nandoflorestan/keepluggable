@@ -161,17 +161,17 @@ When zero, the system does not have a maximum size.""")
         if original is None:
             raise Problem('The file was not found.', status_int=404)
 
-        # Add itself to the list of hashes indicating the versions.
-        keys = [v['md5'] for v in original['versions']]
-        keys.append(original['md5'])
+        # We are deleting the original and its versions.
+        metadatas = [v for v in original['versions']]
+        metadatas.append(original)
 
-        # Delete payloads
-        self.orchestrator.storage_file.delete(self.namespace, keys)
+        # Delete the payloads
+        self.orchestrator.storage_file.delete(self.namespace, metadatas)
 
         # Delete metadata entities
         # sm.delete_with_versions(self.namespace, original['md5'])
-        for key in keys:
-            sm.delete(self.namespace, key)
+        for metadata in metadatas:
+            sm.delete(self.namespace, metadata['md5'])
 
     def gen_originals(self, filters=None):
         """Yield the original files in this namespace.

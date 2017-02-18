@@ -73,7 +73,7 @@ class AmazonS3Storage(BasePayloadStorage):
 
     def delete_bucket(self, bucket=None):
         """Delete the entire bucket."""
-        bucket = self._get_bucket(bucket)
+        bucket = self._get_bucket(bucket)  # self.bucket
         # All items must be deleted before the bucket itself
         self.empty_bucket(bucket)
         return bucket.delete()
@@ -119,6 +119,7 @@ class AmazonS3Storage(BasePayloadStorage):
             self.delete(namespace, key, bucket=bucket)
 
     def get_reader(self, namespace, metadata, bucket=None):
+        """Return a stream for the file content."""
         key = metadata['md5']
         try:
             adict = self._get_object(namespace, key, bucket).get()
@@ -145,7 +146,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return result
 
     def _convert_values_to_str(self, subset):
-        """botocore requires all metadata values be strings, not ints  :("""
+        """botocore requires all metadata values be strings, not ints..."""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
@@ -169,13 +170,12 @@ class AmazonS3Storage(BasePayloadStorage):
                 signature=quote(base64.encodestring(digest).strip()),
             )
 
-    def delete(self, namespace, keys, bucket=None):
+    def delete(self, namespace, metadatas, bucket=None):
         """Delete up to 1000 files."""
-        if isinstance(keys, (str, int)):
-            keys = (keys,)
-        number = len(keys)
+        number = len(metadatas)
         assert number <= 1000, 'Amazon allows us to delete only 1000 ' \
             'objects per request; you tried {}'.format(number)
         # return self._get_object(namespace, key, bucket).delete()
+        keys = (m['md5'] for m in metadatas)
         return self._get_bucket(bucket).delete_objects(Delete={
             'Objects': [{'Key': self._cat(namespace, k) for k in keys}]})
