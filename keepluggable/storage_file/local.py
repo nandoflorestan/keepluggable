@@ -115,10 +115,12 @@ class LocalFilesystemStorage(BasePayloadStorage):
     def _get_filename(self, metadata):
         return metadata['md5'] + self._get_extension(metadata)
 
-    def get_url(self, namespace, metadata, seconds=3600, https=False):
+    def get_url(self, namespace, metadata, seconds=3600, https=True):
         """Return a Pyramid static URL.
 
         If you use another web framework, please override this method.
+
+        The ``seconds`` and ``https`` params are ignored.
         """
         from pyramid.threadlocal import get_current_request
         return get_current_request().static_url('/'.join((

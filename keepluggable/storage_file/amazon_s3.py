@@ -150,8 +150,7 @@ class AmazonS3Storage(BasePayloadStorage):
         for k in subset.keys():
             subset[k] = str(subset[k])
 
-    # TODO https should be a configuration setting
-    def get_url(self, namespace, metadata, seconds=DAY, https=False):
+    def get_url(self, namespace, metadata, seconds=DAY, https=True):
         """Return S3 authenticated URL without making a request.
 
         Stolen from https://gist.github.com/kanevski/655022
