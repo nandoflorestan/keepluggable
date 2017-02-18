@@ -162,7 +162,6 @@ class ImageAction(BaseFilesAction):
         self._copy_img(original, metadata)  # Try to raise before storing
 
         #  No exceptions were raised,  so store the original file
-        metadata['image_format'] = original.format
         metadata['image_width'], metadata['image_height'] = original.size
         if self.store_original:  # Optionally store original payload
             self._store_file(bytes_io, metadata)
@@ -231,7 +230,6 @@ class ImageAction(BaseFilesAction):
 
         # Fill in the metadata
         metadata['mime_type'] = 'image/' + fmt
-        metadata['image_format'] = fmt
         metadata['image_width'], metadata['image_height'] = img.size
         self._compute_length(stream, metadata)
         self._compute_md5(stream, metadata)

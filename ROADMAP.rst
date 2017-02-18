@@ -6,7 +6,7 @@ ROADMAP
 This version
 ============
 
-- Locally, store files with their extension so webservers know the MIME type
+- Fix inability to store .svg images
 
 
 Urgent

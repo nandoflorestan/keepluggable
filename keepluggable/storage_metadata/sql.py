@@ -196,13 +196,7 @@ class BaseFile(ID, MinimalBase):
     # http://stackoverflow.com/questions/643690/maximum-mimetype-length-when-storing-type-in-db
     image_width = Column(Integer, doc='Image width in pixels')
     image_height = Column(Integer, doc='Image height in pixels')
-    image_format = Column(Unicode(20), doc='jpeg, png, gif etc.')
     version = Column(Unicode(20), default='original')
-
-    @property
-    def is_image(self):
-        """self.image_width is not None."""
-        return self.image_width is not None
 
     @property
     def aspect_ratio(self):
