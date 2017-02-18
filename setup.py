@@ -61,4 +61,4 @@ setup(
     # [paste.app_factory]
     # main = keepluggable:main
     # """,
-    )
+)

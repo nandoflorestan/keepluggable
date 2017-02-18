@@ -54,7 +54,7 @@ class AmazonS3Storage(BasePayloadStorage):
         self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
-    def create_bucket(self, name):
+    def create_bucket(self, name):  # Not part of the API
         return self.s3.create_bucket(Name=name)
 
     @property
@@ -71,7 +71,7 @@ class AmazonS3Storage(BasePayloadStorage):
             return self.bucket
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
-    def delete_bucket(self, bucket=None):
+    def delete_bucket(self, bucket=None):  # Not part of the API
         """Delete the entire bucket."""
         bucket = self._get_bucket(bucket)  # self.bucket
         # All items must be deleted before the bucket itself
@@ -94,7 +94,7 @@ class AmazonS3Storage(BasePayloadStorage):
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
-    def empty_bucket(self, bucket=None):
+    def empty_bucket(self, bucket=None):  # Not part of the API
         """Delete all files in the specified bucket. DANGEROUS."""
         # TODO Request up to 1000 files at a time
         bucket = self._get_bucket(bucket)

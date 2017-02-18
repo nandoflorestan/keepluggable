@@ -48,10 +48,6 @@ class LocalFilesystemStorage(BasePayloadStorage):
         for namespace in self.namespaces:
             self.delete_namespace(namespace)
 
-    def create_bucket(self, name):
-        """Do nothing -- this backend ignores buckets."""
-        pass
-
     @property
     def _namespaces(self):  # generator of Path objects
         return (d for d in self.directory.iterdir() if d.is_dir())
@@ -61,7 +57,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         """Generator of namespace names."""
         return (n.name for n in self._namespaces)
 
-    def delete(self, namespace, metadatas, bucket=None):
+    def delete(self, namespace, metadatas):
         """Delete many files."""
         for metadata in metadatas:
             path = (self.directory / str(namespace) /

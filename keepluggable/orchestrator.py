@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from nine.decorator import reify
 from zope.interface import Interface, implementer, Attribute
+from .storage_file import BasePayloadStorage
 
 
 class IOrchestrator(Interface):
@@ -34,6 +35,7 @@ class Orchestrator(object):
 
     def _instantiate_payload_storage(self):
         storage_cls = self.settings.resolve('storage.file')
+        assert issubclass(storage_cls, BasePayloadStorage)
         self.storage_file = storage_cls(self)
 
     def _instantiate_metadata_storage(self):
