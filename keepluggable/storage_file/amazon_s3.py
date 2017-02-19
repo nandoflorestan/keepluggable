@@ -177,4 +177,4 @@ class AmazonS3Storage(BasePayloadStorage):
         # return self._get_object(namespace, key, bucket).delete()
         keys = (m['md5'] for m in metadatas)
         return self._get_bucket(bucket).delete_objects(Delete={
-            'Objects': [{'Key': self._cat(namespace, k) for k in keys}]})
+            'Objects': [{'Key': self._cat(namespace, k)} for k in keys]})
