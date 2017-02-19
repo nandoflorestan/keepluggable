@@ -8,19 +8,19 @@ This version
 
 - Fix inability to store .svg images
 - Use / instead of - to separate the namespace in the filename
+- Review CSRF protection
 
 
 Urgent
 ======
 
-- Use reg instead of subclassing
-- Add automated tests
+- Add functional tests
+- Maybe use reg instead of subclassing actions?
 
 
 Ideas
 =====
 
-- Review CSRF protection
 - Read EXIF data to fill in date and location, hopefully before the user types these
 - Read other EXIF, IPTC, and XMP metadata in photo files
 - Detect whether an image is already in the store and let the user edit it
