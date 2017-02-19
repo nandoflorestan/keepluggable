@@ -1,8 +1,10 @@
+"""This namespace contains strategies for storing file payloads."""
+
 from abc import ABCMeta, abstractmethod
 
 
 class BasePayloadStorage(metaclass=ABCMeta):
-    """Abstract base class ― the interface for payload storage backends."""
+    """Abstract base class ― formal interface for payload storage backends."""
 
     def __init__(self, orchestrator):
         """The constructor just stores the orchestrator instance."""

@@ -1,4 +1,4 @@
-"""keepluggable contains reusable code that stores files and images."""
+"""**keepluggable** contains reusable code that stores files and images."""
 
 from bag.settings import resolve  # TODO Replace
 REQUIRED = object()

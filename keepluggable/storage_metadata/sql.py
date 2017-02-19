@@ -1,4 +1,5 @@
 """Component that stores file metadata in a relational database."""
+
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode

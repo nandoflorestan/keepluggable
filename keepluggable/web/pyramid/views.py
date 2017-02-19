@@ -1,4 +1,8 @@
-"""Pyramid calls its controllers "views"."""
+"""Pyramid calls its controllers "views".
+
+Views must be thin. They marshal data into *actions* that contain the actual
+business logic ― which thus becomes reusable.
+"""
 
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise

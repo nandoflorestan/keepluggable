@@ -1,4 +1,4 @@
-"""The "orchestrator" coordinates the components you chose in configuration."""
+"""The *Orchestrator* coordinates the components you chose in configuration."""
 
 from bag.reify import reify
 from zope.interface import Interface, implementer, Attribute
