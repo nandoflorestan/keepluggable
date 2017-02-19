@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+"""The "orchestrator" coordinates the components you chose in configuration."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 from nine.decorator import reify
 from zope.interface import Interface, implementer, Attribute
 from .storage_file import BasePayloadStorage

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """This module contains keepluggable resources (for Pyramid traversal).
 
 Usually an application will store its files in a single S3 bucket,
@@ -32,9 +30,6 @@ Therefore, subclasses of this resource must provide:
 Resources must also provide ``__name__`` and ``__parent__``. You can
 read more about this in the Pyramid docs.
 """
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 
 class BaseFilesResource(object):

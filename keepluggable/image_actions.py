@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """This module contains an Action class that deals with images."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 # import imghdr  # imghdr.what(file)
 from copy import copy
 from io import BytesIO

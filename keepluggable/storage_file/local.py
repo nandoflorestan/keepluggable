@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """This module contains a simple local filesystem storage backend."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 import mimetypes
 from bag.settings import resolve_path
 from . import BasePayloadStorage

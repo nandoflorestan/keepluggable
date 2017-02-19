@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """This module contains a storage strategy that keeps files in AWS S3."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 import base64
 import hmac
 from time import time
@@ -13,8 +9,7 @@ from bag import dict_subset
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
 from . import BasePayloadStorage
-from nine import nimport
-quote = nimport('urllib.parse:quote')
+from urllib.parse import quote
 
 DAY = 60 * 60 * 24
 

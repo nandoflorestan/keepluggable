@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """This module contains the base Action class."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 from bag.web.exceptions import Problem
 import colander as c
 from keepluggable.exceptions import FileNotAllowed

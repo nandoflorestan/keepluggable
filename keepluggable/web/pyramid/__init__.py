@@ -3,9 +3,6 @@
 Usage is described in the "Pyramid integration" page of the documentation.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from nine import basestring
 from keepluggable import Settings
 from keepluggable.orchestrator import IOrchestrator, Orchestrator
 
@@ -23,7 +20,7 @@ def add_keepluggable(config, dict_or_path, storage_name, encoding='utf-8'):
 
     ``storage_name`` must be a string, a unique ID for this storage in the app.
     """
-    if isinstance(dict_or_path, basestring):
+    if isinstance(dict_or_path, str):
         ini_path = dict_or_path
         from configparser import ConfigParser
         parser = ConfigParser()
@@ -54,7 +51,7 @@ def get_orchestrator(context, request):
     """
     return request.registry.getUtility(
         IOrchestrator,
-        context if isinstance(context, basestring)
+        context if isinstance(context, str)
         else context.keepluggable_name)
 
 

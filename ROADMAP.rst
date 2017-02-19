@@ -8,7 +8,6 @@ This version
 
 - Fix inability to store .svg images
 - Use / instead of - to separate the namespace in the filename
-- Drop support for Python 2
 
 
 Urgent

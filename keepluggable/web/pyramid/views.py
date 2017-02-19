@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """Pyramid calls its controllers "views"."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
 from pyramid.response import Response

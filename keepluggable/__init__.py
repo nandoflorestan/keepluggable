@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+"""keepluggable contains reusable code that stores files and images."""
 
 from bag.settings import resolve  # TODO Replace
 REQUIRED = object()

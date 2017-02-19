@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 """Installer for keepluggable."""
 
@@ -17,8 +16,6 @@ requires = [  # Each backend may have additional dependencies.
 
 if version_info[:2] < (3, 4):
     requires.append('pathlib')  # 'enum34'
-# if version_info[:2] < (3, 2):
-#     requires.extend(['futures', 'unittest2'])
 
 setup(
     name='keepluggable',
@@ -33,8 +30,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        'Programming Language :: Python :: 2',
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",

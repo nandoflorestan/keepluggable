@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Component that stores file metadata in a relational database."""
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode
