@@ -56,7 +56,7 @@ creates configurable smaller versions of it.
 Some cameras do not rotate the photo, they just add orientation metadata to the
 image file, so keepluggable rotates it for you, before creating the thumbnails.
 
-`Get started with keepluggable! <http://docs.nando.audio/keepluggable/latest/getting-started.html>`_
+`Get started with keepluggable! <http://docs.nando.audio/keepluggable/latest/getting_started.html>`_
 
 
 Collaboration

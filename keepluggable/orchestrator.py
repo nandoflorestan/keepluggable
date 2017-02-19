@@ -1,6 +1,6 @@
 """The "orchestrator" coordinates the components you chose in configuration."""
 
-from nine.decorator import reify
+from bag.reify import reify
 from zope.interface import Interface, implementer, Attribute
 from .storage_file import BasePayloadStorage
 
