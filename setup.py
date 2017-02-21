@@ -56,4 +56,5 @@ setup(
     # [paste.app_factory]
     # main = keepluggable:main
     # """,
+    license='MIT',
 )
