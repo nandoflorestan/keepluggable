@@ -1,6 +1,7 @@
 """Component that stores file metadata in a relational database."""
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
+from bag.web.exceptions import Problem
 from sqlalchemy import Column
 from sqlalchemy.types import Integer, Unicode
 
@@ -125,13 +126,17 @@ class SQLAlchemyMetadataStorage(object):
             setattr(entity, key, value)
 
     def update(self, namespace, id, metadata, sas=None):
-        """Update a file metadata. It must already exist in the database."""
+        """Update a file metadata. It must exist in the database."""
         sas = sas or self._get_session()
         # entity = self._query(namespace, key=key, sas=sas).one()
         # entity = self._query(namespace, sas=sas).get(id)
         entity = sas.query(self.file_model_cls).get(id)
-        assert entity is not None, "Unknown file #{} in namespace {}".format(
-            id, namespace)
+        if entity is None:
+            raise Problem(
+                error_title="That file does not exist.",
+                error_msg="File #{} does not exist in namespace {}. "
+                "You may need to refresh.".format(id, namespace),
+            )
         self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
         return entity.to_dict(sas)
