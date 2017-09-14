@@ -174,9 +174,24 @@ When zero, the system does not have a maximum size.""")
 
         ...optionally with further filters.
         """
-        files = self.orchestrator.storage_metadata.gen_originals(
-            self.namespace, filters=filters)
-        for fil in files:
+        # This implementation queries the DB once rather than thousands:
+        universe = list(self.orchestrator.storage_metadata.gen_all(
+            self.namespace, filters=filters))
+        originals = {
+            f['id']: f for f in universe if f['version'] == 'original'}
+        for f in originals.values():
+            f['versions'] = []
+        for adict in universe:
+            if adict['version'] == 'original':
+                continue
+            originals[adict['original_id']]['versions'].append(adict)
+        for f in originals.values():
+            f['versions'].sort(key=lambda fil: fil['image_width'])
+        originals = originals.values()
+        '''OLD IMPLEMENTATION: (The above is equivalent to this:)
+        originals = self.orchestrator.storage_metadata.gen_originals(
+            self.namespace, filters=filters)'''
+        for fil in originals:
             yield self._complement(fil)
 
     def _complement(self, metadata):

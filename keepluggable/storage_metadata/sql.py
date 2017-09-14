@@ -142,12 +142,22 @@ class SQLAlchemyMetadataStorage(object):
         return entity.to_dict(sas)
 
     def gen_originals(self, namespace, filters=None, sas=None):
-        """Generator of original files (not derived versions)."""
+        """Generate original files (not derived versions)."""
         sas = sas or self._get_session()
         filters = {} if filters is None else filters
         filters['version'] = 'original'
         for entity in self._query(namespace, filters=filters, sas=sas):
             yield entity.to_dict(sas)
+
+    def gen_all(self, namespace, filters=None, sas=None):
+        """Generate all the files (originals and derivations).
+
+        Versions must be organized later -- this is a flat listing.
+        """
+        sas = sas or self._get_session()
+        filters = {} if filters is None else filters
+        for entity in self._query(namespace, filters=filters, sas=sas):
+            yield entity.to_dict(sas, versions=False)
 
     # Not currently used, except by the local storage
     def gen_keys(self, namespace, filters=None, sas=None):
