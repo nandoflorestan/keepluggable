@@ -11,7 +11,7 @@ with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 requires = [  # Each backend may have additional dependencies.
-    'bag > 1.1.0',
+    'bag >= 1.2.0',
 ]
 
 if version_info[:2] < (3, 4):
