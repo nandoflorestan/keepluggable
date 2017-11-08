@@ -1,4 +1,4 @@
-"""This module contains the base Action class."""
+"""The base Action class."""
 
 from bag.web.exceptions import Problem
 import colander as c
@@ -60,15 +60,26 @@ When zero, the system does not have a maximum size.""")
         # This is not a derived file such as a resized image.
         metadata['version'] = 'original'
 
-        self._guess_mime_type(bytes_io, metadata)
-        self._compute_length(bytes_io, metadata)
-        self._compute_md5(bytes_io, metadata)
+        self._compute_file_metadata(bytes_io, metadata)
 
         # Hook for subclasses to allow or forbid storing this file
         self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
 
+        # Hook for subclasses to deviate if the file already exists
+        if hasattr(self, '_handle_upload_of_existing_file'):
+            existing = self._file_already_exists(metadata)
+            if existing:
+                return self._handle_upload_of_existing_file(
+                    bytes_io, metadata, existing)
+
         metadata['versions'] = self._store_versions(bytes_io, metadata)
         return self._complement(metadata)
+
+    def _compute_file_metadata(self, bytes_io, metadata):
+        """Override this method in subclasses to populate the file metadata."""
+        self._guess_mime_type(bytes_io, metadata)
+        self._compute_length(bytes_io, metadata)
+        self._compute_md5(bytes_io, metadata)
 
     def _guess_mime_type(self, bytes_io, metadata):
         """Discover the MIME type from the uploaded file extension.
@@ -82,21 +93,6 @@ When zero, the system does not have a maximum size.""")
         typ = guess_type(metadata['file_name'])[0]
         if typ:
             metadata['mime_type'] = typ
-
-    def _allow_storage_of(self, bytes_io, metadata):
-        """Override this method if you wish to abort storing some files.
-
-        To abort, raise FileNotAllowed with a message explaining why.
-        """
-        maximum = self.settings['max_file_size']
-        if maximum and metadata['length'] > maximum:
-            raise FileNotAllowed(
-                'The file is {} KB long and the maximum is {} KB.'.format(
-                    int(metadata['length'] / 1024), int(maximum / 1024)))
-
-        allow_empty = self.settings['allow_empty_files']
-        if not allow_empty and metadata['length'] == 0:
-            raise FileNotAllowed('The file is empty.')
 
     def _compute_length(self, bytes_io, metadata):
         from bag.streams import get_file_size
@@ -122,6 +118,26 @@ When zero, the system does not have a maximum size.""")
             assert previous_length == the_length, "Bug? File lengths {}, {} " \
                 "don't match.".format(previous_length, the_length)
         bytes_io.seek(0)  # ...so it can be read again
+
+    def _allow_storage_of(self, bytes_io, metadata):
+        """Override this method if you wish to abort storing some files.
+
+        To abort, raise FileNotAllowed with a message explaining why.
+        """
+        maximum = self.settings['max_file_size']
+        if maximum and metadata['length'] > maximum:
+            raise FileNotAllowed(
+                'The file is {} KB long and the maximum is {} KB.'.format(
+                    int(metadata['length'] / 1024), int(maximum / 1024)))
+
+        allow_empty = self.settings['allow_empty_files']
+        if not allow_empty and metadata['length'] == 0:
+            raise FileNotAllowed('The file is empty.')
+
+    def _file_already_exists(self, metadata):
+        """Return existing file with the same md5 in the namespace, or None."""
+        return self.orchestrator.storage_metadata.get(
+            namespace=self.namespace, key=metadata['md5'])
 
     def _store_versions(self, bytes_io, metadata):
         """In this base class, just call _store_file().
@@ -206,12 +222,15 @@ When zero, the system does not have a maximum size.""")
             version['href'] = url(self.namespace, version)
         return metadata
 
-    def update_metadata(self, id, adict):
-        """Replace the metadata for key *id* with *adict*."""
+    def _validate_metadata_for_updating(self, adict):
         schema_cls = self.orchestrator.settings.resolve(
             'fls.update_schema', default=None)
         if schema_cls is not None:
             schema = schema_cls()
             adict = schema.deserialize(adict)
+        return adict
+
+    def update_metadata(self, id, adict):
+        """Replace the metadata for key *id* with *adict*."""
         return self.orchestrator.storage_metadata.update(
-            self.namespace, id, adict)
+            self.namespace, id, self._validate_metadata_for_updating(adict))
