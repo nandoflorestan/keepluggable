@@ -1,4 +1,4 @@
-"""This module contains a simple local filesystem storage backend."""
+"""A simple local filesystem storage backend."""
 
 import mimetypes
 from bag.settings import resolve_path

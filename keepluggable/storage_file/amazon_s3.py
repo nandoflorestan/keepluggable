@@ -1,4 +1,4 @@
-"""This module contains a storage strategy that keeps files in AWS S3."""
+"""A storage strategy that keeps files in AWS S3."""
 
 import base64
 import hmac

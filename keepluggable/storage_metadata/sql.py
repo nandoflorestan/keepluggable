@@ -2,7 +2,9 @@
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
+from kerno.web.to_dict import reuse_dict, to_dict
 from sqlalchemy import Column
+from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
 
 
@@ -139,7 +141,7 @@ class SQLAlchemyMetadataStorage(object):
             )
         self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
-        return entity.to_dict(sas)
+        return to_dict(entity)
 
     def gen_originals(self, namespace, filters=None, sas=None):
         """Generate original files (not derived versions)."""
@@ -147,7 +149,7 @@ class SQLAlchemyMetadataStorage(object):
         filters = {} if filters is None else filters
         filters['version'] = 'original'
         for entity in self._query(namespace, filters=filters, sas=sas):
-            yield entity.to_dict(sas)
+            yield to_dict(entity)
 
     def gen_all(self, namespace, filters=None, sas=None):
         """Generate all the files (originals and derivations).
@@ -157,7 +159,7 @@ class SQLAlchemyMetadataStorage(object):
         sas = sas or self._get_session()
         filters = {} if filters is None else filters
         for entity in self._query(namespace, filters=filters, sas=sas):
-            yield entity.to_dict(sas, versions=False)
+            yield to_dict(entity, versions=False)
 
     # Not currently used, except by the local storage
     def gen_keys(self, namespace, filters=None, sas=None):
@@ -172,7 +174,7 @@ class SQLAlchemyMetadataStorage(object):
         """Dict containing the metadata of one file, or None if not found."""
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
-        return entity.to_dict(sas) if entity else None
+        return to_dict(entity) if entity else None
 
     def delete_with_versions(self, namespace, key, sas=None):
         """Delete a file along with all its versions."""
@@ -219,12 +221,13 @@ class BaseFile(ID, MinimalBase):
         """self.original_id is None."""
         return self.original_id is None
 
-    def get_original(self, sas):
+    def get_original(self, sas):  # TODO repo
         """Return the file this instance is derived from."""
         return sas.query(type(self)).get(self.original_id)
 
-    def q_versions(self, sas, order_by='image_width'):
+    def q_versions(self, sas=None, order_by='image_width'):  # TODO repo
         """Query that returns files derived from this instance."""
+        sas = sas or object_session(self)
         return sas.query(type(self)).filter_by(
             original_id=self.id).order_by(order_by)
 
@@ -232,9 +235,13 @@ class BaseFile(ID, MinimalBase):
         return '<{} #{} "{}" {}>'.format(
             type(self).__name__, self.id, self.file_name, self.version)
 
-    def to_dict(self, sas, versions=True):
-        """Convert this File, and optionally its versions, to a dictionary."""
-        dic = super(BaseFile, self).to_dict()
-        dic['versions'] = [v.to_dict(sas) for v in self.q_versions(sas)] \
-            if versions else []
-        return dic
+
+@to_dict.register(obj=BaseFile, flavor='default')
+def file_to_dict(obj, flavor='default', **kw):  # , versions=True
+    """Convert instance to a dictionary, usually for JSON output."""
+    amap = reuse_dict(obj=obj, sort=False)
+    if kw.get('versions', True):
+        amap['versions'] = [reuse_dict(obj=v) for v in obj.q_versions()]
+    else:
+        amap['versions'] = []
+    return amap

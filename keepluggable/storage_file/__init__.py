@@ -1,4 +1,4 @@
-"""This namespace contains strategies for storing file payloads."""
+"""Strategies for storing file payloads."""
 
 from abc import ABCMeta, abstractmethod
 
