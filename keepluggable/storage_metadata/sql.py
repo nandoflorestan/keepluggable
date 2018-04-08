@@ -221,11 +221,11 @@ class BaseFile(ID, MinimalBase):
         """self.original_id is None."""
         return self.original_id is None
 
-    def get_original(self, sas):  # TODO repo
+    def get_original(self, sas):
         """Return the file this instance is derived from."""
         return sas.query(type(self)).get(self.original_id)
 
-    def q_versions(self, sas=None, order_by='image_width'):  # TODO repo
+    def q_versions(self, sas=None, order_by='image_width'):
         """Query that returns files derived from this instance."""
         sas = sas or object_session(self)
         return sas.query(type(self)).filter_by(
