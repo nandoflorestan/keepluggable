@@ -5,7 +5,7 @@ import colander as c
 from keepluggable.exceptions import FileNotAllowed
 
 
-class BaseFilesAction(object):
+class BaseFilesAction:
     """Action class that coordinates the workflow.
 
     You are likely to need to subclass this.

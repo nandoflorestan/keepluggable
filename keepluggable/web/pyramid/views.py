@@ -116,8 +116,9 @@ def update_metadata(context, request):
 
         curl -i -H 'Content-Type: application/json'
         -H 'Accept: application/json' -X PUT
-        -d '{"description": "Super knife", "asset_id": 1, "room_id": null,
-        "user_id": 2}' http://localhost:6543/d/1/files/1/@@metadata
+        -d '{"description": "Super knife", "title": "A knife",
+        "asset_ids": [1], "room_id": null}'
+        http://localhost:6543/d/1/files/1/@@metadata
     """
     adict = get_json_or_raise(request)
     orchestrator = get_orchestrator(context, request)
