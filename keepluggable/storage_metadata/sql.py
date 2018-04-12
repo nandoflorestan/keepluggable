@@ -236,8 +236,8 @@ class BaseFile(ID, MinimalBase):
             type(self).__name__, self.id, self.file_name, self.version)
 
 
-@to_dict.register(obj=BaseFile, flavor='default')
-def file_to_dict(obj, flavor='default', **kw):  # , versions=True
+@to_dict.register(obj=BaseFile, flavor='')
+def file_to_dict(obj, flavor='', **kw):  # , versions=True
     """Convert instance to a dictionary, usually for JSON output."""
     amap = reuse_dict(obj=obj, sort=False, **kw)
     if kw.get('versions', True):
