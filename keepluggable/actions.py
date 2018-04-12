@@ -232,5 +232,9 @@ When zero, the system does not have a maximum size.""")
 
     def update_metadata(self, id, adict):
         """Replace the metadata for key *id* with *adict*."""
-        return self.orchestrator.storage_metadata.update(
-            self.namespace, id, self._validate_metadata_for_updating(adict))
+        return self._complement(
+            self.orchestrator.storage_metadata.update(
+                self.namespace, id,
+                self._validate_metadata_for_updating(adict),
+            ),
+        )
