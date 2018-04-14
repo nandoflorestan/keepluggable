@@ -126,6 +126,8 @@ class SQLAlchemyMetadataStorage(object):
         """
         for key, value in metadata.items():
             setattr(entity, key, value)
+        sas.flush()
+        return entity
 
     def update(self, namespace, id, metadata, sas=None):
         """Update a file metadata. It must exist in the database."""
@@ -139,8 +141,7 @@ class SQLAlchemyMetadataStorage(object):
                 error_msg="File #{} does not exist in namespace {}. "
                 "You may need to refresh.".format(id, namespace),
             )
-        self._update(namespace, metadata, entity, sas=sas)
-        sas.flush()
+        entity = self._update(namespace, metadata, entity, sas=sas)
         return to_dict(entity)
 
     def gen_originals(self, namespace, filters=None, sas=None):
