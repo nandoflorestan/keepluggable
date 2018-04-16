@@ -8,7 +8,7 @@ from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
 
 
-class SQLAlchemyMetadataStorage(object):
+class SQLAlchemyMetadataStorage:
     """File metadata storage backend base class using SQLAlchemy.
 
     This class certainly needs to be subclassed for your specific use case.
