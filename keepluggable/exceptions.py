@@ -1,4 +1,4 @@
-"""This module contains special exceptions raised by keepluggable."""
+"""Special exceptions raised by keepluggable."""
 
 
 class FileNotAllowed(Exception):

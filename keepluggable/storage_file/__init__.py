@@ -7,13 +7,8 @@ class BasePayloadStorage(metaclass=ABCMeta):
     """Abstract base class ― formal interface for payload storage backends."""
 
     def __init__(self, orchestrator):
-        """The constructor just stores the orchestrator instance."""
+        """Just store the orchestrator instance."""
         self.orchestrator = orchestrator
-
-    @abstractmethod
-    def empty_bucket(self, bucket=None):
-        """Delete all files in this storage."""
-        raise NotImplementedError()
 
     @abstractmethod
     def put(self, namespace, metadata, bytes_io):
@@ -23,12 +18,12 @@ class BasePayloadStorage(metaclass=ABCMeta):
     @property
     @abstractmethod
     def namespaces(self):
-        """Generator of existing namespace names."""
+        """Generate existing namespace names."""
         raise NotImplementedError()
 
     @abstractmethod
     def gen_keys(self, namespace):
-        """Generator of the existing keys in a namespace."""
+        """Generate the existing keys in a namespace."""
         raise NotImplementedError()
 
     @abstractmethod

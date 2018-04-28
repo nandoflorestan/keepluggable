@@ -33,16 +33,12 @@ class LocalFilesystemStorage(BasePayloadStorage):
     """
 
     def __init__(self, orchestrator):
+        """Construct with an Orchestrator instance."""
         super(LocalFilesystemStorage, self).__init__(orchestrator)
         self.storage_path = orchestrator.settings.read('local.storage_path')
         self.directory = resolve_path(self.storage_path).absolute()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
-
-    def empty_bucket(self, bucket=None):
-        """Empty the whole bucket, deleting namespaces and files."""
-        for namespace in self.namespaces:
-            self.delete_namespace(namespace)
 
     @property
     def _namespaces(self):  # generator of Path objects
@@ -53,23 +49,10 @@ class LocalFilesystemStorage(BasePayloadStorage):
         """Generator of namespace names."""
         return (n.name for n in self._namespaces)
 
-    def delete(self, namespace, metadatas):
-        """Delete many files."""
-        for metadata in metadatas:
-            path = (self.directory / str(namespace) /
-                    self._get_filename(metadata))
-            if path.exists():
-                path.unlink()
-
     def gen_keys(self, namespace):
         """Generator of the keys in a namespace."""
         for f in (self.directory / str(namespace)).iterdir():
             yield f.name.split('.', 1)[0]
-
-    def delete_namespace(self, namespace):
-        """Delete all files in ``namespace``."""
-        from shutil import rmtree
-        rmtree(str(self.directory / str(namespace)))
 
     def get_reader(self, namespace, metadata):
         """Return a stream for the file content."""
@@ -119,3 +102,29 @@ class LocalFilesystemStorage(BasePayloadStorage):
             self.storage_path,
             str(namespace),
             self._get_filename(metadata))))
+
+    def delete(self, namespace, metadatas):
+        """Delete many files."""
+        for metadata in metadatas:
+            path = (self.directory / str(namespace) /
+                    self._get_filename(metadata))
+            if path.exists():
+                path.unlink()
+
+    def delete_namespace(self, namespace):
+        """Delete all files in ``namespace``."""
+        from shutil import rmtree
+        rmtree(str(self.directory / str(namespace)))
+
+    def get_superpowers(self):
+        """Get a really dangerous subclass instance."""
+        return LocalFilesystemPower(self.orchestrator)
+
+
+class LocalFilesystemPower(LocalFilesystemStorage):
+    """A subclass that contains dangerous methods."""
+
+    def empty_bucket(self, bucket=None):
+        """Empty the whole bucket, deleting namespaces and files."""
+        for namespace in self.namespaces:
+            self.delete_namespace(namespace)

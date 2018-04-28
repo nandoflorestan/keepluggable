@@ -6,9 +6,9 @@ ROADMAP
 This version
 ============
 
+- Use / instead of - to separate the namespace in the filename
 - File information, as converted to JSON, is too verbose! Find ways of making it smaller!
 - Fix inability to store .svg images
-- Use / instead of - to separate the namespace in the filename
 - Review CSRF protection
 
 
@@ -16,12 +16,13 @@ Urgent
 ======
 
 - Add functional tests
-- Maybe use reg instead of subclassing actions?
+- Use reg or events instead of subclassing actions
 
 
 Ideas
 =====
 
+- Integrate with Celery to create image versions in a background task
 - Read EXIF data to fill in date and location, hopefully before the user types these
 - Read other EXIF, IPTC, and XMP metadata in photo files
 - Detect whether an image is already in the store and let the user edit it
@@ -30,6 +31,5 @@ Ideas
 - generate image tag with alt, title (maybe legend) etc.
 - trigger an event when image is uploaded
 - search images to edit or remove them
-- http caching
 - tags
-- Integrate with Celery to create image versions in a background task
+- http caching

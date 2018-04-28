@@ -49,37 +49,11 @@ class AmazonS3Storage(BasePayloadStorage):
         self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
-    def create_bucket(self, name):  # Not part of the API
-        return self.s3.create_bucket(Name=name)
-
-    @property
-    def _buckets(self):
-        return self.s3.buckets.all()
-
-    @property
-    def bucket_names(self):
-        """A generator of bucket names."""
-        return (b.name for b in self._buckets)
-
-    def _get_bucket(self, bucket=None):
-        if bucket is None:
-            return self.bucket
-        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
-
-    def delete_bucket(self, bucket=None):  # Not part of the API
-        """Delete the entire bucket."""
-        bucket = self._get_bucket(bucket)  # self.bucket
-        # All items must be deleted before the bucket itself
-        self.empty_bucket(bucket)
-        return bucket.delete()
-
-    # Intrabucket operations are below
-
     SEP = '-'
 
     @property
     def namespaces(self):
-        """A set of namespace names."""
+        """Return namespace names. Avoid: reads all objects in bucket."""
         return set((o.split(self.SEP, 1)[0]
                     for o in self.bucket.objects.all()))
 
@@ -89,29 +63,12 @@ class AmazonS3Storage(BasePayloadStorage):
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
-    def empty_bucket(self, bucket=None):  # Not part of the API
-        """Delete all files in the specified bucket. DANGEROUS."""
-        # TODO Request up to 1000 files at a time
-        bucket = self._get_bucket(bucket)
-        items = list(bucket.objects.all())
-        if not items:
-            return None
-        resp = bucket.delete_objects(Delete={
-            'Objects': [{'Key': o.key} for o in items]})
-        print(resp)
-        return resp
-
     def gen_keys(self, namespace, bucket=None):
-        """Generator of the keys in a namespace. Too costly."""
+        """Generate the keys in a namespace. Too costly -- avoid."""
         for o in self._get_bucket(bucket).objects.all():
             composite = o.key
             if composite.startswith(namespace + '/'):
                 yield composite.split(self.SEP, 1)[1]
-
-    def delete_namespace(self, namespace, bucket=None):
-        """Delete all files in ``namespace``. Too costly."""
-        for key in self.gen_keys(namespace, bucket=bucket):
-            self.delete(namespace, key, bucket=bucket)
 
     def get_reader(self, namespace, metadata, bucket=None):
         """Return a stream for the file content."""
@@ -173,3 +130,53 @@ class AmazonS3Storage(BasePayloadStorage):
         keys = (m['md5'] for m in metadatas)
         return self._get_bucket(bucket).delete_objects(Delete={
             'Objects': [{'Key': self._cat(namespace, k)} for k in keys]})
+
+    def delete_namespace(self, namespace, bucket=None):
+        """Delete all files in ``namespace``. Too costly."""
+        for key in self.gen_keys(namespace, bucket=bucket):
+            self.delete(namespace, key, bucket=bucket)
+
+    def get_superpowers(self):
+        """Get a really dangerous subclass instance."""
+        return AmazonS3Power(self.orchestrator)
+
+
+class AmazonS3Power(AmazonS3Storage):
+    """A subclass with dangerous methods, not part of the interface."""
+
+    def create_bucket(self, name):
+        """Add a bucket to your S3 account."""
+        return self.s3.create_bucket(Name=name)
+
+    @property
+    def _buckets(self):
+        return self.s3.buckets.all()
+
+    @property
+    def bucket_names(self):
+        """Generate the existing bucket names."""
+        return (b.name for b in self._buckets)
+
+    def _get_bucket(self, bucket=None):
+        if bucket is None:
+            return self.bucket
+        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
+
+    def empty_bucket(self, bucket=None):
+        """Delete all files in the specified bucket. DANGEROUS."""
+        # TODO Request up to 1000 files at a time
+        bucket = self._get_bucket(bucket)
+        items = list(bucket.objects.all())
+        if not items:
+            return None
+        resp = bucket.delete_objects(Delete={
+            'Objects': [{'Key': o.key} for o in items]})
+        print(resp)
+        return resp
+
+    def delete_bucket(self, bucket=None):
+        """Delete the entire bucket."""
+        bucket = self._get_bucket(bucket)  # self.bucket
+        # All items must be deleted before the bucket itself
+        self.empty_bucket(bucket)
+        return bucket.delete()

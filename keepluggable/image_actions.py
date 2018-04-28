@@ -1,4 +1,4 @@
-"""This module contains an Action class that deals with images."""
+"""An Action class that deals with images."""
 
 # import imghdr  # imghdr.what(file)
 from copy import copy
