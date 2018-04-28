@@ -49,7 +49,7 @@ class AmazonS3Storage(BasePayloadStorage):
         self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
-    SEP = '-'
+    SEP = '/'
 
     @property
     def namespaces(self):

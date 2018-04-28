@@ -46,11 +46,11 @@ class LocalFilesystemStorage(BasePayloadStorage):
 
     @property
     def namespaces(self):
-        """Generator of namespace names."""
+        """Generate namespace names."""
         return (n.name for n in self._namespaces)
 
     def gen_keys(self, namespace):
-        """Generator of the keys in a namespace."""
+        """Generate the keys in a namespace."""
         for f in (self.directory / str(namespace)).iterdir():
             yield f.name.split('.', 1)[0]
 
@@ -71,7 +71,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
             bytes_io.seek(0)
         outdir = self.directory / str(namespace)
         if not outdir.exists():
-            outdir.mkdir()  # Create the namespace directory as needed
+            outdir.mkdir(parents=True)  # Create namespace directory as needed
         outfile = outdir / self._get_filename(metadata)
         with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
             while True:
