@@ -164,7 +164,7 @@ class SQLAlchemyMetadataStorage:
 
     # Not currently used, except by the local storage
     def gen_keys(self, namespace, filters=None, sas=None):
-        """Generator of the keys in a namespace."""
+        """Generate the keys in a namespace."""
         sas = sas or self._get_session()
         q = self._query(
             namespace, filters=filters, what=self.file_model_cls.md5, sas=sas)
@@ -172,7 +172,7 @@ class SQLAlchemyMetadataStorage:
             yield tup[0]
 
     def get(self, namespace, key, sas=None):
-        """Dict containing the metadata of one file, or None if not found."""
+        """Return a dict: the metadata of one file, or None if not found."""
         sas = sas or self._get_session()
         entity = self._query(sas=sas, namespace=namespace, key=key).first()
         return to_dict(entity) if entity else None

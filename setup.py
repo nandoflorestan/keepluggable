@@ -24,7 +24,7 @@ setup(
     description='Manages storage of images and other files, with metadata.'
     ' Also offers an HTTP API done on Pyramid.',
     long_description=long_description,
-    classifiers=[  # http://pypi.python.org/pypi?:action=list_classifiers
+    classifiers=[  # https://pypi.org/pypi?:action=list_classifiers
         'Development Status :: 4 - Beta',
         # "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -35,6 +35,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
         "Framework :: Pyramid",
         'Topic :: Database',
         "Topic :: Internet :: WWW/HTTP",

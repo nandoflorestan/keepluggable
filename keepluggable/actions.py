@@ -154,7 +154,7 @@ When zero, the system does not have a maximum size.""")
 
         try:
             self._store_metadata(bytes_io, metadata)
-        except:
+        except Exception:
             storage_file.delete(
                 namespace=self.namespace, keys=(metadata['md5'],))
             raise

@@ -1,4 +1,4 @@
-"""This module contains keepluggable resources (for Pyramid traversal).
+"""keepluggable resources (for Pyramid traversal).
 
 Usually an application will store its files in a single S3 bucket,
 but there will be a need to namespace the files. This namespace
@@ -32,13 +32,13 @@ read more about this in the Pyramid docs.
 """
 
 
-class BaseFilesResource(object):
+class BaseFilesResource:
     """Base for a Pyramid traversal resource representing a file store."""
 
     pass
 
 
-class BaseFileResource(object):
+class BaseFileResource:
     """Pyramid traversal resource representing a specific file.
 
     Here is an example resource using this as a base class::
