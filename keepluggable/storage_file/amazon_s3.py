@@ -61,13 +61,6 @@ class AmazonS3Storage(BasePayloadStorage):
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
-    def gen_keys(self, namespace, bucket=None): # TODO NOOOOOOOOOOOOO
-        """Generate the keys in a namespace. Too costly -- avoid."""
-        for o in self._get_bucket(bucket).objects.all():
-            composite = o.key
-            if composite.startswith(namespace + '/'):
-                yield composite.split(self.SEP, 1)[1]
-
     def get_reader(self, namespace, metadata, bucket=None):
         """Return a stream for the file content."""
         key = metadata['md5']
@@ -114,8 +107,10 @@ class AmazonS3Storage(BasePayloadStorage):
         return '{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId=' \
             '{access_key_id}&Expires={seconds}&Signature={signature}'.format(
                 scheme='https://' if https else 'http://',
-                bucket=self.bucket_name, key=composite,
-                access_key_id=self.access_key_id, seconds=seconds,
+                bucket=self.bucket_name,
+                key=composite,
+                access_key_id=self.access_key_id,
+                seconds=seconds,
                 signature=quote(base64.encodestring(digest).strip()),
             )
 
@@ -128,11 +123,6 @@ class AmazonS3Storage(BasePayloadStorage):
         keys = (m['md5'] for m in metadatas)
         return self._get_bucket(bucket).delete_objects(Delete={
             'Objects': [{'Key': self._cat(namespace, k)} for k in keys]})
-
-    def delete_namespace(self, namespace, bucket=None):
-        """Delete all files in ``namespace``. Too costly."""
-        for key in self.gen_keys(namespace, bucket=bucket):
-            self.delete(namespace, key, bucket=bucket)
 
     def get_superpowers(self):
         """Get a really dangerous subclass instance."""
@@ -159,6 +149,18 @@ class AmazonS3Power(AmazonS3Storage):
         if bucket is None:
             return self.bucket
         return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
+
+    def gen_keys(self, namespace, bucket=None):
+        """Generate the keys in a namespace. Too costly -- avoid."""
+        for o in self._get_bucket(bucket).objects.all():
+            composite = o.key
+            if composite.startswith(namespace + '/'):
+                yield composite.split(self.SEP, 1)[1]
+
+    def delete_namespace(self, namespace, bucket=None):
+        """Delete all files in ``namespace``. Too costly."""
+        for key in self.gen_keys(namespace, bucket=bucket):
+            self.delete(namespace, key, bucket=bucket)
 
     def empty_bucket(self, bucket=None):
         """Delete all files in the specified bucket. DANGEROUS."""

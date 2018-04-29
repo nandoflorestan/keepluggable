@@ -47,11 +47,6 @@ class LocalFilesystemStorage(BasePayloadStorage):
         return self.directory / get_middle_path(
             name=self.orchestrator.name, namespace=namespace)
 
-    def gen_keys(self, namespace):
-        """Generate the keys in a namespace."""
-        for f in self._dir_of(namespace).iterdir():
-            yield f.name.split('.', 1)[0]
-
     def get_reader(self, namespace, metadata):
         """Return a stream for the file content."""
         try:
@@ -109,10 +104,6 @@ class LocalFilesystemStorage(BasePayloadStorage):
             if path.exists():
                 path.unlink()
 
-    def delete_namespace(self, namespace):
-        """Delete all files in ``namespace``."""
-        rmtree(self._dir_of(namespace))
-
     def get_superpowers(self):
         """Get a really dangerous subclass instance."""
         return LocalFilesystemPower(self.orchestrator)
@@ -120,6 +111,15 @@ class LocalFilesystemStorage(BasePayloadStorage):
 
 class LocalFilesystemPower(LocalFilesystemStorage):
     """A subclass that contains dangerous methods."""
+
+    def gen_keys(self, namespace):
+        """Generate the keys in a namespace."""
+        for f in self._dir_of(namespace).iterdir():
+            yield f.name.split('.', 1)[0]
+
+    def delete_namespace(self, namespace):
+        """Delete all files in ``namespace``."""
+        rmtree(self._dir_of(namespace))
 
     def empty_bucket(self, bucket=None):
         """Empty the whole bucket, deleting namespaces and files."""
