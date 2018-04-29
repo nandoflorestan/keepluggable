@@ -35,8 +35,6 @@ read more about this in the Pyramid docs.
 class BaseFilesResource:
     """Base for a Pyramid traversal resource representing a file store."""
 
-    pass
-
 
 class BaseFileResource:
     """Pyramid traversal resource representing a specific file.
@@ -51,5 +49,3 @@ class BaseFileResource:
             def namespace(self):
                 return parent(self).id
     """
-
-    pass

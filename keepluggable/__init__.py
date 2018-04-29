@@ -14,7 +14,7 @@ def SettingsFromFiles(*paths, encoding='utf-8'):
     return Settings(parser)
 
 
-class Settings(object):
+class Settings:
     """Convenient API for reading settings."""
 
     REQUIRED = object()

@@ -1,7 +1,9 @@
 """A simple local filesystem storage backend."""
 
 import mimetypes
+from shutil import rmtree
 from bag.settings import resolve_path
+from keepluggable.orchestrator import get_middle_path
 from . import BasePayloadStorage
 
 MEGABYTE = 1048576
@@ -40,18 +42,14 @@ class LocalFilesystemStorage(BasePayloadStorage):
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
-    @property
-    def _namespaces(self):  # generator of Path objects
-        return (d for d in self.directory.iterdir() if d.is_dir())
-
-    @property
-    def namespaces(self):
-        """Generate namespace names."""
-        return (n.name for n in self._namespaces)
+    def _dir_of(self, namespace):
+        """Figure out the directory where we store the given ``namespace``."""
+        return self.directory / get_middle_path(
+            name=self.orchestrator.name, namespace=namespace)
 
     def gen_keys(self, namespace):
         """Generate the keys in a namespace."""
-        for f in (self.directory / str(namespace)).iterdir():
+        for f in self._dir_of(namespace).iterdir():
             yield f.name.split('.', 1)[0]
 
     def get_reader(self, namespace, metadata):
@@ -69,7 +67,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         """Store a file (``bytes_io``) inside ``namespace``."""
         if bytes_io.tell():
             bytes_io.seek(0)
-        outdir = self.directory / str(namespace)
+        outdir = self._dir_of(namespace)
         if not outdir.exists():
             outdir.mkdir(parents=True)  # Create namespace directory as needed
         outfile = outdir / self._get_filename(metadata)
@@ -97,24 +95,23 @@ class LocalFilesystemStorage(BasePayloadStorage):
 
         The ``seconds`` and ``https`` params are ignored.
         """
-        from pyramid.threadlocal import get_current_request
+        from pyramid.threadlocal import get_current_request  # TODO bad way
         return get_current_request().static_path('/'.join((
             self.storage_path,
-            str(namespace),
+            get_middle_path(name=self.orchestrator.name, namespace=namespace),
             self._get_filename(metadata))))
 
     def delete(self, namespace, metadatas):
         """Delete many files."""
+        base_path = self._dir_of(namespace)
         for metadata in metadatas:
-            path = (self.directory / str(namespace) /
-                    self._get_filename(metadata))
+            path = base_path / self._get_filename(metadata)
             if path.exists():
                 path.unlink()
 
     def delete_namespace(self, namespace):
         """Delete all files in ``namespace``."""
-        from shutil import rmtree
-        rmtree(str(self.directory / str(namespace)))
+        rmtree(self._dir_of(namespace))
 
     def get_superpowers(self):
         """Get a really dangerous subclass instance."""
@@ -126,5 +123,5 @@ class LocalFilesystemPower(LocalFilesystemStorage):
 
     def empty_bucket(self, bucket=None):
         """Empty the whole bucket, deleting namespaces and files."""
-        for namespace in self.namespaces:
-            self.delete_namespace(namespace)
+        for sub in self.directory.iterdir():
+            rmtree(sub)

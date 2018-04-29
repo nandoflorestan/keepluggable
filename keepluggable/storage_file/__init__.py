@@ -15,12 +15,6 @@ class BasePayloadStorage(metaclass=ABCMeta):
         """Store a file (``bytes_io``) inside ``namespace``."""
         raise NotImplementedError()
 
-    @property
-    @abstractmethod
-    def namespaces(self):
-        """Generate existing namespace names."""
-        raise NotImplementedError()
-
     @abstractmethod
     def gen_keys(self, namespace):
         """Generate the existing keys in a namespace."""

@@ -1,15 +1,18 @@
 """A storage strategy that keeps files in AWS S3."""
 
 import base64
+from hashlib import sha1
 import hmac
 from time import time
-from hashlib import sha1
+from urllib.parse import quote
+
 from bag import dict_subset
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
-from . import BasePayloadStorage
-from urllib.parse import quote
+
+from keepluggable.orchestrator import get_middle_path
+from keepluggable.storage_file import BasePayloadStorage
 
 DAY = 60 * 60 * 24
 
@@ -51,19 +54,14 @@ class AmazonS3Storage(BasePayloadStorage):
 
     SEP = '/'
 
-    @property
-    def namespaces(self):
-        """Return namespace names. Avoid: reads all objects in bucket."""
-        return set((o.split(self.SEP, 1)[0]
-                    for o in self.bucket.objects.all()))
-
     def _cat(self, namespace, key):
-        return str(namespace) + self.SEP + key
+        return get_middle_path(
+            name=self.orchestrator.name, namespace=namespace) + self.SEP + key
 
     def _get_object(self, namespace, key, bucket=None):
         return self._get_bucket(bucket).Object(self._cat(namespace, key))
 
-    def gen_keys(self, namespace, bucket=None):
+    def gen_keys(self, namespace, bucket=None): # TODO NOOOOOOOOOOOOO
         """Generate the keys in a namespace. Too costly -- avoid."""
         for o in self._get_bucket(bucket).objects.all():
             composite = o.key
