@@ -52,6 +52,11 @@ class AmazonS3Storage(BasePayloadStorage):
         self.bucket_name = settings.read('s3.bucket')
         self.bucket = self.s3.Bucket(self.bucket_name)
 
+    def _get_bucket(self, bucket=None):
+        if bucket is None:
+            return self.bucket
+        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
+
     SEP = '/'
 
     def _cat(self, namespace, key):
@@ -144,11 +149,6 @@ class AmazonS3Power(AmazonS3Storage):
     def bucket_names(self):
         """Generate the existing bucket names."""
         return (b.name for b in self._buckets)
-
-    def _get_bucket(self, bucket=None):
-        if bucket is None:
-            return self.bucket
-        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     def gen_keys(self, namespace, bucket=None):
         """Generate the keys in a namespace. Too costly -- avoid."""
