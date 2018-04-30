@@ -3,7 +3,6 @@
 from bag.reify import reify
 import reg
 from zope.interface import Interface, implementer, Attribute
-from .storage_file import BasePayloadStorage
 
 
 class IOrchestrator(Interface):
@@ -33,6 +32,7 @@ class Orchestrator:
         self.action_configuration = self._validate_action_configuration()
 
     def _instantiate_payload_storage(self):
+        from .storage_file import BasePayloadStorage
         storage_cls = self.settings.resolve('storage.file')
         assert issubclass(storage_cls, BasePayloadStorage)
         self.storage_file = storage_cls(self)

@@ -1,10 +1,12 @@
 """A simple local filesystem storage backend."""
 
-import mimetypes
+from pathlib import Path
 from shutil import rmtree
+from typing import Any, Dict, Sequence
 from bag.settings import resolve_path
-from keepluggable.orchestrator import get_middle_path
-from . import BasePayloadStorage
+
+from keepluggable.orchestrator import get_middle_path, Orchestrator
+from keepluggable.storage_file import BasePayloadStorage
 
 MEGABYTE = 1048576
 
@@ -34,7 +36,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         local.storage_path = some.python.resource:relative/directory
     """
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: Orchestrator) -> None:
         """Construct with an Orchestrator instance."""
         super(LocalFilesystemStorage, self).__init__(orchestrator)
         self.storage_path = orchestrator.settings.read('local.storage_path')
@@ -42,7 +44,7 @@ class LocalFilesystemStorage(BasePayloadStorage):
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
-    def _dir_of(self, namespace):
+    def _dir_of(self, namespace: str) -> Path:
         """Figure out the directory where we store the given ``namespace``."""
         return self.directory / get_middle_path(
             name=self.orchestrator.name, namespace=namespace)
@@ -75,15 +77,10 @@ class LocalFilesystemStorage(BasePayloadStorage):
                     break
         assert outfile.lstat().st_size == metadata['length']
 
-    def _get_extension(self, metadata):
-        extensions = sorted(mimetypes.guess_all_extensions(
-            metadata['mime_type'], strict=False))
-        return extensions[0] if extensions else ''
-
-    def _get_filename(self, metadata):
-        return metadata['md5'] + self._get_extension(metadata)
-
-    def get_url(self, namespace, metadata, seconds=3600, https=True):
+    def get_url(
+        self, namespace: str, metadata: Dict[str, Any], seconds: int = 3600,
+        https: bool = True,
+    ) -> str:
         """Return a Pyramid static URL.
 
         If you use another web framework, please override this method.
@@ -96,7 +93,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
             get_middle_path(name=self.orchestrator.name, namespace=namespace),
             self._get_filename(metadata))))
 
-    def delete(self, namespace, metadatas):
+    def delete(
+        self, namespace: str, metadatas: Sequence[Dict[str, Any]],
+    ) -> None:
         """Delete many files."""
         base_path = self._dir_of(namespace)
         for metadata in metadatas:

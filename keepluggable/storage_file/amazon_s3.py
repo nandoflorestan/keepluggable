@@ -4,6 +4,7 @@ import base64
 from hashlib import sha1
 import hmac
 from time import time
+from typing import Any, Dict, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
@@ -11,7 +12,7 @@ from bag import dict_subset
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
 
-from keepluggable.orchestrator import get_middle_path
+from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
 
 DAY = 60 * 60 * 24
@@ -34,7 +35,7 @@ class AmazonS3Storage(BasePayloadStorage):
       you may omit this setting and override the _set_bucket() method.
     """
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and instantiate an S3 Session."""
         super(AmazonS3Storage, self).__init__(orchestrator)
         self.access_key_id = orchestrator.settings.read('s3.access_key_id')
@@ -59,12 +60,14 @@ class AmazonS3Storage(BasePayloadStorage):
 
     SEP = '/'
 
-    def _cat(self, namespace, key):
+    def _get_path(self, namespace: str, metadata: Dict[str, Any]) -> str:
         return get_middle_path(
-            name=self.orchestrator.name, namespace=namespace) + self.SEP + key
+            name=self.orchestrator.name, namespace=namespace
+        ) + self.SEP + self._get_filename(metadata)
 
-    def _get_object(self, namespace, key, bucket=None):
-        return self._get_bucket(bucket).Object(self._cat(namespace, key))
+    def _get_object(self, namespace, metadata, bucket=None):
+        return self._get_bucket(bucket).Object(
+            self._get_path(namespace, metadata))
 
     def get_reader(self, namespace, metadata, bucket=None):
         """Return a stream for the file content."""
@@ -86,7 +89,7 @@ class AmazonS3Storage(BasePayloadStorage):
         if not hasattr(bytes_io, 'seek'):
             bytes_io = bytes_io.read()
         result = self._get_bucket(bucket).put_object(
-            Key=self._cat(namespace, metadata['md5']),
+            Key=self._get_path(namespace, metadata),
             # done automatically by botocore:  ContentMD5=encoded_md5,
             ContentType=metadata['mime_type'],
             ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
@@ -98,12 +101,15 @@ class AmazonS3Storage(BasePayloadStorage):
         for k in subset.keys():
             subset[k] = str(subset[k])
 
-    def get_url(self, namespace, metadata, seconds=DAY, https=True):
+    def get_url(
+        self, namespace: str, metadata: Dict[str, Any], seconds: int = DAY,
+        https: bool = True,
+    ) -> str:
         """Return S3 authenticated URL without making a request.
 
         Stolen from https://gist.github.com/kanevski/655022
         """
-        composite = self._cat(namespace, metadata['md5'])
+        composite = self._get_path(namespace, metadata)
         seconds = int(time()) + seconds
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
             seconds, self.bucket_name, composite).encode('ascii')
@@ -119,15 +125,18 @@ class AmazonS3Storage(BasePayloadStorage):
                 signature=quote(base64.encodestring(digest).strip()),
             )
 
-    def delete(self, namespace, metadatas, bucket=None):
+    def delete(
+        self, namespace: str, metadatas: Sequence[Dict[str, Any]],
+        bucket=None,
+    ) -> None:
         """Delete up to 1000 files."""
         number = len(metadatas)
         assert number <= 1000, 'Amazon allows us to delete only 1000 ' \
             'objects per request; you tried {}'.format(number)
-        # return self._get_object(namespace, key, bucket).delete()
-        keys = (m['md5'] for m in metadatas)
-        return self._get_bucket(bucket).delete_objects(Delete={
-            'Objects': [{'Key': self._cat(namespace, k)} for k in keys]})
+        return self._get_bucket(bucket).delete_objects(Delete={'Objects': [
+            {'Key': self._get_path(namespace, metadata)}
+            for metadata in metadatas
+        ]})
 
     def get_superpowers(self):
         """Get a really dangerous subclass instance."""
