@@ -97,7 +97,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return result
 
     def _convert_values_to_str(self, subset):
-        """The botocore library likes values to be strings, not ints..."""
+        """Replace ints with the strings that botocore likes values to be."""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
