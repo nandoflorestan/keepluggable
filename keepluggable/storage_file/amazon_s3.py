@@ -4,7 +4,7 @@ import base64
 from hashlib import sha1
 import hmac
 from time import time
-from typing import Any, Dict, Sequence
+from typing import Any, Callable, Dict, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
@@ -201,6 +201,7 @@ class AmazonS3Power(AmazonS3Storage):
         new_bucket: str = None,
         skip_the_first_n: int = 0,
         discard_img_sizes: Sequence[str] = [],
+        old_path_from_new_path: Callable[[str], str] = None,
     ):
         """Migrate a bucket from keepluggable < 0.8.
 
@@ -216,13 +217,18 @@ class AmazonS3Power(AmazonS3Storage):
                 discard_img_sizes=['thumb'])
         """
         # Open and iterate old_bucket
-        def old_path_from(path):
-            parts = path.split('/')
-            filename = parts[-1]
-            md5 = filename.split('.')[0]
-            first_dir = parts[0]
-            namespace = ''.join(filter(str.isnumeric, first_dir))
-            return namespace + '-' + md5
+        if old_path_from_new_path is None:
+            def old_path_from_new_path(path):
+                """Convert a new path to an old one.
+
+                Useful for bucket migration. This is an example implementation.
+                """
+                parts = path.split('/')
+                filename = parts[-1]
+                md5 = filename.split('.')[0]
+                first_dir = parts[0]
+                namespace = ''.join(filter(str.isnumeric, first_dir))
+                return namespace + '-' + md5
 
         old = self.s3.Bucket(old_bucket)
         new = self._get_bucket(new_bucket)
@@ -230,7 +236,8 @@ class AmazonS3Power(AmazonS3Storage):
         print('   Retrieving existing keys in target {}'.format(new))
 
         # TODO For a really big bucket we might need to use a database:
-        existing = [old_path_from(fil.key) for fil in new_objects_collection]
+        existing = [old_path_from_new_path(fil.key)
+                    for fil in new_objects_collection]
         print('   There are {}. Migrating remaining files...'.format(
             len(existing)))
 
@@ -266,3 +273,4 @@ class AmazonS3Power(AmazonS3Storage):
             }
             new.copy(copy_source, new_key)  # does not keep the LastModified
             print("   {}. Copied: {}".format(index, new_key))
+        print('Migration finished.')
