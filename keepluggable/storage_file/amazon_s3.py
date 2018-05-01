@@ -143,6 +143,19 @@ class AmazonS3Storage(BasePayloadStorage):
         return AmazonS3Power(self.orchestrator)
 
 
+def old_path_from_new_path(path: str) -> str:
+    """Convert a new path to an old one.
+
+    Useful for bucket migration. This is an example implementation.
+    """
+    parts = path.split('/')
+    filename = parts[-1]
+    md5 = filename.split('.')[0]
+    first_dir = parts[0]
+    namespace = ''.join(filter(str.isnumeric, first_dir))
+    return namespace + '-' + md5
+
+
 class AmazonS3Power(AmazonS3Storage):
     """A subclass with dangerous methods, not part of the interface."""
 
@@ -201,7 +214,7 @@ class AmazonS3Power(AmazonS3Storage):
         new_bucket: str = None,
         skip_the_first_n: int = 0,
         discard_img_sizes: Sequence[str] = [],
-        old_path_from_new_path: Callable[[str], str] = None,
+        old_path_from_new_path: Callable[[str], str] = old_path_from_new_path,
     ):
         """Migrate a bucket from keepluggable < 0.8.
 
@@ -217,19 +230,6 @@ class AmazonS3Power(AmazonS3Storage):
                 discard_img_sizes=['thumb'])
         """
         # Open and iterate old_bucket
-        if old_path_from_new_path is None:
-            def old_path_from_new_path(path):
-                """Convert a new path to an old one.
-
-                Useful for bucket migration. This is an example implementation.
-                """
-                parts = path.split('/')
-                filename = parts[-1]
-                md5 = filename.split('.')[0]
-                first_dir = parts[0]
-                namespace = ''.join(filter(str.isnumeric, first_dir))
-                return namespace + '-' + md5
-
         old = self.s3.Bucket(old_bucket)
         new = self._get_bucket(new_bucket)
         new_objects_collection = new.objects.all()
