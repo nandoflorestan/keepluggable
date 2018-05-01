@@ -195,3 +195,74 @@ class AmazonS3Power(AmazonS3Storage):
         # All items must be deleted before the bucket itself
         self.empty_bucket(bucket)
         return bucket.delete()
+
+    def migrate_bucket(
+        self, old_bucket: str,
+        new_bucket: str = None,
+        skip_the_first_n: int = 0,
+        discard_img_sizes: Sequence[str] = [],
+    ):
+        """Migrate a bucket from keepluggable < 0.8.
+
+        First you must configure the app to use a new bucket. Then you can
+        use this method from Pyramid's shell, ``pshell server.ini``::
+
+            from keepluggable.web.pyramid import get_orchestrator
+            orch = get_orchestrator('KEEPLUGGABLE_NAME', request)
+            power = orch.storage_file.get_superpowers()
+            power.migrate_bucket(
+                'my_old_bucket_name',
+                new_bucket='my_destination_bucket_name',
+                discard_img_sizes=['thumb'])
+        """
+        # Open and iterate old_bucket
+        def old_path_from(path):
+            parts = path.split('/')
+            filename = parts[-1]
+            md5 = filename.split('.')[0]
+            first_dir = parts[0]
+            namespace = ''.join(filter(str.isnumeric, first_dir))
+            return namespace + '-' + md5
+
+        old = self.s3.Bucket(old_bucket)
+        new = self._get_bucket(new_bucket)
+        new_objects_collection = new.objects.all()
+        print('   Retrieving existing keys in target {}'.format(new))
+
+        # TODO For a really big bucket we might need to use a database:
+        existing = [old_path_from(fil.key) for fil in new_objects_collection]
+        print('   There are {}. Migrating remaining files...'.format(
+            len(existing)))
+
+        for index, summary in enumerate(old.objects.all(), 1):
+            if index < skip_the_first_n:
+                continue
+            namespace, md5 = summary.key.split('-')
+
+            # Skip files that already exist in the target bucket
+            if summary.key in existing:
+                print('   {}. Already exists in destination: {}'.format(
+                    index, summary.key))
+                continue
+
+            # TODO Optionally ignore old files, using summary.last_modified
+
+            # Ignore image versions found in "discard_img_sizes"
+            obj = summary.Object()
+            version = obj.metadata.get('version')
+            if version in discard_img_sizes:
+                print('   {}. Skipping unwanted version: {}'.format(
+                    index, obj))
+                continue
+
+            new_key = get_middle_path(
+                name=self.orchestrator.name, namespace=namespace
+            ) + self.SEP + md5 + self._get_extension(obj.content_type)
+
+            # Copy files, including metadata
+            copy_source = {
+                'Bucket': old_bucket,
+                'Key': summary.key,
+            }
+            new.copy(copy_source, new_key)  # does not keep the LastModified
+            print("   {}. Copied: {}".format(index, new_key))

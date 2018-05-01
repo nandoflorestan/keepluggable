@@ -27,13 +27,13 @@ class BasePayloadStorage(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def _get_extension(self, metadata: Dict[str, Any]) -> str:
+    def _get_extension(self, mime_type: str) -> str:
         extensions = sorted(mimetypes.guess_all_extensions(
-            metadata['mime_type'], strict=False))
+            mime_type, strict=False))
         return extensions[0] if extensions else ''
 
     def _get_filename(self, metadata: Dict[str, Any]) -> str:
-        return metadata['md5'] + self._get_extension(metadata)
+        return metadata['md5'] + self._get_extension(metadata['mime_type'])
 
     @abstractmethod
     def get_url(
