@@ -52,11 +52,6 @@ class BasePayloadStorage(metaclass=ABCMeta):
 
     '''
     @abstractmethod
-    def gen_keys(self, namespace):
-        """Generate the existing keys in a namespace."""
-        raise NotImplementedError()
-
-    @abstractmethod
     def delete_namespace(self, namespace):
         """Delete all files in ``namespace``."""
         raise NotImplementedError()

@@ -111,10 +111,11 @@ class LocalFilesystemStorage(BasePayloadStorage):
 class LocalFilesystemPower(LocalFilesystemStorage):
     """A subclass that contains dangerous methods."""
 
-    def gen_keys(self, namespace):
-        """Generate the keys in a namespace."""
-        for f in self._dir_of(namespace).iterdir():
-            yield f.name.split('.', 1)[0]
+    def gen_paths(self, namespace, bucket=None):
+        """Generate the paths in a namespace. Too costly -- avoid."""
+        the_dir = self._dir_of(namespace)
+        for f in the_dir.iterdir():
+            yield f  # TODO TEST OR DELETE METHOD
 
     def delete_namespace(self, namespace):
         """Delete all files in ``namespace``."""

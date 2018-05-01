@@ -97,7 +97,7 @@ class AmazonS3Storage(BasePayloadStorage):
         return result
 
     def _convert_values_to_str(self, subset):
-        """botocore requires all metadata values be strings, not ints..."""
+        """The botocore library likes values to be strings, not ints..."""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
@@ -128,7 +128,7 @@ class AmazonS3Storage(BasePayloadStorage):
     def delete(
         self, namespace: str, metadatas: Sequence[Dict[str, Any]],
         bucket=None,
-    ) -> None:
+    ) -> Any:
         """Delete up to 1000 files."""
         number = len(metadatas)
         assert number <= 1000, 'Amazon allows us to delete only 1000 ' \
@@ -159,17 +159,23 @@ class AmazonS3Power(AmazonS3Storage):
         """Generate the existing bucket names."""
         return (b.name for b in self._buckets)
 
-    def gen_keys(self, namespace, bucket=None):
-        """Generate the keys in a namespace. Too costly -- avoid."""
+    def gen_paths(self, namespace, bucket=None):
+        """Generate the paths in a namespace. Too costly -- avoid."""
+        prefix = get_middle_path(
+            name=self.orchestrator.name, namespace=namespace)
         for o in self._get_bucket(bucket).objects.all():
             composite = o.key
-            if composite.startswith(namespace + '/'):
-                yield composite.split(self.SEP, 1)[1]
+            if composite.startswith(prefix):
+                yield composite
 
     def delete_namespace(self, namespace, bucket=None):
-        """Delete all files in ``namespace``. Too costly."""
-        for key in self.gen_keys(namespace, bucket=bucket):
-            self.delete(namespace, key, bucket=bucket)
+        """Delete all files in ``namespace``.
+
+        This is probably too costly because it reads all objects from bucket.
+        """
+        # TODO Work around S3 limitation of 1000 objects per request
+        self._get_bucket(bucket).delete_objects(Delete={'Objects': [
+            {'Key': path} for path in self.gen_paths(namespace, bucket)]})
 
     def empty_bucket(self, bucket=None):
         """Delete all files in the specified bucket. DANGEROUS."""
