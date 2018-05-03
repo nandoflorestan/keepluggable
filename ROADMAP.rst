@@ -6,7 +6,6 @@ ROADMAP
 This version
 ============
 
-- Use / instead of - to separate the namespace in the filename
 - File information, as converted to JSON, is too verbose! Find ways of making it smaller!
 - Fix inability to store .svg images
 - Review CSRF protection

@@ -254,8 +254,9 @@ class AmazonS3Power(AmazonS3Storage):
 
             # TODO Optionally ignore old files, using summary.last_modified
 
-            # Ignore image versions found in "discard_img_sizes"
             obj = summary.Object()
+
+            # Ignore image versions found in "discard_img_sizes"
             version = obj.metadata.get('version')
             if version in discard_img_sizes:
                 print('   {}. Skipping unwanted version: {}'.format(

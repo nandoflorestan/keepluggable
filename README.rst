@@ -67,3 +67,24 @@ We want your help. We are open to feature requests, suggestions,
 and
 `pull requests <https://github.com/nandoflorestan/keepluggable>`_,
 in reverse order of openness.
+
+
+Migration to keepluggable 0.8
+=============================
+
+keepluggable 0.8 changes the way files are stored. How?
+
+- It separates namespaces using the "/" character rather than "-". This
+  creates a better user experience in the S3 Management console.
+- Now you can use only one bucket per environment if you wish to.
+  Multiple keepluggable integrations (in a single app) can use the
+  same bucket, because each keepluggable integration can use its
+  own directories.
+- Between the bucket name and the file name you can create your own
+  directory scheme (e. g. "/users/42/avatars/angry_mode/"). I am calling
+  this a "middle path". See the function ``get_middle_path()`` in the
+  *orchestrator.py* file.
+
+A migration function is provided so you can update your old storages
+to keepluggable 0.8. See the method ``migrate_bucket()`` in the file
+*amazon_s3.py*.
