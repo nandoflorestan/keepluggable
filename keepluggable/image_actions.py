@@ -64,11 +64,11 @@ class ImageAction(BaseFilesAction):
         # (...)
         img.store_original = False
         img.versions =
+            jpeg 3840 2160 4k
             jpeg 1920 1920 hd
             jpeg  960  960 half
             jpeg  480  480 quarter
             jpeg  240  240 vignette
-            jpeg  160  160 thumb
         img.versions_quality = 90
     """
 
