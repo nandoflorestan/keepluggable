@@ -88,7 +88,10 @@ class LocalFilesystemStorage(BasePayloadStorage):
         The ``seconds`` and ``https`` params are ignored.
         """
         from pyramid.threadlocal import get_current_request  # TODO bad way
-        return get_current_request().static_path('/'.join((
+        request = get_current_request()
+        if request is None:  # In a shell command, for instance,
+            return ''        # the URL is not important.
+        return request.static_path('/'.join((
             self.storage_path,
             get_middle_path(name=self.orchestrator.name, namespace=namespace),
             self._get_filename(metadata))))
