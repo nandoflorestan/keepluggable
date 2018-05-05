@@ -81,6 +81,7 @@ class ImageAction(BaseFilesAction):
         super(ImageAction, self).__init__(*a, **kw)
 
         # TODO: Schema for these configuration settings
+        # TODO: Only once at startup and keep config in an object
         # Read configuration
         self.upload_must_be_img = asbool(self.orchestrator.settings.read(
             'img.upload_must_be_img', default=False))
@@ -232,15 +233,10 @@ class ImageAction(BaseFilesAction):
 
         return img
 
-    def _complement(self, fil):
+    def _complement(self, metadata):
         """Omit the main *href* if we are not storing original images."""
-        url = self.orchestrator.storage_file.get_url
-
+        metadata = super()._complement(metadata)
         # Add main *href* if we are storing original images or if not image
-        if fil.get('image_width') is None or self.store_original:
-            fil['href'] = url(self.namespace, fil)
-
-        # Also add *href* for each version
-        for version in fil['versions']:
-            version['href'] = url(self.namespace, version)
-        return fil
+        if metadata.get('image_width') or not self.store_original:
+            del metadata['href']
+        return metadata

@@ -62,8 +62,7 @@ def get_orchestrator(context, request):
     """
     return request.registry.getUtility(
         IOrchestrator,
-        context if isinstance(context, str)
-        else context.keepluggable_name)
+        context if isinstance(context, str) else context.keepluggable_name)
 
 
 def includeme(config):

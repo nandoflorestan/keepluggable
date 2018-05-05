@@ -6,7 +6,13 @@ ROADMAP
 This version
 ============
 
-- File information, as converted to JSON, is too verbose! Find ways of making it smaller!
+- Validate settings with pydantic at startup and then store a
+  separate configuration object within the orchestrator instance.
+- File information, as converted to JSON, is too verbose! Find ways of
+  making it smaller!
+- Extract Payload (version) model from File model
+  - File should contain: created, file_title, extension.
+  - Payload should contain: image_height, image_width, length, md5, mime_type, extension, file_title, version_name (original would be ""), file_id, and href could be a property if the model can read configuration
 - Fix inability to store .svg images
 - Review CSRF protection
 
@@ -14,8 +20,11 @@ This version
 Urgent
 ======
 
-- Add functional tests
+- We should use classes (probably pydantic models) instead of dumb dictionaries
+- Formalize action interface or use kerno actions
 - Use reg or events instead of subclassing actions
+- Add type annotations
+- Add functional tests
 
 
 Ideas
