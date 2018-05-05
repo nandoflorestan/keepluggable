@@ -194,7 +194,8 @@ class ImageAction(BaseFilesAction):
 
         return metadata
 
-    def _copy_img(self, original, metadata):
+    def _copy_img(self, original, metadata, alpha: bool = True):
+        mode = 'RGBA' if alpha else 'RGB'
         try:
             # if original.mode == 'RGBA':
             #     background = Image.new("RGB", original.size, (255, 255, 255))
@@ -202,7 +203,7 @@ class ImageAction(BaseFilesAction):
             #     background.paste(original, mask=original.split()[3])
             #     return background
             # else:
-            return original.convert('RGB')  # Creates a copy
+            return original.convert(mode)  # Create a copy
         except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
@@ -216,7 +217,7 @@ class ImageAction(BaseFilesAction):
         """
         fmt = version_config['format']
         assert fmt in ('png', 'jpeg', 'gif'), 'Unknown format: {}'.format(fmt)
-        img = self._copy_img(original, metadata)
+        img = self._copy_img(original, metadata, alpha=fmt != 'jpeg')
 
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config['width'], version_config['height']))
