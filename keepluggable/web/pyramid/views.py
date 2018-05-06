@@ -11,7 +11,7 @@ from bag.web.pyramid.views import ajax_view, get_json_or_raise
 from pyramid.response import Response
 
 from keepluggable.exceptions import FileNotAllowed
-from . import _, get_orchestrator
+from keepluggable.web.pyramid import _
 from .resources import BaseFilesResource, BaseFileResource
 
 
@@ -22,9 +22,8 @@ def list_files(context, request):
 
         curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
     """
-    orchestrator = get_orchestrator(context, request)
-    action = orchestrator.get_action(context.namespace)
-    return {'items': list(action.gen_originals(filters=context.filters))}
+    return {'items': list(
+        context.action.gen_originals(filters=context.filters))}
 
 
 @ajax_view
@@ -39,12 +38,8 @@ def upload_single_file(context, request):
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['file']
 
-    orchestrator = get_orchestrator(context, request)
-    action = orchestrator.get_action(context.namespace)
-
-    # encoding = fieldStorage.encoding
     try:
-        return action.store_original_file(
+        return context.action.store_original_file(
             bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
             mime_type=fieldStorage.type, **other_posted_data)
     except (OSError, FileNotAllowed) as e:
@@ -74,14 +69,11 @@ def upload_multiple_files(context, request):
     other_posted_data = dict(request.POST)  # a copy
     del other_posted_data['files']
 
-    orchestrator = get_orchestrator(context, request)
-    action = orchestrator.get_action(context.namespace)
-
     items = []
     for fieldStorage in files:
         # encoding = fieldStorage.encoding
         try:
-            metadata = action.store_original_file(
+            metadata = context.action.store_original_file(
                 bytes_io=fieldStorage.file, file_name=fieldStorage.filename,
                 mime_type=fieldStorage.type, **other_posted_data)
             items.append(metadata)
@@ -104,10 +96,8 @@ def upload_multiple_files(context, request):
 @ajax_view
 def delete_file_and_its_versions(context, request):
     """Delete a file and its derived versions."""
-    orchestrator = get_orchestrator(context, request)
-    action = orchestrator.get_action(context.namespace)
     key_to_delete = context.__name__
-    action.delete_file(key_to_delete)
+    context.action.delete_file(key_to_delete)
     return Response(status_int=204)  # No content
 
 
@@ -124,9 +114,7 @@ def update_metadata(context, request):
         http://localhost:6543/d/1/files/1/@@metadata
     """
     adict = get_json_or_raise(request)
-    orchestrator = get_orchestrator(context, request)
-    action = orchestrator.get_action(context.namespace)
-    return action.update_metadata(context.__name__, adict)
+    return context.action.update_metadata(context.__name__, adict)
 
 
 def get_operations(base_url: str = '') -> Dict[str, Dict[str, Any]]:

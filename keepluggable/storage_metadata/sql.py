@@ -1,11 +1,31 @@
 """Component that stores file metadata in a relational database."""
 
+from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence
+
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
 from kerno.web.to_dict import reuse_dict, to_dict
+from pydantic import PyObject, Required, validator
 from sqlalchemy import Column
 from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
+
+from keepluggable import Pydantic
+from keepluggable.orchestrator import Orchestrator
+
+
+class MetadataStorageConfig(Pydantic):
+    """Validated configuration for ``SQLAlchemyMetadataStorage``.
+
+    - ``metadata_model_cls`` must point to a certain model class to store
+      the file metadata.
+    - ``sql_session`` should point to a scoped session global variable.
+      But instead of using this setting, you may override the
+      ``SQLAlchemyMetadataStorage._get_session()`` method.
+    """
+
+    metadata_model_cls: PyObject = Required
+    sql_session:        PyObject = None
 
 
 class SQLAlchemyMetadataStorage:
@@ -15,14 +35,6 @@ class SQLAlchemyMetadataStorage:
     You must examine the source code and override methods as necessary.
     The most important reason for this is that each application will need
     to namespace the stored files differently.
-
-    **Configuration settings**
-
-    - ``sql.file_model_cls`` must point to a certain model class to store
-      the file metadata.
-    - ``sql.session`` should point to a scoped session global variable.
-      But instead of using this setting, you may override the
-      ``_get_session()`` method.
 
     **Creating your File model class**
 
@@ -62,19 +74,20 @@ class SQLAlchemyMetadataStorage:
         # When original_id is null, this is the original file.
     """
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and ensure a SQLAlchemy session can be obtained."""
         self.orchestrator = orchestrator
-
-        self.file_model_cls = orchestrator.settings.resolve(
-            'sql.file_model_cls')
+        self.config = MetadataStorageConfig(
+            **self.orchestrator.config.settings)
 
         # Get a session at startup just to make sure it is configured
-        self._get_session()
+        assert self._get_session() is not None
 
     def _get_session(self):
         """Return the SQLAlchemy session."""
-        return self.orchestrator.settings.resolve('sql.session')
+        return self.config.sql_session
+
+    # TODO Move namespace into constructor
 
     def put(self, namespace, metadata, sas=None):
         """Create or update a file corresponding to the given ``metadata``.
@@ -86,7 +99,7 @@ class SQLAlchemyMetadataStorage:
         you to override the methods it calls.
         """
         sas = sas or self._get_session()
-        entity = self._query(namespace, key=metadata['md5'], sas=sas).first()
+        entity = self._query(namespace, md5=metadata['md5'], sas=sas).first()
         is_new = entity is None
         if is_new:
             is_new = metadata.pop('is_new', None)
@@ -98,15 +111,15 @@ class SQLAlchemyMetadataStorage:
         sas.flush()
         return entity.id, is_new
 
-    def _query(self, namespace, key=None, filters=None, what=None, sas=None):
+    def _query(self, namespace, md5=None, filters=None, what=None, sas=None):
         """Override this to search for an existing file.
 
         You probably need to do something with the ``namespace``.
         """
         sas = sas or self._get_session()
-        q = sas.query(what or self.file_model_cls)
-        if key is not None:
-            q = q.filter_by(md5=key)
+        q = sas.query(what or self.config.metadata_model_cls)
+        if md5 is not None:
+            q = q.filter_by(md5=md5)
         if filters is not None:
             q = q.filter_by(**filters)
         return q
@@ -117,7 +130,7 @@ class SQLAlchemyMetadataStorage:
         Override this to add or delete arguments on the constructor call.
         You probably need to do something with the ``namespace``.
         """
-        return self.file_model_cls(**metadata)
+        return self.config.metadata_model_cls(**metadata)
 
     def _update(self, namespace, metadata, entity, sas=None):
         """Update the metadata of an existing entity.
@@ -132,9 +145,7 @@ class SQLAlchemyMetadataStorage:
     def update(self, namespace, id, metadata, sas=None):
         """Update a file metadata. It must exist in the database."""
         sas = sas or self._get_session()
-        # entity = self._query(namespace, key=key, sas=sas).one()
-        # entity = self._query(namespace, sas=sas).get(id)
-        entity = sas.query(self.file_model_cls).get(id)
+        entity = sas.query(self.config.metadata_model_cls).get(id)
         if entity is None:
             raise Problem(
                 error_title="That file does not exist.",
@@ -167,21 +178,22 @@ class SQLAlchemyMetadataStorage:
         """Generate the keys in a namespace."""
         sas = sas or self._get_session()
         q = self._query(
-            namespace, filters=filters, what=self.file_model_cls.md5, sas=sas)
+            namespace, filters=filters,
+            what=self.config.metadata_model_cls.md5, sas=sas)
         for tup in q:
             yield tup[0]
 
-    def get(self, namespace, key, sas=None):
+    def get(self, namespace: str, key: str, sas=None) -> Dict[str, Any]:
         """Return a dict: the metadata of one file, or None if not found."""
         sas = sas or self._get_session()
-        entity = self._query(sas=sas, namespace=namespace, key=key).first()
+        entity = self._query(sas=sas, namespace=namespace, md5=key).first()
         return to_dict(entity) if entity else None
 
     def delete_with_versions(self, namespace, key, sas=None):
         """Delete a file along with all its versions."""
         sas = sas or self._get_session()
         original = self._query(
-            sas=sas, namespace=namespace, key=key).one()
+            sas=sas, namespace=namespace, md5=key).one()
         for version in original.versions:
             sas.delete(version)
         sas.delete(original)
@@ -189,7 +201,7 @@ class SQLAlchemyMetadataStorage:
     def delete(self, namespace, key, sas=None):
         """Delete one file."""
         sas = sas or self._get_session()
-        self._query(sas=sas, namespace=namespace, key=key).delete()
+        self._query(sas=sas, namespace=namespace, md5=key).delete()
 
 
 class BaseFile(ID, MinimalBase):

@@ -31,12 +31,27 @@ Resources must also provide ``__name__`` and ``__parent__``. You can
 read more about this in the Pyramid docs.
 """
 
+from keepluggable.orchestrator import Orchestrator
+from pyramid.decorator import reify
 
-class BaseFilesResource:
+
+class BaseResource:
+
+    @reify
+    def orchestrator(self) -> Orchestrator:
+        """Return the Orchestrator instance relevant to this resource."""
+        return Orchestrator.instances[self.keepluggable_name]  # type: ignore
+
+    @reify
+    def action(self):
+        return self.orchestrator.get_action(self.namespace)
+
+
+class BaseFilesResource(BaseResource):
     """Base for a Pyramid traversal resource representing a file store."""
 
 
-class BaseFileResource:
+class BaseFileResource(BaseResource):
     """Pyramid traversal resource representing a specific file.
 
     Here is an example resource using this as a base class::

@@ -33,17 +33,13 @@ In the following example 2 keepluggable storages are configured::
 At application startup
 ======================
 
-Start by including **keepluggable** after Pyramid's Configurator
-is instantiated::
+For each keepluggable storage, you need to instantiate an Orchestrator::
 
-    config.include('keepluggable.web.pyramid')
+    from keepluggable.orchestrator import Orchestrator
 
-This does almost nothing: it only makes a new config method available.
-You have to use it next::
-
-    config.add_keepluggable(  # Directive that adds a keepluggable storage
-        global_settings['__file__'],  # Path to your INI configuration file
-        'avatars',                    # A unique name for this storage.
+    Orchestrator.from_ini(
+        'avatars',                    # A unique name for this storage
+        global_settings['__file__'],  # Path to INI configuration file
     )
 
 This will cause **keepluggable** to read the "[keepluggable avatars]"
@@ -51,13 +47,15 @@ section you created earlier and set it up.
 
 Repeat the call for each separate storage::
 
-    config.add_keepluggable(  # Directive that adds a keepluggable storage
+    Orchestrator.from_ini(
+        'products',                   # A unique name for this storage
         global_settings['__file__'],  # Path to your INI configuration file
-        'products',                   # A unique name for this storage.
     )
 
-The first argument can be a settings dictionary, too -- but we recommend
-you set things up with INI sections as described above.
+The Orchestrator class keeps track of its instances so that later,
+in a request, you can retrieve an instance like this::
+
+    orchestrator = Orchestrator.instances['avatars']
 
 
 Create a resource for the file storage

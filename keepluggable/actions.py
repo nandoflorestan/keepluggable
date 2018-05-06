@@ -1,8 +1,13 @@
 """The base Action class."""
 
+from typing import Any, BinaryIO, Callable, Dict, Iterable, Optional, Sequence
+
 from bag.web.exceptions import Problem
-import colander as c
+from pydantic import PositiveInt, PyObject, Required, validator
+
+from keepluggable import AtLeastOneChar, Pydantic
 from keepluggable.exceptions import FileNotAllowed
+from keepluggable.orchestrator import Orchestrator
 
 
 class BaseFilesAction:
@@ -12,40 +17,35 @@ class BaseFilesAction:
 
     To enable this action, use this configuration::
 
-        action.files = keepluggable.actions:BaseFilesAction
-
-
-    **Configuration settings**
-
-    - ``fls.max_file_size`` (int): the maximum file length, in bytes, that
-      can be uploaded. When zero, the system does not have a maximum size.
-    - ``fls.allow_empty_files`` (boolean): whether to allow zero-length
-      files to be uploaded.
-    - ``fls.update_schema`` (resource spec): Colander schema that validates
-      metadata being updated. Without it, no validation is done, which is
-      unsafe. So it is recommended that you implement a schema.
+        action_cls = keepluggable.actions:BaseFilesAction
     """
 
-    SETTINGS_PREFIX = 'fls.'
-
-    class ConfigurationSchema(c.Schema):
-        """Schema to validate configuration settings for BaseFilesAction."""
-
-        max_file_size = c.SchemaNode(
-            c.Int(), default=0, missing=0, validator=c.Range(min=0), doc="""\
-The maximum file length, in bytes, that can be uploaded. \
-When zero, the system does not have a maximum size.""")
-        allow_empty_files = c.SchemaNode(
-            c.Bool(), default=False, missing=False,
-            doc="Whether to allow zero-length files to be uploaded.")
-
-    def __init__(self, orchestrator, namespace):
-        """Store orchestrator, namespace and the settings for this action."""
+    def __init__(self, orchestrator: Orchestrator, namespace: str) -> None:
+        """Instantiate an action for one request."""
         self.orchestrator = orchestrator
         self.namespace = namespace
-        self.settings = orchestrator.action_configuration
+        self.config = orchestrator.action_config
 
-    def store_original_file(self, bytes_io, **metadata):
+    class Config(Pydantic):
+        """Validated configuration for BaseFilesAction.
+
+        - ``max_file_size`` (int): the maximum file length, in bytes, that
+          can be uploaded. When zero, the system does not have a maximum size.
+        - ``allow_empty_files`` (boolean): whether to allow zero-length
+          files to be uploaded.
+        - ``cls_update_metadata_schema`` (dotted resource spec):
+          Colander schema that validates metadata being updated.
+          Without it, no validation is done, which is unsafe.
+          So it is recommended that you implement a schema.
+        """
+
+        max_file_size:                     PositiveInt = 0
+        allow_empty_files:                        bool = False
+        cls_update_metadata_schema: Optional[PyObject] = None
+
+    def store_original_file(
+        self, bytes_io: BinaryIO, **metadata
+    ) -> Dict[str, Any]:
         """Point of entry into the workflow of storing a file.
 
         You can override this method in subclasses to change the steps
@@ -69,19 +69,23 @@ When zero, the system does not have a maximum size.""")
         if hasattr(self, '_handle_upload_of_existing_file'):
             existing = self._file_already_exists(metadata)
             if existing:
-                return self._handle_upload_of_existing_file(
+                return self._handle_upload_of_existing_file(  # type: ignore
                     bytes_io, metadata, existing)
 
-        metadata['versions'] = self._store_versions(bytes_io, metadata)
+        self._store_versions(bytes_io, metadata)
         return self._complement(metadata)
 
-    def _compute_file_metadata(self, bytes_io, metadata):
+    def _compute_file_metadata(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         """Override this method in subclasses to populate the file metadata."""
         self._guess_mime_type(bytes_io, metadata)
         self._compute_length(bytes_io, metadata)
         self._compute_md5(bytes_io, metadata)
 
-    def _guess_mime_type(self, bytes_io, metadata):
+    def _guess_mime_type(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         """Discover the MIME type from the uploaded file extension.
 
         Otherwise just keep the browser-provided mime_type (less reliable).
@@ -94,11 +98,15 @@ When zero, the system does not have a maximum size.""")
         if typ:
             metadata['mime_type'] = typ
 
-    def _compute_length(self, bytes_io, metadata):
+    def _compute_length(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         from bag.streams import get_file_size
         metadata['length'] = get_file_size(bytes_io)
 
-    def _compute_md5(self, bytes_io, metadata):
+    def _compute_md5(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         from hashlib import md5
         two_megabytes = 1048576 * 2
         the_hash = md5()
@@ -119,34 +127,39 @@ When zero, the system does not have a maximum size.""")
                 "don't match.".format(previous_length, the_length)
         bytes_io.seek(0)  # ...so it can be read again
 
-    def _allow_storage_of(self, bytes_io, metadata):
+    def _allow_storage_of(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         """Override this method if you wish to abort storing some files.
 
         To abort, raise FileNotAllowed with a message explaining why.
         """
-        maximum = self.settings['max_file_size']
+        maximum = self.config.max_file_size
         if maximum and metadata['length'] > maximum:
             raise FileNotAllowed(
                 'The file is {} KB long and the maximum is {} KB.'.format(
                     int(metadata['length'] / 1024), int(maximum / 1024)))
 
-        allow_empty = self.settings['allow_empty_files']
-        if not allow_empty and metadata['length'] == 0:
+        if not self.config.allow_empty_files and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
 
-    def _file_already_exists(self, metadata):
+    def _file_already_exists(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Return existing file with the same md5 in the namespace, or None."""
         return self.orchestrator.storage_metadata.get(
             namespace=self.namespace, key=metadata['md5'])
 
-    def _store_versions(self, bytes_io, metadata):
+    def _store_versions(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         """In this base class, just call _store_file().
 
-        But any subclass will have a complex workflow for storing versions.
+        But most subclasses will have a complex workflow for storing versions.
         """
-        return self._store_file(bytes_io, metadata)
+        self._store_file(bytes_io, metadata)
 
-    def _store_file(self, bytes_io, metadata):
+    def _store_file(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         """Save the payload and the metadata on the 2 storage backends."""
         storage_file = self.orchestrator.storage_file
         storage_file.put(
@@ -155,17 +168,17 @@ When zero, the system does not have a maximum size.""")
         try:
             self._store_metadata(bytes_io, metadata)
         except Exception:
-            storage_file.delete(
-                namespace=self.namespace, keys=(metadata['md5'],))
+            storage_file.delete(namespace=self.namespace, metadatas=[metadata])
             raise
-        return []  # no new versions are created in this case
 
-    def _store_metadata(self, bytes_io, metadata):
+    def _store_metadata(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
         metadata['id'], metadata['is_new'] = \
             self.orchestrator.storage_metadata.put(
                 namespace=self.namespace, metadata=metadata)
 
-    def delete_file(self, key):
+    def delete_file(self, key: str) -> None:
         """Delete a file's metadata and payload, including derived versions."""
         # Obtain the original file.
         sm = self.orchestrator.storage_metadata
@@ -185,7 +198,7 @@ When zero, the system does not have a maximum size.""")
         for metadata in metadatas:
             sm.delete(self.namespace, metadata['md5'])
 
-    def gen_originals(self, filters=None):
+    def gen_originals(self, filters=None) -> Iterable[Dict[str, Any]]:
         """Yield the original files in this namespace.
 
         ...optionally with further filters.
@@ -203,14 +216,13 @@ When zero, the system does not have a maximum size.""")
             originals[adict['original_id']]['versions'].append(adict)
         for f in originals.values():
             f['versions'].sort(key=lambda fil: fil['image_width'])
-        originals = originals.values()
         '''OLD IMPLEMENTATION: (The above is equivalent to this:)
         originals = self.orchestrator.storage_metadata.gen_originals(
             self.namespace, filters=filters)'''
-        for fil in originals:
+        for fil in originals.values():
             yield self._complement(fil)
 
-    def _complement(self, metadata):
+    def _complement(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Add the links for downloading the original file and its versions."""
         url = self.orchestrator.storage_file.get_url
 
@@ -222,15 +234,18 @@ When zero, the system does not have a maximum size.""")
             version['href'] = url(self.namespace, version)
         return metadata
 
-    def _validate_metadata_for_updating(self, adict):
-        schema_cls = self.orchestrator.settings.resolve(
-            'fls.update_schema', default=None)
-        if schema_cls is not None:
-            schema = schema_cls()
+    def _validate_metadata_for_updating(
+        self, adict: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        cls_update_metadata_schema = self.config.cls_update_metadata_schema
+        if cls_update_metadata_schema is not None:
+            schema = cls_update_metadata_schema()
             adict = schema.deserialize(adict)
         return adict
 
-    def update_metadata(self, id, adict):
+    def update_metadata(
+        self, id: int, adict: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """Replace the metadata for key *id* with *adict*."""
         return self._complement(
             self.orchestrator.storage_metadata.update(

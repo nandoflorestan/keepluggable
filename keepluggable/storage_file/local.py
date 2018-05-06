@@ -2,16 +2,25 @@
 
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, Dict, Sequence
-from bag.settings import resolve_path
+from typing import Any, BinaryIO, Dict, Sequence
 
+from bag.settings import resolve_path
+from pydantic import PyObject, Required, validator
+
+from keepluggable import AtLeastOneChar, Pydantic
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
 
 MEGABYTE = 1048576
 
 
-class LocalFilesystemStorage(BasePayloadStorage):
+class LocalConfig(Pydantic):
+    """Validated configuration for LocalStorage."""
+
+    local_storage_path: AtLeastOneChar = Required
+
+
+class LocalStorage(BasePayloadStorage):
     """Local filesystem storage backend.
 
     You should use this for testing only because it is not very robust.
@@ -27,29 +36,30 @@ class LocalFilesystemStorage(BasePayloadStorage):
 
     To enable this backend, use this configuration::
 
-        storage.file = keepluggable.storage_file.local:LocalFilesystemStorage
+        cls_storage_file = keepluggable.storage_file.local.LocalStorage
 
     **Configuration settings**
 
     Specify in which directory to store payloads like this::
 
-        local.storage_path = some.python.resource:relative/directory
+        local_storage_path = some.python.resource:relative/directory
     """
 
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Construct with an Orchestrator instance."""
-        super(LocalFilesystemStorage, self).__init__(orchestrator)
-        self.storage_path = orchestrator.settings.read('local.storage_path')
-        self.directory = resolve_path(self.storage_path).absolute()
+        super().__init__(orchestrator)
+        self.config = LocalConfig(**self.orchestrator.config.settings)
+        self.directory = resolve_path(
+            self.config.local_storage_path).absolute()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
     def _dir_of(self, namespace: str) -> Path:
         """Figure out the directory where we store the given ``namespace``."""
         return self.directory / get_middle_path(
-            name=self.orchestrator.name, namespace=namespace)
+            name=self.orchestrator.config.name, namespace=namespace)
 
-    def get_reader(self, namespace, metadata):
+    def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
         """Return a stream for the file content."""
         try:
             return open(str(
@@ -60,7 +70,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
                 'Key not found: {} / {}'.format(
                     namespace, metadata['md5'])) from e
 
-    def put(self, namespace, metadata, bytes_io):
+    def put(
+        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
+    ) -> None:
         """Store a file (``bytes_io``) inside ``namespace``."""
         if bytes_io.tell():
             bytes_io.seek(0)
@@ -92,8 +104,9 @@ class LocalFilesystemStorage(BasePayloadStorage):
         if request is None:  # In a shell command, for instance,
             return ''        # the URL is not important.
         return request.static_path('/'.join((
-            self.storage_path,
-            get_middle_path(name=self.orchestrator.name, namespace=namespace),
+            self.config.local_storage_path,
+            get_middle_path(name=self.orchestrator.config.name,
+                            namespace=namespace),
             self._get_filename(metadata))))
 
     def delete(
@@ -106,25 +119,25 @@ class LocalFilesystemStorage(BasePayloadStorage):
             if path.exists():
                 path.unlink()
 
-    def get_superpowers(self):
+    def get_superpowers(self) -> 'LocalFilesystemPower':
         """Get a really dangerous subclass instance."""
         return LocalFilesystemPower(self.orchestrator)
 
 
-class LocalFilesystemPower(LocalFilesystemStorage):
+class LocalFilesystemPower(LocalStorage):
     """A subclass that contains dangerous methods."""
 
-    def gen_paths(self, namespace, bucket=None):
+    def gen_paths(self, namespace: str, bucket=None):
         """Generate the paths in a namespace. Too costly -- avoid."""
         the_dir = self._dir_of(namespace)
         for f in the_dir.iterdir():
             yield f  # TODO TEST OR DELETE METHOD
 
-    def delete_namespace(self, namespace):
+    def delete_namespace(self, namespace: str):
         """Delete all files in ``namespace``."""
         rmtree(self._dir_of(namespace))
 
-    def empty_bucket(self, bucket=None):
+    def empty_bucket(self):
         """Empty the whole bucket, deleting namespaces and files."""
         for sub in self.directory.iterdir():
             rmtree(sub)

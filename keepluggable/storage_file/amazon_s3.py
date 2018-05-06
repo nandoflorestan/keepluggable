@@ -4,106 +4,108 @@ import base64
 from hashlib import sha1
 import hmac
 from time import time
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
+from pydantic import PyObject, Required, validator
 
+from keepluggable import AtLeastOneChar, Pydantic
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
 
-DAY = 60 * 60 * 24
+DAY = 60 * 60 * 24  # seconds
+
+
+class S3Config(Pydantic):
+    """Configuration settings for AmazonS3Storage.
+
+    - ``s3_access_key_id``: part of your Amazon credentials
+    - ``s3_access_key_secret``: part of your Amazon credentials
+    - ``s3_region_name``: part of your Amazon credentials
+    - ``s3_bucket``: name of the bucket in which to store objects.
+    """
+
+    s3_access_key_id:     AtLeastOneChar = Required
+    s3_access_key_secret: AtLeastOneChar = Required
+    s3_region_name:       AtLeastOneChar = Required
+    s3_bucket:            AtLeastOneChar = Required
 
 
 class AmazonS3Storage(BasePayloadStorage):
-    """Amazon S3 storage backend.
+    """Storage backend that keeps files in an Amazon S3 bucket.
 
     To enable this backend, use this configuration::
 
-        storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
-
-    **Configuration settings**
-
-    - ``s3.access_key_id``: part of your Amazon credentials
-    - ``s3.secret_access_key``: part of your Amazon credentials
-    - ``s3.region_name``: part of your Amazon credentials
-    - ``s3.bucket``: name of the bucket in which to store objects. If you'd
-      like to come up with the bucket name in code rather than configuration,
-      you may omit this setting and override the _set_bucket() method.
+        storage.file = keepluggable.storage_file.amazon_s3.AmazonS3Storage
     """
 
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and instantiate an S3 Session."""
-        super(AmazonS3Storage, self).__init__(orchestrator)
-        self.access_key_id = orchestrator.settings.read('s3.access_key_id')
-        self.secret_access_key = orchestrator.settings.read(
-            's3.secret_access_key')
+        super().__init__(orchestrator)
+        self.config = S3Config(**self.orchestrator.config.settings)
         session = Session(
-            aws_access_key_id=self.access_key_id,
-            aws_secret_access_key=self.secret_access_key,
-            region_name=orchestrator.settings.read('s3.region_name'))
+            aws_access_key_id=self.config.s3_access_key_id,
+            aws_secret_access_key=self.config.s3_access_key_secret,
+            region_name=self.config.s3_region_name,
+        )
         self.s3 = session.resource('s3')
+        self._set_bucket()
 
-        self._set_bucket(orchestrator.settings)
-
-    def _set_bucket(self, settings):
-        self.bucket_name = settings.read('s3.bucket')
+    def _set_bucket(self, bucket_name=None):
+        self.bucket_name = bucket_name or self.config.s3_bucket
         self.bucket = self.s3.Bucket(self.bucket_name)
-
-    def _get_bucket(self, bucket=None):
-        if bucket is None:
-            return self.bucket
-        return self.s3.Bucket(bucket) if isinstance(bucket, str) else bucket
 
     SEP = '/'
 
     def _get_path(self, namespace: str, metadata: Dict[str, Any]) -> str:
         return get_middle_path(
-            name=self.orchestrator.name, namespace=namespace
+            name=self.orchestrator.config.name, namespace=namespace
         ) + self.SEP + self._get_filename(metadata)
 
-    def _get_object(self, namespace, metadata, bucket=None):
-        return self._get_bucket(bucket).Object(
-            self._get_path(namespace, metadata))
+    def _get_object(self, namespace: str, metadata: Dict[str, Any]):
+        return self.bucket.Object(self._get_path(namespace, metadata))
 
-    def get_reader(self, namespace, metadata, bucket=None):
+    def get_reader(self, namespace: str, metadata: Dict[str, Any]):
         """Return a stream for the file content."""
-        key = metadata['md5']
         try:
-            adict = self._get_object(namespace, key, bucket).get()
+            adict = self._get_object(namespace, metadata).get()
         except ClientError as e:  # amazon_s3: key not found
             raise KeyError(
-                'Key not found: {} / {}'.format(namespace, key)) from e
+                'Key not found: {} / {}'.format(
+                    namespace, metadata['md5'])) from e
         else:
             return adict['Body']  # botocore.response.StreamingBody has .read()
 
-    def put(self, namespace, metadata, bytes_io, bucket=None):
+    def put(
+        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
+    ) -> None:
         """Store a file."""
         subset = dict_subset(metadata, lambda k, v: k in (
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
         self._convert_values_to_str(subset)
         if not hasattr(bytes_io, 'seek'):
-            bytes_io = bytes_io.read()
-        result = self._get_bucket(bucket).put_object(
+            byts = bytes_io.read()
+        result = self.bucket.put_object(
             Key=self._get_path(namespace, metadata),
             # done automatically by botocore:  ContentMD5=encoded_md5,
             ContentType=metadata['mime_type'],
-            ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
+            ContentLength=metadata['length'], Body=byts, Metadata=subset)
         # print(result)
         return result
 
-    def _convert_values_to_str(self, subset):
+    def _convert_values_to_str(self, subset: Dict[str, Any]) -> None:
         """Replace ints with the strings that botocore likes values to be."""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
     def get_url(
-        self, namespace: str, metadata: Dict[str, Any], seconds: int = DAY,
-        https: bool = True,
+        self, namespace: str, metadata: Dict[str, Any], seconds: int=DAY,
+        https: bool=True,
     ) -> str:
         """Return S3 authenticated URL without making a request.
 
@@ -114,31 +116,31 @@ class AmazonS3Storage(BasePayloadStorage):
         to_sign = "GET\n\n\n{}\n/{}/{}".format(
             seconds, self.bucket_name, composite).encode('ascii')
         digest = hmac.new(
-            self.secret_access_key.encode('ascii'), to_sign, sha1).digest()
+            self.config.s3_access_key_secret.encode('ascii'), to_sign, sha1
+        ).digest()
         return '{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId=' \
             '{access_key_id}&Expires={seconds}&Signature={signature}'.format(
                 scheme='https://' if https else 'http://',
                 bucket=self.bucket_name,
                 key=composite,
-                access_key_id=self.access_key_id,
+                access_key_id=self.config.s3_access_key_id,
                 seconds=seconds,
                 signature=quote(base64.encodestring(digest).strip()),
             )
 
     def delete(
         self, namespace: str, metadatas: Sequence[Dict[str, Any]],
-        bucket=None,
     ) -> Any:
         """Delete up to 1000 files."""
         number = len(metadatas)
         assert number <= 1000, 'Amazon allows us to delete only 1000 ' \
             'objects per request; you tried {}'.format(number)
-        return self._get_bucket(bucket).delete_objects(Delete={'Objects': [
+        return self.bucket.delete_objects(Delete={'Objects': [
             {'Key': self._get_path(namespace, metadata)}
             for metadata in metadatas
         ]})
 
-    def get_superpowers(self):
+    def get_superpowers(self) -> 'AmazonS3Power':
         """Get a really dangerous subclass instance."""
         return AmazonS3Power(self.orchestrator)
 
@@ -159,7 +161,7 @@ def old_path_from_new_path(path: str) -> str:
 class AmazonS3Power(AmazonS3Storage):
     """A subclass with dangerous methods, not part of the interface."""
 
-    def create_bucket(self, name):
+    def create_bucket(self, name: str) -> None:
         """Add a bucket to your S3 account."""
         return self.s3.create_bucket(Name=name)
 
@@ -168,46 +170,44 @@ class AmazonS3Power(AmazonS3Storage):
         return self.s3.buckets.all()
 
     @property
-    def bucket_names(self):
+    def bucket_names(self) -> Iterable[str]:
         """Generate the existing bucket names."""
         return (b.name for b in self._buckets)
 
-    def gen_paths(self, namespace, bucket=None):
+    def gen_paths(self, namespace: str) -> Iterable[str]:
         """Generate the paths in a namespace. Too costly -- avoid."""
         prefix = get_middle_path(
-            name=self.orchestrator.name, namespace=namespace)
-        for o in self._get_bucket(bucket).objects.all():
+            name=self.orchestrator.config.name, namespace=namespace)
+        for o in self.bucket.objects.all():
             composite = o.key
             if composite.startswith(prefix):
                 yield composite
 
-    def delete_namespace(self, namespace, bucket=None):
+    def delete_namespace(self, namespace: str) -> None:
         """Delete all files in ``namespace``.
 
         This is probably too costly because it reads all objects from bucket.
         """
         # TODO Work around S3 limitation of 1000 objects per request
-        self._get_bucket(bucket).delete_objects(Delete={'Objects': [
-            {'Key': path} for path in self.gen_paths(namespace, bucket)]})
+        self.bucket.delete_objects(Delete={'Objects': [
+            {'Key': path} for path in self.gen_paths(namespace)]})
 
-    def empty_bucket(self, bucket=None):
-        """Delete all files in the specified bucket. DANGEROUS."""
+    def empty_bucket(self):
+        """Delete all files in this bucket. DANGEROUS."""
         # TODO Request up to 1000 files at a time
-        bucket = self._get_bucket(bucket)
-        items = list(bucket.objects.all())
+        items = list(self.bucket.objects.all())
         if not items:
             return None
-        resp = bucket.delete_objects(Delete={
+        resp = self.bucket.delete_objects(Delete={
             'Objects': [{'Key': o.key} for o in items]})
         print(resp)
         return resp
 
-    def delete_bucket(self, bucket=None):
+    def delete_bucket(self):
         """Delete the entire bucket."""
-        bucket = self._get_bucket(bucket)  # self.bucket
         # All items must be deleted before the bucket itself
-        self.empty_bucket(bucket)
-        return bucket.delete()
+        self.empty_bucket()
+        return self.bucket.delete()
 
     def migrate_bucket(
         self, old_bucket: str,
@@ -221,8 +221,8 @@ class AmazonS3Power(AmazonS3Storage):
         First you must configure the app to use a new bucket. Then you can
         use this method from Pyramid's shell, ``pshell server.ini``::
 
-            from keepluggable.web.pyramid import get_orchestrator
-            orch = get_orchestrator('KEEPLUGGABLE_NAME', request)
+            from keepluggable.web.pyramid import Orchestrator
+            orch = Orchestrator.instances['KEEPLUGGABLE_NAME']
             power = orch.storage_file.get_superpowers()
             power.migrate_bucket(
                 'my_old_bucket_name',
@@ -231,9 +231,10 @@ class AmazonS3Power(AmazonS3Storage):
         """
         # Open and iterate old_bucket
         old = self.s3.Bucket(old_bucket)
-        new = self._get_bucket(new_bucket)
-        new_objects_collection = new.objects.all()
-        print('   Retrieving existing keys in target {}'.format(new))
+        if new_bucket:
+            self._set_bucket(new_bucket)
+        new_objects_collection = self.bucket.objects.all()
+        print('   Retrieving existing keys in target {}'.format(self.bucket))
 
         # TODO For a really big bucket we might need to use a database:
         existing = [old_path_from_new_path(fil.key)
@@ -264,7 +265,7 @@ class AmazonS3Power(AmazonS3Storage):
                 continue
 
             new_key = get_middle_path(
-                name=self.orchestrator.name, namespace=namespace
+                name=self.orchestrator.config.name, namespace=namespace
             ) + self.SEP + md5 + self._get_extension(obj.content_type)
 
             # Copy files, including metadata
@@ -272,6 +273,6 @@ class AmazonS3Power(AmazonS3Storage):
                 'Bucket': old_bucket,
                 'Key': summary.key,
             }
-            new.copy(copy_source, new_key)  # does not keep the LastModified
+            self.bucket.copy(copy_source, new_key)  # LastModified is not kept
             print("   {}. Copied: {}".format(index, new_key))
         print('Migration finished.')

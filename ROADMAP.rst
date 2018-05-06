@@ -6,8 +6,7 @@ ROADMAP
 This version
 ============
 
-- Validate settings with pydantic at startup and then store a
-  separate configuration object within the orchestrator instance.
+- Add type annotations
 - File information, as converted to JSON, is too verbose! Find ways of
   making it smaller!
 - Extract Payload (version) model from File model
@@ -20,11 +19,11 @@ This version
 Urgent
 ======
 
-- We should use classes (probably pydantic models) instead of dumb dictionaries
+- metadata should be a class (probably a pydantic model) instead of
+  a dumb dictionary.
 - Formalize action interface or use kerno actions
-- Use reg or events instead of subclassing actions
-- Add type annotations
 - Add functional tests
+- Use reg or events instead of subclassing actions?
 
 
 Ideas

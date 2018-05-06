@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 import mimetypes
-from typing import Any, Dict, Sequence
+from typing import Any, BinaryIO, Dict, Sequence
 
 from keepluggable.orchestrator import Orchestrator
 
@@ -15,12 +15,14 @@ class BasePayloadStorage(metaclass=ABCMeta):
         self.orchestrator = orchestrator
 
     @abstractmethod
-    def put(self, namespace, metadata, bytes_io):
+    def put(
+        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
+    ) -> None:
         """Store a file (``bytes_io``) inside ``namespace``."""
         raise NotImplementedError()
 
     @abstractmethod
-    def get_reader(self, namespace, metadata):
+    def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
         """Return an open "file" object from which the payload can be read.
 
         Otherwise, raise KeyError.
@@ -40,7 +42,7 @@ class BasePayloadStorage(metaclass=ABCMeta):
         self, namespace: str, metadata: Dict[str, Any], seconds: int = 3600,
         https: bool = True,
     ) -> str:
-        """Return an URL for a certain stored file."""
+        """Return a URL for a certain stored file."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -49,10 +51,3 @@ class BasePayloadStorage(metaclass=ABCMeta):
     ) -> None:
         """Delete many files within a namespace."""
         raise NotImplementedError()
-
-    '''
-    @abstractmethod
-    def delete_namespace(self, namespace):
-        """Delete all files in ``namespace``."""
-        raise NotImplementedError()
-    '''

@@ -1,65 +1,83 @@
 """The *Orchestrator* coordinates the components you chose in configuration."""
 
+from os import PathLike
+from typing import Any, Dict, Iterable, Sequence, Union
+
 from bag.reify import reify
+from pydantic import PyObject, Required, validator
 import reg
-from zope.interface import Interface, implementer, Attribute
+
+from keepluggable import AtLeastOneChar, Pydantic
 
 
-class IOrchestrator(Interface):
-    """Represents the materialization of the components chosen in settings."""
+class Configuration(Pydantic):
+    """Validated configuration of a keepluggable instance.
 
-    storage_file = Attribute('payload storage strategy instance')
-    storage_metadata = Attribute('metadata storage strategy instance')
-    action_cls = Attribute('action strategy class')
+    ``settings`` should contain only the relevant section of an INI file.
+    """
+
+    name:           AtLeastOneChar = Required
+    settings:       Dict[str, Any] = Required
+    cls_storage_file:     PyObject = ''
+    cls_storage_metadata: PyObject = ''
+    cls_action:           PyObject = ''
+
+    @validator('cls_storage_file')
+    def _validate_storage_file(cls, value):
+        from .storage_file import BasePayloadStorage as BPS
+        if not issubclass(value, BPS) or value is BPS:
+            raise ValueError(
+                '*cls_storage_file* must be a subclass of BasePayloadStorage.')
+        return value
 
 
-@implementer(IOrchestrator)
 class Orchestrator:
-    """The coordinator of your configured components.
+    """A coordinator that instantiates configured components at startup.
 
     An Orchestrator instance provides as its variables:
 
     - ``storage_file``: the instance of the payload storage strategy class.
     - ``storage_metadata``: the instance of the metadata storage strategy.
-    - ``action_cls``: the configured action class, ready to be instantiated.
     """
 
-    def __init__(self, name, settings):
-        """``settings`` contains only the relevant section of the INI file."""
-        self.name, self.settings = name, settings
-        self._instantiate_payload_storage()
-        self._instantiate_metadata_storage()
-        self.action_configuration = self._validate_action_configuration()
+    instances: Dict[str, 'Orchestrator'] = {}
 
-    def _instantiate_payload_storage(self):
-        from .storage_file import BasePayloadStorage
-        storage_cls = self.settings.resolve('storage.file')
-        assert issubclass(storage_cls, BasePayloadStorage)
-        self.storage_file = storage_cls(self)
+    def __init__(self, config: Configuration) -> None:
+        """Instantiate from a validated configuration object."""
+        self.config = config
+        self.storage_file = config.cls_storage_file(self)
+        self.storage_metadata = config.cls_storage_metadata(self)
+        Orchestrator.instances[config.name] = self
+        self.action_config = self.config.cls_action.Config(
+            **self.config.settings)
 
-    def _instantiate_metadata_storage(self):
-        storage_cls = self.settings.resolve('storage.metadata')
-        self.storage_metadata = storage_cls(self)
-
-    @reify
-    def action_cls(self):
-        """Return the *action* class configured for this storage."""
-        return self.settings.resolve('action.files')
-
-    def _validate_action_configuration(self):
+    def _validate_action_configuration(self): # TODO NOW
         """Validate settings for the action class against the schema."""
-        # Select settings that start with a prefix like "fls."
-        prefix = self.action_cls.SETTINGS_PREFIX
-        raw_settings = {
-            key[len(prefix):]: val
-            for key, val in self.settings.adict.items()
-            if key.startswith(prefix)}
-        schema = self.action_cls.ConfigurationSchema()
-        return schema.deserialize(raw_settings)
+        self.get_action(1)  # Instantiating the action validates config
 
-    def get_action(self, namespace):
+    @classmethod
+    def from_ini(
+        cls, name: str,
+        *paths: Union[str, PathLike],
+        encoding: str = 'utf-8',
+    ) -> 'Orchestrator':
+        """Read one or more INI files and return an Orchestrator instance."""
+        from configparser import ConfigParser
+        parser = ConfigParser()
+        parser.read(paths, encoding=encoding)
+        section = parser['keepluggable ' + name]
+        config = Configuration(
+            name=name,
+            settings=section,
+            cls_storage_file=section['cls_storage_file'],
+            cls_storage_metadata=section['cls_storage_metadata'],
+            cls_action=section['cls_action'],
+        )
+        return cls(config)
+
+    def get_action(self, namespace: str) -> Any:
         """Conveniently instantiate the configured action class."""
-        return self.action_cls(self, namespace)
+        return self.config.cls_action(self, namespace)
 
 
 @reg.dispatch(  # Dispatch on the value of *name*.
