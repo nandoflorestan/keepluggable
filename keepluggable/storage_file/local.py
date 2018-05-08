@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, BinaryIO, Dict, Sequence
+from typing import Any, BinaryIO, Dict, Iterable, Sequence
 
 from bag.settings import resolve_path
 from pydantic import PyObject, Required, validator
@@ -127,11 +127,11 @@ class LocalStorage(BasePayloadStorage):
 class LocalFilesystemPower(LocalStorage):
     """A subclass that contains dangerous methods."""
 
-    def gen_paths(self, namespace: str, bucket=None):
+    def gen_paths(self, namespace: str) -> Iterable[str]:
         """Generate the paths in a namespace. Too costly -- avoid."""
         the_dir = self._dir_of(namespace)
         for f in the_dir.iterdir():
-            yield f  # TODO TEST OR DELETE METHOD
+            yield str(f)  # TODO TEST OR DELETE METHOD
 
     def delete_namespace(self, namespace: str):
         """Delete all files in ``namespace``."""
