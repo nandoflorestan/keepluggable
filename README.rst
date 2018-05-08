@@ -88,3 +88,5 @@ keepluggable 0.8 changes the way files are stored. How?
 A migration function is provided so you can update your old storages
 to keepluggable 0.8. See the method ``migrate_bucket()`` in the file
 *amazon_s3.py*.
+
+The names of the configuration settings also changed in 0.8.
