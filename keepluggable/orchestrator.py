@@ -34,10 +34,12 @@ class Configuration(Pydantic):
 class Orchestrator:
     """A coordinator that instantiates configured components at startup.
 
-    An Orchestrator instance provides as its variables:
+    An Orchestrator instance provides:
 
     - ``storage_file``: the instance of the payload storage strategy class.
     - ``storage_metadata``: the instance of the metadata storage strategy.
+    - ``get_action(namespace)``: conveniently get an instance of the
+      action class, in order to serve a request.
     """
 
     instances: Dict[str, 'Orchestrator'] = {}
@@ -48,12 +50,7 @@ class Orchestrator:
         self.storage_file = config.cls_storage_file(self)
         self.storage_metadata = config.cls_storage_metadata(self)
         Orchestrator.instances[config.name] = self
-        self.action_config = self.config.cls_action.Config(
-            **self.config.settings)
-
-    def _validate_action_configuration(self): # TODO NOW
-        """Validate settings for the action class against the schema."""
-        self.get_action(1)  # Instantiating the action validates config
+        self.action_config = config.cls_action.Config(**config.settings)
 
     @classmethod
     def from_ini(
