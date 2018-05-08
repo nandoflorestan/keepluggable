@@ -133,11 +133,11 @@ class LocalFilesystemPower(LocalStorage):
         for f in the_dir.iterdir():
             yield str(f)  # TODO TEST OR DELETE METHOD
 
-    def delete_namespace(self, namespace: str):
+    def delete_namespace(self, namespace: str) -> None:
         """Delete all files in ``namespace``."""
         rmtree(self._dir_of(namespace))
 
-    def empty_bucket(self):
+    def empty_bucket(self) -> None:
         """Empty the whole bucket, deleting namespaces and files."""
         for sub in self.directory.iterdir():
             rmtree(sub)

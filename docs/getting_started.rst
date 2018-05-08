@@ -48,22 +48,21 @@ section to my Pyramid config file::
 
     [keepluggable docs]
     # The components we chose:
-    storage.file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
-    storage.metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
-    action.files = keepluggable.actions:BaseFilesAction
+    cls_storage_file = keepluggable.storage_file.amazon_s3:AmazonS3Storage
+    cls_storage_metadata = keepluggable.storage_metadata.sql:SQLAlchemyMetadataStorage
+    cls_action = keepluggable.actions:BaseFilesAction
 
     # AmazonS3Storage configuration:
-    s3.access_key_id = SOME_KEY
-    s3.secret_access_key = SOME_SECRET
-    s3.region_name = SOME_REGION
-    s3.bucket = BUCKET_NAME
+    s3_access_key_id = SOME_KEY
+    s3_access_key_secret = SOME_SECRET
+    s3_region_name = SOME_REGION
+    s3_bucket = BUCKET_NAME
 
     # SQLAlchemyMetadataStorage configuration:
-    sql.file_model_cls = myapp.modules.docs.models:File
-    sql.session = myapp.database:session
+    metadata_model_cls = myapp.modules.docs.models:File
+    sql_session = myapp.database:session
 
-    # action.files configuration keys have a "fls." prefix:
-    fls.max_file_size = 23068672
+    max_file_size = 23068672
 
 Above you see a few ``[key = value]`` pairs. At startup this INI file section
 is read into a Python dictionary which is what the system actually uses as
@@ -73,17 +72,13 @@ The first group of settings define which components we are using.
 Each value is comprised of a Python package name (containing dots),
 then a colon, then a class name. What do they do?
 
-- ``storage.file`` informs which backend class shall be used for
+- ``cls_storage_file`` informs which backend class shall be used for
   file payload storage. In the example, we are using Amazon S3.
-- ``storage.metadata`` informs which backend class shall be used for
+- ``cls_storage_metadata`` informs which backend class shall be used for
   metadata storage. In the example, we are storing metadata with SQLAlchemy.
-- ``action.files`` points to an "Action" class that contains the actual steps
+- ``cls_action`` points to an "Action" class that contains the actual steps
   that will be carried out in the workflow. Thus, probably this will point
   to your own subclass instead of the value given in the example.
-
-Each component we just selected needs its own configuration. Thus,
-the Amazon S3 backend has settings beginning with "s3." and the
-SQLAlchemy metadata storage has settings beginning with "sql.".
 
 To configure each component you selected, please refer to that component's
 own documentation -- it should mention all the possible settings.
