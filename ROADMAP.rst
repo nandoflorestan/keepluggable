@@ -6,7 +6,6 @@ ROADMAP
 This version
 ============
 
-- Add type annotations
 - File information, as converted to JSON, is too verbose! Find ways of
   making it smaller!
 - Extract Payload (version) model from File model
