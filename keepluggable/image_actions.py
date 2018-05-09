@@ -274,6 +274,6 @@ class ImageAction(BaseFilesAction):
         """Omit the main *href* if we are not storing original images."""
         metadata = super()._complement(metadata)
         # Add main *href* if we are storing original images or if not image
-        if metadata.get('image_width') or not self.config.store_original:
+        if not metadata.get('image_width') or not self.config.store_original:
             del metadata['href']
         return metadata
