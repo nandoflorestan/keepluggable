@@ -1,8 +1,9 @@
 """**keepluggable** contains reusable code that stores files and images."""
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, conint, constr
 
 AtLeastOneChar: constr = constr(min_length=1, strip_whitespace=True)
+ZeroOrMore: conint = conint(gt=-1)
 
 
 class Pydantic(BaseModel):

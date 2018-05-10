@@ -3,9 +3,9 @@
 from typing import Any, BinaryIO, Callable, Dict, Iterable, Optional, Sequence
 
 from bag.web.exceptions import Problem
-from pydantic import PositiveInt, PyObject, Required, validator
+from pydantic import PyObject, Required, validator
 
-from keepluggable import AtLeastOneChar, Pydantic
+from keepluggable import AtLeastOneChar, Pydantic, ZeroOrMore
 from keepluggable.exceptions import FileNotAllowed
 from keepluggable.orchestrator import Orchestrator
 
@@ -39,7 +39,7 @@ class BaseFilesAction:
           So it is recommended that you implement a schema.
         """
 
-        max_file_size:                     PositiveInt = 0
+        max_file_size:                      ZeroOrMore = 0
         allow_empty_files:                        bool = False
         cls_update_metadata_schema: Optional[PyObject] = None
 
