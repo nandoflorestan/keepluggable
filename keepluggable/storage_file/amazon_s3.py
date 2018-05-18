@@ -15,7 +15,7 @@ from pydantic import PyObject, Required, validator
 
 from keepluggable import AtLeastOneChar, Pydantic
 from keepluggable.orchestrator import get_middle_path, Orchestrator
-from keepluggable.storage_file import BasePayloadStorage
+from keepluggable.storage_file import BasePayloadStorage, get_extension
 
 DAY = 60 * 60 * 24  # seconds
 
@@ -266,7 +266,7 @@ class AmazonS3Power(AmazonS3Storage):
 
             new_key = get_middle_path(
                 name=self.orchestrator.config.name, namespace=namespace
-            ) + self.SEP + md5 + self._get_extension(obj.content_type)
+            ) + self.SEP + md5 + get_extension(obj.content_type)
 
             # Copy files, including metadata
             copy_source = {

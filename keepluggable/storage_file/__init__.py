@@ -7,6 +7,13 @@ from typing import Any, BinaryIO, Dict, Sequence
 from keepluggable.orchestrator import Orchestrator
 
 
+def get_extension(mime_type: str) -> str:
+    """From a ``mime_type`` return a corresponding file extension, or empty."""
+    extensions = sorted(mimetypes.guess_all_extensions(
+        mime_type, strict=False))
+    return extensions[0] if extensions else ''
+
+
 class BasePayloadStorage(metaclass=ABCMeta):
     """Abstract base class ― formal interface for payload storage backends."""
 
@@ -29,13 +36,8 @@ class BasePayloadStorage(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def _get_extension(self, mime_type: str) -> str:
-        extensions = sorted(mimetypes.guess_all_extensions(
-            mime_type, strict=False))
-        return extensions[0] if extensions else ''
-
     def _get_filename(self, metadata: Dict[str, Any]) -> str:
-        return metadata['md5'] + self._get_extension(metadata['mime_type'])
+        return metadata['md5'] + get_extension(metadata['mime_type'])
 
     @abstractmethod
     def get_url(
