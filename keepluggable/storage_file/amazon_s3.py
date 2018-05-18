@@ -88,12 +88,13 @@ class AmazonS3Storage(BasePayloadStorage):
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
         self._convert_values_to_str(subset)
-        byts = bytes_io.read() if not hasattr(bytes_io, 'seek') else bytes_io
+        if bytes_io.seekable():
+            bytes_io.seek(0)
         result = self.bucket.put_object(
             Key=self._get_path(namespace, metadata),
             # done automatically by botocore:  ContentMD5=encoded_md5,
             ContentType=metadata['mime_type'],
-            ContentLength=metadata['length'], Body=byts, Metadata=subset)
+            ContentLength=metadata['length'], Body=bytes_io, Metadata=subset)
         # print(result)
         return result
 

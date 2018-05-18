@@ -182,14 +182,13 @@ class ImageAction(BaseFilesAction):
             else:
                 super()._store_versions(bytes_io, metadata)
 
-        # Probably don't need to verify the image since we are loading it
-        # original = self._img_from_stream(bytes_io)
-        # original.verify()  # TODO What does this raise?
-
         # # If you need to load the image after verify(), must reopen it
         # bytes_io.seek(0)
         original = self._img_from_stream(bytes_io, metadata)  # may raise
         original = self._rotate_exif_orientation(original)
+
+        # Probably don't need to verify() the image since we are loading it
+        # original.verify()  # TODO What does this raise?
         self._copy_img(original, metadata)  # Try to raise before storing
 
         #  No exceptions were raised,  so store the original file
