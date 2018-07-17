@@ -174,9 +174,8 @@ class BaseFilesAction:
     def _store_metadata(
         self, bytes_io: BinaryIO, metadata: Dict[str, Any],
     ) -> None:
-        metadata['id'], metadata['is_new'] = \
-            self.orchestrator.storage_metadata.put(
-                namespace=self.namespace, metadata=metadata)
+        self.orchestrator.storage_metadata.put(
+            namespace=self.namespace, metadata=metadata)
 
     def delete_file(self, key: str) -> None:
         """Delete a file's metadata and payload, including derived versions."""

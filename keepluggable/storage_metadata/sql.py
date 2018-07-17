@@ -89,7 +89,7 @@ class SQLAlchemyMetadataStorage:
 
     def put(
         self, namespace: str, metadata: Dict[str, Any], sas=None,
-    ) -> Tuple[int, bool]:
+    ) -> Dict[str, Any]:
         """Create or update a file corresponding to the given ``metadata``.
 
         This method returns a 2-tuple containing the ID of the entity
@@ -100,16 +100,17 @@ class SQLAlchemyMetadataStorage:
         """
         sas = sas or self._get_session()
         entity = self._query(namespace, md5=metadata['md5'], sas=sas).first()
-        is_new = entity is None
+        is_new = metadata['is_new'] = entity is None
         if is_new:
-            is_new = metadata.pop('is_new', None)
+            _ = metadata.pop('is_new', None)
             entity = self._instantiate(namespace, metadata, sas=sas)
             sas.add(entity)
             metadata['is_new'] = is_new
         else:
             self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
-        return entity.id, is_new
+        metadata['id'] = entity.id
+        return metadata
 
     def _query(
         self, namespace: str, md5: str='', filters=None, what=None, sas=None,
