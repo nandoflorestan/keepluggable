@@ -181,6 +181,7 @@ class ImageAction(BaseFilesAction):
                     'so it was not stored.'.format(metadata['file_name']))
             else:
                 super()._store_versions(bytes_io, metadata)
+                return
 
         # # If you need to load the image after verify(), must reopen it
         # bytes_io.seek(0)

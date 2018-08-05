@@ -155,6 +155,7 @@ class BaseFilesAction:
 
         But most subclasses will have a complex workflow for storing versions.
         """
+        metadata['versions'] = []
         self._store_file(bytes_io, metadata)
 
     def _store_file(
