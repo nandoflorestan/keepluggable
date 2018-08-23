@@ -76,6 +76,9 @@ class Orchestrator:
         """Conveniently instantiate the configured action class."""
         return self.config.cls_action(self, namespace)
 
+    def __repr__(self):
+        return f'<Orchestrator "{self.config.name}">'
+
 
 @reg.dispatch(  # Dispatch on the value of *name*.
     reg.match_key('name', lambda name, namespace: name))
