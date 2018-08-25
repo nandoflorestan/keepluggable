@@ -88,7 +88,7 @@ class AmazonS3Storage(BasePayloadStorage):
             # We are not storing the 'file_name'
             'image_width', 'image_height', 'original_id', 'version'))
         self._convert_values_to_str(subset)
-        if bytes_io.seekable():
+        if hasattr(bytes_io, 'seekable') and bytes_io.seekable():
             bytes_io.seek(0)
         result = self.bucket.put_object(
             Key=self._get_path(namespace, metadata),
