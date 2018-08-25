@@ -62,9 +62,8 @@ class LocalStorage(BasePayloadStorage):
     def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
         """Return a stream for the file content."""
         try:
-            return open(str(
-                self.directory / str(namespace) / self._get_filename(
-                    metadata)), 'rb')
+            return open(self._dir_of(str(namespace)) / self._get_filename(
+                    metadata), 'rb')
         except FileNotFoundError as e:
             raise KeyError(
                 'Key not found: {} / {}'.format(
