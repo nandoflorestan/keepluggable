@@ -78,7 +78,8 @@ class AmazonS3Storage(BasePayloadStorage):
                 'Key not found: {} / {}'.format(
                     namespace, metadata['md5'])) from e
         else:
-            return adict['Body']  # botocore.response.StreamingBody has .read()
+            # botocore.response.StreamingBody has .read(), but not .tell():
+            return adict['Body']
 
     def put(
         self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
@@ -90,6 +91,14 @@ class AmazonS3Storage(BasePayloadStorage):
         self._convert_values_to_str(subset)
         if hasattr(bytes_io, 'seekable') and bytes_io.seekable():
             bytes_io.seek(0)
+
+        # When botocore.response.StreamingBody is passed in as bytes_io,
+        # the bucket.put_object() call below fails with
+        # "AttributeError: 'StreamingBody' object has no attribute 'tell'"
+        # so we have to read the stream, getting the bytes:
+        if not hasattr(bytes_io, 'tell'):
+            bytes_io = bytes_io.read()  # type: ignore
+
         result = self.bucket.put_object(
             Key=self._get_path(namespace, metadata),
             # done automatically by botocore:  ContentMD5=encoded_md5,
