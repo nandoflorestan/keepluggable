@@ -13,7 +13,7 @@ with open('README.rst', encoding='utf-8') as f:
 requires = [  # Each backend may have additional dependencies.
     'bag >= 1.3.0',
     'kerno',
-    'pydantic < 0.10a',
+    'pydantic < 0.19a',
 ]
 
 if version_info[:2] < (3, 4):
