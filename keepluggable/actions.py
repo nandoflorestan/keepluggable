@@ -70,7 +70,10 @@ class BaseFilesAction:
             existing = self._file_already_exists(metadata)
             if existing:
                 return self._handle_upload_of_existing_file(  # type: ignore
-                    bytes_io, metadata, existing)
+                    bytes_io=bytes_io,
+                    metadata=metadata,
+                    existing=existing,
+                )
 
         self._store_versions(bytes_io, metadata)
         return self._complement(metadata)
