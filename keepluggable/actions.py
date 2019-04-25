@@ -60,22 +60,17 @@ class BaseFilesAction:
         # This is not a derived file such as a resized image.
         metadata['version'] = 'original'
 
-        self._compute_file_metadata(bytes_io, metadata)
+        self._compute_file_metadata(bytes_io=bytes_io, metadata=metadata)
+
+        # In the case of images, keepluggable can be configured to not store
+        # the original, but it still must be checked for duplicates
+        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata)
 
         # Hook for subclasses to allow or forbid storing this file
-        self._allow_storage_of(bytes_io, metadata)  # may raise FileNotAllowed
+        # by raising FileNotAllowed
+        self._allow_storage_of(bytes_io=bytes_io, metadata=metadata)
 
-        # Hook for subclasses to deviate if the file already exists
-        if hasattr(self, '_handle_upload_of_existing_file'):
-            existing = self._file_already_exists(metadata)
-            if existing:
-                return self._handle_upload_of_existing_file(  # type: ignore
-                    bytes_io=bytes_io,
-                    metadata=metadata,
-                    existing=existing,
-                )
-
-        self._store_versions(bytes_io, metadata)
+        self._store_versions(bytes_io=bytes_io, metadata=metadata)
         return self._complement(metadata)
 
     def _compute_file_metadata(
@@ -146,11 +141,6 @@ class BaseFilesAction:
         if not self.config.allow_empty_files and metadata['length'] == 0:
             raise FileNotAllowed('The file is empty.')
 
-    def _file_already_exists(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """Return existing file with the same md5 in the namespace, or None."""
-        return self.orchestrator.storage_metadata.get(
-            namespace=self.namespace, key=metadata['md5'])
-
     def _store_versions(
         self, bytes_io: BinaryIO, metadata: Dict[str, Any],
     ) -> None:
@@ -161,10 +151,40 @@ class BaseFilesAction:
         metadata['versions'] = []
         self._store_file(bytes_io, metadata)
 
+    def _check_for_existing_file(
+        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+    ) -> None:
+        # Hook for subclasses to deviate if the file already exists
+        if hasattr(self, '_handle_upload_of_existing_file'):
+            existing = self._file_already_exists(metadata)
+            # print(existing, metadata['version'], metadata)
+            # import ipdb; ipdb.set_trace() # TODO Remove debug
+            if existing:
+                self._handle_upload_of_existing_file(  # type: ignore
+                    bytes_io=bytes_io,
+                    metadata=metadata,
+                    existing=existing,
+                )
+                # TODO We should roll back any versions stored in AWS
+                # In fact, we should validate everything before sending any
+
+    def _file_already_exists(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Return existing file with the same md5 in the namespace, or None."""
+        return self.orchestrator.storage_metadata.get(
+            namespace=self.namespace, key=metadata['md5'])
+
     def _store_file(
         self, bytes_io: BinaryIO, metadata: Dict[str, Any],
     ) -> None:
-        """Save the payload and the metadata on the 2 storage backends."""
+        """Save the payload and the metadata on the 2 storage backends.
+
+        The arguments contain either the file being uploaded, or the
+        versions of it that we create (e. g. image sizes).
+
+        But first we check for duplicates of the file being stored.
+        """
+        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata)
+
         storage_file = self.orchestrator.storage_file
         storage_file.put(
             namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
