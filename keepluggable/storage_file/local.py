@@ -50,7 +50,7 @@ class LocalStorage(BasePayloadStorage):
         super().__init__(orchestrator)
         self.config = LocalConfig(**self.orchestrator.config.settings)
         self.directory = resolve_path(
-            self.config.local_storage_path).absolute()
+            self.config.local_storage_path).resolve()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
