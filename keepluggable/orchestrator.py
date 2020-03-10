@@ -4,10 +4,10 @@ from os import PathLike
 from typing import Any, Dict, Iterable, Sequence, Union
 
 from bag.reify import reify
-from pydantic import PyObject, Required, validator
+from pydantic import PyObject, validator
 import reg
 
-from keepluggable import AtLeastOneChar, Pydantic
+from keepluggable import Pydantic, ReqStr
 
 
 class Configuration(Pydantic):
@@ -16,18 +16,20 @@ class Configuration(Pydantic):
     ``settings`` should contain only the relevant section of an INI file.
     """
 
-    name:           AtLeastOneChar = Required
-    settings:       Dict[str, Any] = Required
-    cls_storage_file:     PyObject = ''
-    cls_storage_metadata: PyObject = ''
-    cls_action:           PyObject = ''
+    name: ReqStr
+    settings: Dict[str, Any]
+    cls_storage_file: PyObject
+    cls_storage_metadata: PyObject
+    cls_action: PyObject
 
-    @validator('cls_storage_file')
+    @validator("cls_storage_file")
     def _validate_storage_file(cls, value):
         from .storage_file import BasePayloadStorage as BPS
+
         if not issubclass(value, BPS) or value is BPS:
             raise ValueError(
-                '*cls_storage_file* must be a subclass of BasePayloadStorage.')
+                "*cls_storage_file* must be a subclass of BasePayloadStorage."
+            )
         return value
 
 
@@ -42,46 +44,50 @@ class Orchestrator:
       action class, in order to serve a request.
     """
 
-    instances: Dict[str, 'Orchestrator'] = {}
+    instances: Dict[str, "Orchestrator"] = {}
 
     def __init__(self, config: Configuration) -> None:
         """Instantiate from a validated configuration object."""
         self.config = config
-        self.storage_file = config.cls_storage_file(self)
-        self.storage_metadata = config.cls_storage_metadata(self)
+        self.storage_file = config.cls_storage_file(self)  # type: ignore
+        self.storage_metadata = config.cls_storage_metadata(  # type: ignore
+            self
+        )
         Orchestrator.instances[config.name] = self
-        self.action_config = config.cls_action.Config(**config.settings)
+        self.action_config = config.cls_action.Config(  # type: ignore
+            **config.settings
+        )
 
     @classmethod
     def from_ini(
-        cls, name: str,
-        *paths: Union[str, PathLike],
-        encoding: str = 'utf-8',
-    ) -> 'Orchestrator':
+        cls, name: str, *paths: Union[str, PathLike], encoding: str = "utf-8",
+    ) -> "Orchestrator":
         """Read one or more INI files and return an Orchestrator instance."""
         from configparser import ConfigParser
+
         parser = ConfigParser()
         parser.read(paths, encoding=encoding)
-        section = parser['keepluggable ' + name]
+        section = parser["keepluggable " + name]
         config = Configuration(
             name=name,
             settings=section,
-            cls_storage_file=section['cls_storage_file'],
-            cls_storage_metadata=section['cls_storage_metadata'],
-            cls_action=section['cls_action'],
+            cls_storage_file=section["cls_storage_file"],
+            cls_storage_metadata=section["cls_storage_metadata"],
+            cls_action=section["cls_action"],
         )
         return cls(config)
 
     def get_action(self, namespace: str) -> Any:
         """Conveniently instantiate the configured action class."""
-        return self.config.cls_action(self, namespace)
+        return self.config.cls_action(self, namespace)  # type: ignore
 
     def __repr__(self):
         return f'<Orchestrator "{self.config.name}">'
 
 
 @reg.dispatch(  # Dispatch on the value of *name*.
-    reg.match_key('name', lambda name, namespace: name))
+    reg.match_key("name", lambda name, namespace: name)
+)
 # Cannot type-annotate this function, Reg 0.11 does not support it
 def get_middle_path(name, namespace):
     """Return the path between bucket and file name.

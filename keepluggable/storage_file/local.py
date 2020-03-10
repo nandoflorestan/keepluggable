@@ -5,9 +5,9 @@ from shutil import rmtree
 from typing import Any, BinaryIO, Dict, Iterable, Sequence
 
 from bag.settings import resolve_path
-from pydantic import PyObject, Required, validator
+from pydantic import constr, PyObject, validator
 
-from keepluggable import AtLeastOneChar, Pydantic
+from keepluggable import Pydantic, ReqStr
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
 
@@ -17,7 +17,7 @@ MEGABYTE = 1048576
 class LocalConfig(Pydantic):
     """Validated configuration for LocalStorage."""
 
-    local_storage_path: AtLeastOneChar = Required
+    local_storage_path: ReqStr
 
 
 class LocalStorage(BasePayloadStorage):
@@ -49,25 +49,27 @@ class LocalStorage(BasePayloadStorage):
         """Construct with an Orchestrator instance."""
         super().__init__(orchestrator)
         self.config = LocalConfig(**self.orchestrator.config.settings)
-        self.directory = resolve_path(
-            self.config.local_storage_path).resolve()
+        self.directory = resolve_path(self.config.local_storage_path).resolve()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
     def _dir_of(self, namespace: str) -> Path:
         """Figure out the directory where we store the given ``namespace``."""
         return self.directory / get_middle_path(
-            name=self.orchestrator.config.name, namespace=namespace)
+            name=self.orchestrator.config.name, namespace=namespace
+        )
 
     def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
         """Return a stream for the file content."""
         try:
-            return open(self._dir_of(str(namespace)) / self._get_filename(
-                    metadata), 'rb')
+            return open(
+                self._dir_of(str(namespace)) / self._get_filename(metadata),
+                "rb",
+            )
         except FileNotFoundError as e:
             raise KeyError(
-                'Key not found: {} / {}'.format(
-                    namespace, metadata['md5'])) from e
+                "Key not found: {} / {}".format(namespace, metadata["md5"])
+            ) from e
 
     def put(
         self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
@@ -79,17 +81,20 @@ class LocalStorage(BasePayloadStorage):
         if not outdir.exists():
             outdir.mkdir(parents=True)  # Create namespace directory as needed
         outfile = outdir / self._get_filename(metadata)
-        with open(str(outfile), mode='wb', buffering=MEGABYTE) as writer:
+        with open(str(outfile), mode="wb", buffering=MEGABYTE) as writer:
             while True:
                 chunk = bytes_io.read(MEGABYTE)
                 if chunk:
                     writer.write(chunk)
                 else:
                     break
-        assert outfile.lstat().st_size == metadata['length']
+        assert outfile.lstat().st_size == metadata["length"]
 
     def get_url(
-        self, namespace: str, metadata: Dict[str, Any], seconds: int = 3600,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        seconds: int = 3600,
         https: bool = True,
     ) -> str:
         """Return a Pyramid static URL.
@@ -99,14 +104,21 @@ class LocalStorage(BasePayloadStorage):
         The ``seconds`` and ``https`` params are ignored.
         """
         from pyramid.threadlocal import get_current_request  # TODO bad way
+
         request = get_current_request()
         if request is None:  # In a shell command, for instance,
-            return ''        # the URL is not important.
-        return request.static_path('/'.join((
-            self.config.local_storage_path,
-            get_middle_path(name=self.orchestrator.config.name,
-                            namespace=namespace),
-            self._get_filename(metadata))))
+            return ""  # the URL is not important.
+        return request.static_path(
+            "/".join(
+                (
+                    self.config.local_storage_path,
+                    get_middle_path(
+                        name=self.orchestrator.config.name, namespace=namespace
+                    ),
+                    self._get_filename(metadata),
+                )
+            )
+        )
 
     def delete(
         self, namespace: str, metadatas: Sequence[Dict[str, Any]],
@@ -118,7 +130,7 @@ class LocalStorage(BasePayloadStorage):
             if path.exists():
                 path.unlink()
 
-    def get_superpowers(self) -> 'LocalFilesystemPower':
+    def get_superpowers(self) -> "LocalFilesystemPower":
         """Get a really dangerous subclass instance."""
         return LocalFilesystemPower(self.orchestrator)
 

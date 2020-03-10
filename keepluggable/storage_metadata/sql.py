@@ -1,11 +1,20 @@
 """Component that stores file metadata in a relational database."""
 
-from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence, Tuple
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
 from kerno.web.to_dict import reuse_dict, to_dict
-from pydantic import PyObject, Required, validator
+from pydantic import PyObject, validator
 from sqlalchemy import Column
 from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
@@ -24,8 +33,8 @@ class MetadataStorageConfig(Pydantic):
       ``SQLAlchemyMetadataStorage._get_session()`` method.
     """
 
-    metadata_model_cls: PyObject = Required
-    sql_session:        PyObject = None
+    metadata_model_cls: PyObject
+    sql_session: Optional[PyObject] = None
 
 
 class SQLAlchemyMetadataStorage:
@@ -78,7 +87,8 @@ class SQLAlchemyMetadataStorage:
         """Read settings and ensure a SQLAlchemy session can be obtained."""
         self.orchestrator = orchestrator
         self.config = MetadataStorageConfig(
-            **self.orchestrator.config.settings)
+            **self.orchestrator.config.settings
+        )
 
         # Get a session at startup just to make sure it is configured
         assert self._get_session() is not None
@@ -99,21 +109,21 @@ class SQLAlchemyMetadataStorage:
         you to override the methods it calls.
         """
         sas = sas or self._get_session()
-        entity = self._query(namespace, md5=metadata['md5'], sas=sas).first()
-        is_new = metadata['is_new'] = entity is None
+        entity = self._query(namespace, md5=metadata["md5"], sas=sas).first()
+        is_new = metadata["is_new"] = entity is None
         if is_new:
-            _ = metadata.pop('is_new', None)
+            _ = metadata.pop("is_new", None)
             entity = self._instantiate(namespace, metadata, sas=sas)
             sas.add(entity)
-            metadata['is_new'] = is_new
+            metadata["is_new"] = is_new
         else:
             self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
-        metadata['id'] = entity.id
+        metadata["id"] = entity.id
         return metadata
 
     def _query(
-        self, namespace: str, md5: str='', filters=None, what=None, sas=None,
+        self, namespace: str, md5: str = "", filters=None, what=None, sas=None,
     ) -> Any:
         """Override this to search for an existing file.
 
@@ -135,7 +145,7 @@ class SQLAlchemyMetadataStorage:
         Override this to add or delete arguments on the constructor call.
         You probably need to do something with the ``namespace``.
         """
-        return self.config.metadata_model_cls(**metadata)
+        return self.config.metadata_model_cls(**metadata)  # type: ignore
 
     def _update(
         self, namespace: str, metadata: Dict[str, Any], entity, sas=None,
@@ -168,7 +178,7 @@ class SQLAlchemyMetadataStorage:
         """Generate original files (not derived versions)."""
         sas = sas or self._get_session()
         filters = {} if filters is None else filters
-        filters['version'] = 'original'
+        filters["version"] = "original"
         for entity in self._query(namespace, filters=filters, sas=sas):
             yield to_dict(entity)
 
@@ -187,8 +197,11 @@ class SQLAlchemyMetadataStorage:
         """Generate the keys in a namespace."""
         sas = sas or self._get_session()
         q = self._query(
-            namespace, filters=filters,
-            what=self.config.metadata_model_cls.md5, sas=sas)
+            namespace,
+            filters=filters,
+            what=self.config.metadata_model_cls.md5,  # type: ignore
+            sas=sas,
+        )
         for tup in q:
             yield tup[0]
 
@@ -201,8 +214,7 @@ class SQLAlchemyMetadataStorage:
     def delete_with_versions(self, namespace: str, key, sas=None):
         """Delete a file along with all its versions."""
         sas = sas or self._get_session()
-        original = self._query(
-            sas=sas, namespace=namespace, md5=key).one()
+        original = self._query(sas=sas, namespace=namespace, md5=key).one()
         for version in original.versions:
             sas.delete(version)
         sas.delete(original)
@@ -220,18 +232,22 @@ class BaseFile(ID, MinimalBase):
     """
 
     # id = Primary key that exists because we inherit from ID
-    md5 = Column(Unicode(32), nullable=False,
-                 doc='hashlib.md5(file_content).hexdigest()')
+    md5 = Column(
+        Unicode(32),
+        nullable=False,
+        doc="hashlib.md5(file_content).hexdigest()",
+    )
     file_name = Column(
         Unicode(300),
-        doc="Name of the original uploaded file, including extension")
-    length = Column(Integer, nullable=False, doc='File size in bytes')
+        doc="Name of the original uploaded file, including extension",
+    )
+    length = Column(Integer, nullable=False, doc="File size in bytes")
     created = now_column()  # Stores the moment the instance is created
     mime_type = Column(Unicode(255), doc='MIME type; e.g. "image/jpeg"')
     # http://stackoverflow.com/questions/643690/maximum-mimetype-length-when-storing-type-in-db
-    image_width = Column(Integer, doc='Image width in pixels')
-    image_height = Column(Integer, doc='Image height in pixels')
-    version = Column(Unicode(20), default='original')
+    image_width = Column(Integer, doc="Image width in pixels")
+    image_height = Column(Integer, doc="Image height in pixels")
+    version = Column(Unicode(20), default="original")
 
     @property
     def aspect_ratio(self):
@@ -247,23 +263,27 @@ class BaseFile(ID, MinimalBase):
         """Return the file this instance is derived from."""
         return sas.query(type(self)).get(self.original_id)
 
-    def q_versions(self, sas=None, order_by='image_width'):
+    def q_versions(self, sas=None, order_by="image_width"):
         """Query that returns files derived from this instance."""
         sas = sas or object_session(self)
-        return sas.query(type(self)).filter_by(
-            original_id=self.id).order_by(order_by)
+        return (
+            sas.query(type(self))
+            .filter_by(original_id=self.id)
+            .order_by(order_by)
+        )
 
     def __repr__(self):
         return '<{} #{} "{}" {}>'.format(
-            type(self).__name__, self.id, self.file_name, self.version)
+            type(self).__name__, self.id, self.file_name, self.version
+        )
 
 
-@to_dict.register(obj=BaseFile, flavor='')
-def file_to_dict(obj, flavor='', **kw):  # , versions=True
+@to_dict.register(obj=BaseFile, flavor="")
+def file_to_dict(obj, flavor="", **kw):  # , versions=True
     """Convert instance to a dictionary, usually for JSON output."""
     amap = reuse_dict(obj=obj, sort=False, **kw)
-    if kw.get('versions', True):
-        amap['versions'] = [reuse_dict(obj=v, **kw) for v in obj.q_versions()]
+    if kw.get("versions", True):
+        amap["versions"] = [reuse_dict(obj=v, **kw) for v in obj.q_versions()]
     else:
-        amap['versions'] = []
+        amap["versions"] = []
     return amap

@@ -3,15 +3,24 @@
 from copy import copy
 from io import BytesIO
 from typing import (
-    Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Union)
+    Any,
+    BinaryIO,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 # import imghdr  # imghdr.what(file)
 from bag.settings import asbool
 from bag.web.exceptions import Problem
-from pydantic import PositiveInt, PyObject, Required, validator
+from pydantic import PositiveInt, PyObject, validator
 from PIL import Image, ExifTags
 
-from keepluggable import AtLeastOneChar, Pydantic
+from keepluggable import Pydantic, ReqStr
 from keepluggable.actions import BaseFilesAction
 from keepluggable.exceptions import FileNotAllowed
 
@@ -19,30 +28,28 @@ from keepluggable.exceptions import FileNotAllowed
 class ImageVersionConfig(Pydantic):
     """A part of the configuration."""
 
-    format:         str = Required
-    width:  PositiveInt = Required
-    height: PositiveInt = Required
-    name:           str = Required
+    format: ReqStr
+    width: PositiveInt
+    height: PositiveInt
+    name: ReqStr
 
-    @validator('format')
+    @validator("format")
     def validate_format(cls, value: str) -> str:
         """Convert format to lower case."""
         value = value.lower()
-        if value not in ('png', 'jpeg', 'gif'):
-            raise ValueError(f'Unknown format: {value}')
+        if value not in ("png", "jpeg", "gif"):
+            raise ValueError(f"Unknown format: {value}")
         return value
 
     @classmethod
-    def from_str(cls, line: str) -> 'ImageVersionConfig':
+    def from_str(cls, line: str) -> "ImageVersionConfig":
         """Instantiate from a configuration line."""
         parts = line.split()
-        assert len(parts) == 4, \
-            f'The configuration line "{line}" should have 4 parts'
+        assert (
+            len(parts) == 4
+        ), f'The configuration line "{line}" should have 4 parts'
         return cls(
-            format=parts[0],
-            width=parts[1],
-            height=parts[2],
-            name=parts[3],
+            format=parts[0], width=parts[1], height=parts[2], name=parts[3],
         )
 
 
@@ -115,14 +122,14 @@ class ImageAction(BaseFilesAction):
     class Config(BaseFilesAction.Config):
         """Validated configuration for ``ImageAction``."""
 
-        upload_must_be_img:                   bool = False
-        store_original:                       bool = True
-        versions_quality:                      int = 90
-        versions:         List[ImageVersionConfig] = Required
+        upload_must_be_img: bool = False
+        store_original: bool = True
+        versions_quality: int = 90
+        versions: List[ImageVersionConfig]
 
-        @validator('versions', pre=True, whole=True)
+        @validator("versions", pre=True, whole=True)
         def validate_versions(
-            cls, value: Union[ImageVersionConfig, str],
+            cls, value: Union[List[ImageVersionConfig], str],
         ) -> List[ImageVersionConfig]:
             """Convert the configuration string into validated objects."""
             if not isinstance(value, str):
@@ -130,7 +137,7 @@ class ImageAction(BaseFilesAction):
 
             # Convert str to ImageVersionConfig
             versions = []
-            for line in value.split('\n'):
+            for line in value.split("\n"):
                 line = line.strip()
                 if not line:  # Ignore an empty line
                     continue
@@ -147,8 +154,10 @@ class ImageAction(BaseFilesAction):
         except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
-                'the server is unable to identify the image format.'.format(
-                    metadata['file_name']))
+                "the server is unable to identify the image format.".format(
+                    metadata["file_name"]
+                )
+            )
         img.bytes_io = bytes_io
         return img
 
@@ -158,12 +167,12 @@ class ImageAction(BaseFilesAction):
         Some cameras do not rotate the image, they just add orientation
         metadata to the file, so we rotate it here.
         """
-        if not hasattr(img, '_getexif'):
+        if not hasattr(img, "_getexif"):
             return img  # PIL.PngImagePlugin.PngImageFile apparently lacks EXIF
         tags = img._getexif()
         if tags is None:
             return img
-        orientation = tags.get(self.EXIF_TAGS['Orientation'])
+        orientation = tags.get(self.EXIF_TAGS["Orientation"])
         if orientation is None:
             return img
         degrees = self.EXIF_ROTATION_FIX.get(orientation)
@@ -173,12 +182,13 @@ class ImageAction(BaseFilesAction):
         self, bytes_io: BinaryIO, metadata: Dict[str, Any],
     ) -> None:
         # We override this method to deal with images.
-        is_image = metadata['mime_type'].startswith('image')
+        is_image = metadata["mime_type"].startswith("image")
         if not is_image:
             if self.config.upload_must_be_img:
                 raise FileNotAllowed(
                     'The file name "{}" lacks a supported image extension, '
-                    'so it was not stored.'.format(metadata['file_name']))
+                    "so it was not stored.".format(metadata["file_name"])
+                )
             else:
                 super()._store_versions(bytes_io, metadata)
                 return
@@ -193,10 +203,10 @@ class ImageAction(BaseFilesAction):
         self._copy_img(original, metadata)  # Try to raise before storing
 
         #  No exceptions were raised,  so store the original file
-        metadata['image_width'], metadata['image_height'] = original.size
+        metadata["image_width"], metadata["image_height"] = original.size
         if self.config.store_original:  # Optionally store original payload
             self._store_file(bytes_io, metadata)
-        else:                        # Always store original metadata
+        else:  # Always store original metadata
             self._store_metadata(bytes_io, metadata)
 
         # There is no point in enlarging an uploaded image, but some
@@ -209,19 +219,24 @@ class ImageAction(BaseFilesAction):
             current_area = version_config.width * version_config.height
             if largest_version_created_so_far <= original_area:
                 # Do it
-                new_versions.append(self._store_img_version(  # may raise
-                    original, metadata, version_config))
+                new_versions.append(
+                    self._store_img_version(  # may raise
+                        original, metadata, version_config
+                    )
+                )
                 largest_version_created_so_far = current_area
-        metadata['versions'] = new_versions
+        metadata["versions"] = new_versions
 
     def _store_img_version(
-        self, original: Image, original_metadata: Dict[str, Any],
+        self,
+        original: Image,
+        original_metadata: Dict[str, Any],
         version_config: ImageVersionConfig,
     ) -> Dict[str, Any]:
         metadata = copy(original_metadata)
-        metadata['version'] = version_config.name
-        metadata['original_id'] = original_metadata['id']
-        del metadata['id']
+        metadata["version"] = version_config.name
+        metadata["original_id"] = original_metadata["id"]
+        del metadata["id"]
 
         img = self._convert_img(original, metadata, version_config)
 
@@ -233,17 +248,21 @@ class ImageAction(BaseFilesAction):
     def _copy_img(
         self, original: Image, metadata: Dict[str, Any], alpha: bool = True,
     ) -> Image:
-        mode = 'RGBA' if alpha else 'RGB'
+        mode = "RGBA" if alpha else "RGB"
         try:
             return original.convert(mode)  # Create a copy
         except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
-                'the server is unable to convert it.'.format(
-                    metadata['file_name']))
+                "the server is unable to convert it.".format(
+                    metadata["file_name"]
+                )
+            )
 
     def _convert_img(
-        self, original: Image, metadata: Dict[str, Any],
+        self,
+        original: Image,
+        metadata: Dict[str, Any],
         version_config: ImageVersionConfig,
     ) -> Image:
         """Return a new image, converted from ``original``.
@@ -251,20 +270,23 @@ class ImageAction(BaseFilesAction):
         Do it using ``version_config`` and setting ``metadata``.
         """
         fmt = version_config.format
-        img = self._copy_img(original, metadata, alpha=fmt != 'jpeg')
+        img = self._copy_img(original, metadata, alpha=fmt != "jpeg")
 
         # Resize, keeping the aspect ratio:
         img.thumbnail((version_config.width, version_config.height))
 
         stream = BytesIO()
         img.save(
-            stream, format=fmt.upper(),
-            quality=self.config.versions_quality, optimize=1)
+            stream,
+            format=fmt.upper(),
+            quality=self.config.versions_quality,
+            optimize=1,
+        )
         img.stream = stream  # so we can recover it elsewhere
 
         # Fill in the metadata
-        metadata['mime_type'] = 'image/' + fmt
-        metadata['image_width'], metadata['image_height'] = img.size
+        metadata["mime_type"] = "image/" + fmt
+        metadata["image_width"], metadata["image_height"] = img.size
         self._compute_length(stream, metadata)
         self._compute_md5(stream, metadata)
 
@@ -274,6 +296,6 @@ class ImageAction(BaseFilesAction):
         """Omit the main *href* if we are not storing original images."""
         metadata = super()._complement(metadata)
         # Add main *href* if we are storing original images or if not image
-        if metadata.get('image_width') and not self.config.store_original:
-            del metadata['href']
+        if metadata.get("image_width") and not self.config.store_original:
+            del metadata["href"]
         return metadata

@@ -1,9 +1,16 @@
 """**keepluggable** contains reusable code that stores files and images."""
 
+# TODO Move this module to kerno.pydantic
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, conint, constr
 
-AtLeastOneChar: constr = constr(min_length=1, strip_whitespace=True)
-ZeroOrMore: conint = conint(gt=-1)
+if TYPE_CHECKING:
+    ReqStr = str
+    ZeroOrMore = int
+else:
+    ReqStr = constr(min_length=1, strip_whitespace=True, strict=True)
+    ZeroOrMore = conint(gt=-1)
 
 
 class Pydantic(BaseModel):
