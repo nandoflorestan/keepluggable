@@ -22,7 +22,7 @@ if version_info[:2] < (3, 4):
 
 setup(
     name="keepluggable",
-    version="0.8.1",
+    version="0.8.2.dev1",
     description="Manages storage of images and other files, with metadata."
     " Also offers an HTTP API done on Pyramid.",
     long_description=long_description,
