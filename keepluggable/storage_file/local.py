@@ -5,9 +5,8 @@ from shutil import rmtree
 from typing import Any, BinaryIO, Dict, Iterable, Sequence
 
 from bag.settings import resolve_path
-from pydantic import constr, PyObject, validator
+from kerno.pydantic import Pydantic, ReqStr
 
-from keepluggable import Pydantic, ReqStr
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
 

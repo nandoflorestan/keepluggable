@@ -1,25 +1,16 @@
 """Component that stores file metadata in a relational database."""
 
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import Any, Dict, Optional
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
+from kerno.pydantic import Pydantic
 from kerno.web.to_dict import reuse_dict, to_dict
-from pydantic import PyObject, validator
+from pydantic import PyObject
 from sqlalchemy import Column
 from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
 
-from keepluggable import Pydantic
 from keepluggable.orchestrator import Orchestrator
 
 

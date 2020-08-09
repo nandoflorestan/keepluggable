@@ -8,13 +8,12 @@ from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
+from kerno.pydantic import Pydantic, ReqStr
 
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
 from boto3.session import Session  # easy_install -UZ boto3
-from pydantic import PyObject, validator
 
-from keepluggable import Pydantic, ReqStr
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage, get_extension
 

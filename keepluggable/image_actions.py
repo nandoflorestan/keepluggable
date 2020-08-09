@@ -2,25 +2,13 @@
 
 from copy import copy
 from io import BytesIO
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, BinaryIO, Dict, List, Union
 
 # import imghdr  # imghdr.what(file)
-from bag.settings import asbool
-from bag.web.exceptions import Problem
-from pydantic import PositiveInt, PyObject, validator
+from kerno.pydantic import Pydantic, ReqStr
+from pydantic import PositiveInt, validator
 from PIL import Image, ExifTags
 
-from keepluggable import Pydantic, ReqStr
 from keepluggable.actions import BaseFilesAction
 from keepluggable.exceptions import FileNotAllowed
 
