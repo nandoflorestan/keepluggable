@@ -115,7 +115,7 @@ class ImageAction(BaseFilesAction):
         versions_quality: int = 90
         versions: List[ImageVersionConfig]
 
-        @validator("versions", pre=True, whole=True)
+        @validator("versions", pre=True, each_item=False)
         def validate_versions(
             cls, value: Union[List[ImageVersionConfig], str],
         ) -> List[ImageVersionConfig]:
