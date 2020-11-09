@@ -37,7 +37,10 @@ class ImageVersionConfig(Pydantic):
             len(parts) == 4
         ), f'The configuration line "{line}" should have 4 parts'
         return cls(
-            format=parts[0], width=parts[1], height=parts[2], name=parts[3],
+            format=parts[0],
+            width=parts[1],
+            height=parts[2],
+            name=parts[3],
         )
 
 
@@ -117,7 +120,8 @@ class ImageAction(BaseFilesAction):
 
         @validator("versions", pre=True, each_item=False)
         def validate_versions(
-            cls, value: Union[List[ImageVersionConfig], str],
+            cls,
+            value: Union[List[ImageVersionConfig], str],
         ) -> List[ImageVersionConfig]:
             """Convert the configuration string into validated objects."""
             if not isinstance(value, str):
@@ -135,7 +139,9 @@ class ImageAction(BaseFilesAction):
             return versions
 
     def _img_from_stream(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> Image:
         try:
             img = Image.open(bytes_io)
@@ -164,10 +170,13 @@ class ImageAction(BaseFilesAction):
         if orientation is None:
             return img
         degrees = self.EXIF_ROTATION_FIX.get(orientation)
-        return img.rotate(degrees) if degrees else img
+        rotated = img.rotate(degrees, expand=True) if degrees else img
+        return rotated
 
     def _store_versions(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         # We override this method to deal with images.
         is_image = metadata["mime_type"].startswith("image")
@@ -234,7 +243,10 @@ class ImageAction(BaseFilesAction):
         return metadata
 
     def _copy_img(
-        self, original: Image, metadata: Dict[str, Any], alpha: bool = True,
+        self,
+        original: Image,
+        metadata: Dict[str, Any],
+        alpha: bool = True,
     ) -> Image:
         mode = "RGBA" if alpha else "RGB"
         try:
@@ -252,16 +264,17 @@ class ImageAction(BaseFilesAction):
         original: Image,
         metadata: Dict[str, Any],
         version_config: ImageVersionConfig,
+        resample=Image.LANCZOS,
     ) -> Image:
         """Return a new image, converted from ``original``.
 
         Do it using ``version_config`` and setting ``metadata``.
         """
         fmt = version_config.format
-        img = self._copy_img(original, metadata, alpha=fmt != "jpeg")
 
         # Resize, keeping the aspect ratio:
-        img.thumbnail((version_config.width, version_config.height))
+        img = self._copy_img(original, metadata, alpha=fmt != "jpeg")
+        img.thumbnail((version_config.width, version_config.height), resample)
 
         stream = BytesIO()
         img.save(
