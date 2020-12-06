@@ -4,7 +4,7 @@ from collections import OrderedDict
 from datetime import datetime
 from unittest import TestCase
 from kerno.web.to_dict import to_dict
-from mock import patch
+from unittest.mock import patch
 from .. import File
 
 
