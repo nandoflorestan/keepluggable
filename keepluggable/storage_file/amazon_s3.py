@@ -154,7 +154,7 @@ class AmazonS3Storage(BasePayloadStorage):
                 key=composite,
                 access_key_id=self.config.s3_access_key_id,
                 seconds=seconds,
-                signature=quote(base64.encodestring(digest).strip()),
+                signature=quote(base64.encodebytes(digest).strip()),
             )
         )
 
