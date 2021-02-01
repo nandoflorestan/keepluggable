@@ -40,8 +40,8 @@ Releaser(
     GitTag,  # Locally tag the current commit with the new version number
     InteractivelyApproveDistribution,  # Generate sdist, let user verify it
     InteractivelyApproveWheel,         # Generate wheel, let user verify it
-    PypiUpload,   # Make and upload a source .tar.gz to https://pypi.python.org
-    PypiUploadWheel,  # Make and upload source wheel to https://pypi.python.org
+    PypiUpload,   # Make and upload a source .tar.gz to https://pypi.org
+    PypiUploadWheel,  # Make and upload source wheel to https://pypi.org
 
     # ===========  Post-release: set development version and push  ============
     SetFutureVersion,  # Writes incremented version, now with 'dev' suffix
