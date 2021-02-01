@@ -31,8 +31,6 @@ Releaser(
     EnsureGitClean,   # There are no uncommitted changes in tracked files.
     EnsureGitBranch,  # I must be in the branch specified in config
     # InteractivelyEnsureChangesDocumented,     # Did you update CHANGES.rst?
-    InteractivelyApproveDistribution,  # Generate sdist, let user verify it
-    InteractivelyApproveWheel,         # Let user verify a temp wheel
     # CheckTravis,  # We run this late, so travis-ci has more time to build
 
     # ======================  All checks pass. RELEASE!  ======================
@@ -40,6 +38,8 @@ Releaser(
     Shell('./build_sphinx_documentation.sh'),
     GitCommitVersionNumber,
     GitTag,  # Locally tag the current commit with the new version number
+    InteractivelyApproveDistribution,  # Generate sdist, let user verify it
+    InteractivelyApproveWheel,         # Generate wheel, let user verify it
     PypiUpload,   # Make and upload a source .tar.gz to https://pypi.python.org
     PypiUploadWheel,  # Make and upload source wheel to https://pypi.python.org
 
