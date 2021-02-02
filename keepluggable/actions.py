@@ -44,7 +44,7 @@ class BaseFilesAction:
         cls_update_metadata_schema: Optional[PyObject] = None
 
     def store_original_file(
-        self, bytes_io: BinaryIO, **metadata
+        self, bytes_io: BinaryIO, repo: Any, **metadata
     ) -> Dict[str, Any]:
         """Point of entry into the workflow of storing a file.
 
@@ -64,17 +64,21 @@ class BaseFilesAction:
 
         # In the case of images, keepluggable can be configured to not store
         # the original, but it still must be checked for duplicates
-        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata)
+        self._check_for_existing_file(
+            bytes_io=bytes_io, metadata=metadata, repo=repo
+        )
 
         # Hook for subclasses to allow or forbid storing this file
         # by raising FileNotAllowed
         self._allow_storage_of(bytes_io=bytes_io, metadata=metadata)
 
-        self._store_versions(bytes_io=bytes_io, metadata=metadata)
+        self._store_versions(bytes_io=bytes_io, metadata=metadata, repo=repo)
         return self._complement(metadata)
 
     def _compute_file_metadata(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         """Override this method in subclasses to populate the file metadata."""
         self._guess_mime_type(bytes_io, metadata)
@@ -82,7 +86,9 @@ class BaseFilesAction:
         self._compute_md5(bytes_io, metadata)
 
     def _guess_mime_type(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         """Discover the MIME type from the uploaded file extension.
 
@@ -98,14 +104,18 @@ class BaseFilesAction:
             metadata["mime_type"] = typ
 
     def _compute_length(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         from bag.streams import get_file_size
 
         metadata["length"] = get_file_size(bytes_io)
 
     def _compute_md5(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         from hashlib import md5
 
@@ -124,14 +134,17 @@ class BaseFilesAction:
         if previous_length is None:
             metadata["length"] = the_length
         else:
-            assert previous_length == the_length, (
-                "Bug? File lengths {}, {} "
-                "don't match.".format(previous_length, the_length)
+            assert (
+                previous_length == the_length
+            ), "Bug? File lengths {}, {} " "don't match.".format(
+                previous_length, the_length
             )
         bytes_io.seek(0)  # ...so it can be read again
 
     def _allow_storage_of(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         """Override this method if you wish to abort storing some files.
 
@@ -149,38 +162,48 @@ class BaseFilesAction:
             raise FileNotAllowed("The file is empty.")
 
     def _store_versions(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
+        repo: Any,
     ) -> None:
         """In this base class, just call _store_file().
 
         But most subclasses will have a complex workflow for storing versions.
         """
         metadata["versions"] = []
-        self._store_file(bytes_io, metadata)
+        self._store_file(bytes_io, metadata, repo)
 
     def _check_for_existing_file(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
+        repo: Any,
     ) -> None:
         # Hook for subclasses to deviate if the file already exists
         if hasattr(self, "_handle_upload_of_existing_file"):
             existing = self._file_already_exists(metadata)
-            # print(existing, metadata['version'], metadata)
-            # import ipdb; ipdb.set_trace() # TODO Remove debug
             if existing:
                 self._handle_upload_of_existing_file(  # type: ignore
-                    bytes_io=bytes_io, metadata=metadata, existing=existing,
+                    bytes_io=bytes_io,
+                    metadata=metadata,
+                    existing=existing,
+                    repo=repo,
                 )
                 # TODO We should roll back any versions stored in AWS
                 # In fact, we should validate everything before sending any
 
     def _file_already_exists(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Return existing file with the same md5 in the namespace, or None."""
-        return self.orchestrator.storage_metadata.get(
+        return self.orchestrator.storage_metadata.get_entity(
             namespace=self.namespace, key=metadata["md5"]
         )
 
     def _store_file(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
+        repo: Any,
     ) -> None:
         """Save the payload and the metadata on the 2 storage backends.
 
@@ -189,7 +212,9 @@ class BaseFilesAction:
 
         But first we check for duplicates of the file being stored.
         """
-        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata)
+        self._check_for_existing_file(
+            bytes_io=bytes_io, metadata=metadata, repo=repo
+        )
 
         storage_file = self.orchestrator.storage_file
         storage_file.put(
@@ -203,7 +228,9 @@ class BaseFilesAction:
             raise
 
     def _store_metadata(
-        self, bytes_io: BinaryIO, metadata: Dict[str, Any],
+        self,
+        bytes_io: BinaryIO,
+        metadata: Dict[str, Any],
     ) -> None:
         self.orchestrator.storage_metadata.put(
             namespace=self.namespace, metadata=metadata
@@ -270,7 +297,8 @@ class BaseFilesAction:
         return metadata
 
     def _validate_metadata_for_updating(
-        self, adict: Dict[str, Any],
+        self,
+        adict: Dict[str, Any],
     ) -> Dict[str, Any]:
         cls_update_metadata_schema = self.config.cls_update_metadata_schema
         if cls_update_metadata_schema is not None:
@@ -279,7 +307,9 @@ class BaseFilesAction:
         return adict
 
     def update_metadata(
-        self, id: int, adict: Dict[str, Any],
+        self,
+        id: int,
+        adict: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Replace the metadata for key *id* with *adict*."""
         return self._complement(

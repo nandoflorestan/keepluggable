@@ -89,7 +89,10 @@ class SQLAlchemyMetadataStorage:
         return self.config.sql_session
 
     def put(
-        self, namespace: str, metadata: Dict[str, Any], sas=None,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        sas=None,
     ) -> Dict[str, Any]:
         """Create or update a file corresponding to the given ``metadata``.
 
@@ -114,7 +117,12 @@ class SQLAlchemyMetadataStorage:
         return metadata
 
     def _query(
-        self, namespace: str, md5: str = "", filters=None, what=None, sas=None,
+        self,
+        namespace: str,
+        md5: str = "",
+        filters=None,
+        what=None,
+        sas=None,
     ) -> Any:
         """Override this to search for an existing file.
 
@@ -129,7 +137,10 @@ class SQLAlchemyMetadataStorage:
         return q
 
     def _instantiate(
-        self, namespace: str, metadata: Dict[str, Any], sas=None,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        sas=None,
     ) -> Any:
         """Return an instance of the file model.
 
@@ -139,7 +150,11 @@ class SQLAlchemyMetadataStorage:
         return self.config.metadata_model_cls(**metadata)  # type: ignore
 
     def _update(
-        self, namespace: str, metadata: Dict[str, Any], entity, sas=None,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        entity,
+        sas=None,
     ) -> Any:
         """Update the metadata of an existing entity.
 
@@ -151,7 +166,11 @@ class SQLAlchemyMetadataStorage:
         return entity
 
     def update(
-        self, namespace: str, id, metadata: Dict[str, Any], sas=None,
+        self,
+        namespace: str,
+        id,
+        metadata: Dict[str, Any],
+        sas=None,
     ) -> Dict[str, Any]:
         """Update a file metadata. It must exist in the database."""
         sas = sas or self._get_session()
@@ -198,9 +217,16 @@ class SQLAlchemyMetadataStorage:
 
     def get(self, namespace: str, key: str, sas=None) -> Dict[str, Any]:
         """Return a dict: the metadata of one file, or None if not found."""
-        sas = sas or self._get_session()
-        entity = self._query(sas=sas, namespace=namespace, md5=key).first()
+        entity = self.get_entity(namespace, key, sas)
         return to_dict(entity) if entity else None
+
+    def get_entity(self, namespace: str, key: str, sas=None) -> Any:
+        """Return a model instance representing file metadata, or None."""
+        return self._query(
+            sas=sas or self._get_session(),
+            namespace=namespace,
+            md5=key,
+        ).first()
 
     def delete_with_versions(self, namespace: str, key, sas=None):
         """Delete a file along with all its versions."""

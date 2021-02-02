@@ -45,6 +45,7 @@ def upload_single_file(context, request):
             bytes_io=fieldStorage.file,
             file_name=fieldStorage.filename,
             mime_type=fieldStorage.type,
+            repo=getattr(request, "repo"),
             **other_posted_data
         )
     except (OSError, FileNotAllowed) as e:
@@ -83,6 +84,7 @@ def upload_multiple_files(context, request):
                 bytes_io=fieldStorage.file,
                 file_name=fieldStorage.filename,
                 mime_type=fieldStorage.type,
+                repo=getattr(request, "repo"),
                 **other_posted_data
             )
             items.append(metadata)

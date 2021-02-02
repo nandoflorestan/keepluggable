@@ -177,6 +177,7 @@ class ImageAction(BaseFilesAction):
         self,
         bytes_io: BinaryIO,
         metadata: Dict[str, Any],
+        repo: Any,
     ) -> None:
         # We override this method to deal with images.
         is_image = metadata["mime_type"].startswith("image")
@@ -187,7 +188,7 @@ class ImageAction(BaseFilesAction):
                     "so it was not stored.".format(metadata["file_name"])
                 )
             else:
-                super()._store_versions(bytes_io, metadata)
+                super()._store_versions(bytes_io, metadata, repo)
                 return
 
         # # If you need to load the image after verify(), must reopen it
@@ -202,7 +203,7 @@ class ImageAction(BaseFilesAction):
         #  No exceptions were raised,  so store the original file
         metadata["image_width"], metadata["image_height"] = original.size
         if self.config.store_original:  # Optionally store original payload
-            self._store_file(bytes_io, metadata)
+            self._store_file(bytes_io, metadata, repo)
         else:  # Always store original metadata
             self._store_metadata(bytes_io, metadata)
 
@@ -218,7 +219,7 @@ class ImageAction(BaseFilesAction):
                 # Do it
                 new_versions.append(
                     self._store_img_version(  # may raise
-                        original, metadata, version_config
+                        original, metadata, version_config, repo
                     )
                 )
                 largest_version_created_so_far = current_area
@@ -229,6 +230,7 @@ class ImageAction(BaseFilesAction):
         original: Image,
         original_metadata: Dict[str, Any],
         version_config: ImageVersionConfig,
+        repo: Any,
     ) -> Dict[str, Any]:
         metadata = copy(original_metadata)
         metadata["version"] = version_config.name
@@ -238,7 +240,7 @@ class ImageAction(BaseFilesAction):
         img = self._convert_img(original, metadata, version_config)
 
         # Store the new metadata and the new payload
-        self._store_file(img.stream, metadata)
+        self._store_file(img.stream, metadata, repo)
 
         return metadata
 
