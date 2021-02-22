@@ -4,7 +4,7 @@ from unittest import TestCase
 from keepluggable.actions import BaseFilesAction
 
 
-class TestActionConfig(TestCase):
+class TestActionConfig(TestCase):  # noqa
 
     def _make_one(self, allow_empty_files):
         return BaseFilesAction.Config(
@@ -13,7 +13,7 @@ class TestActionConfig(TestCase):
             allow_empty_files=allow_empty_files,
         )
 
-    def test_boolean_from_text(self):
+    def test_boolean_from_text(self):  # noqa
         config = self._make_one('True')
         assert config.max_file_size == 0
         assert config.cls_update_metadata_schema is None

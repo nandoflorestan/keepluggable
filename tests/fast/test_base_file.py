@@ -8,7 +8,7 @@ from unittest.mock import patch
 from .. import File
 
 
-class TestBaseFile(TestCase):
+class TestBaseFile(TestCase):  # noqa
 
     def _make_one(self, versions=1):
         kw = dict(
@@ -34,11 +34,11 @@ class TestBaseFile(TestCase):
             ))
         return original
 
-    def test_repr(self):
+    def test_repr(self):  # noqa
         assert '<File #1 "back_orifice.exe" original>' == \
             repr(self._make_one())
 
-    def test_to_dict_no_versions(self):
+    def test_to_dict_no_versions(self):  # noqa
         assert to_dict(self._make_one(0), versions=False) == OrderedDict([
             ('id', 1),
             ('md5', '1234567890abcdef'),
@@ -52,7 +52,7 @@ class TestBaseFile(TestCase):
             ('versions', []),
         ])
 
-    def test_to_dict_with_versions(self):
+    def test_to_dict_with_versions(self):  # noqa
         fil = self._make_one(1)
         with patch.object(File, 'q_versions') as io:
             io.return_value = fil.versions
