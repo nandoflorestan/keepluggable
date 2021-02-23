@@ -80,15 +80,14 @@ class Orchestrator:
         """Conveniently instantiate the configured action class."""
         return self.config.cls_action(self, namespace)  # type: ignore
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Orchestrator "{self.config.name}">'
 
 
 @reg.dispatch(  # Dispatch on the value of *name*.
     reg.match_key("name", lambda name, namespace: name)
 )
-# Cannot type-annotate this function, Reg 0.11 does not support it
-def get_middle_path(name, namespace):
+def get_middle_path(name: str, namespace: Any) -> str:
     """Return the path between bucket and file name.
 
     By default this simply returns the ``namespace``. This means the

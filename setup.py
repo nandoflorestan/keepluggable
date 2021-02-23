@@ -15,6 +15,7 @@ requires = [  # Each backend may have additional dependencies.
     "bag >= 3.0.0",
     "kerno",
     "pydantic > 1.4a, < 1.5a",
+    "reg > 0.11",
 ]
 
 if version_info[:2] < (3, 4):
