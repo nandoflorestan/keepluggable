@@ -168,7 +168,6 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         if entity is None:
             entity = self._instantiate(namespace, metadata, sas=sas)
             sas.add(entity)
-            metadata["is_new"] = True
         else:
             self._update(namespace, metadata, entity, sas=sas)
         sas.flush()
