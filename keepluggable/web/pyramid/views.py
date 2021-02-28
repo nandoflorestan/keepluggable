@@ -8,6 +8,8 @@ from typing import Any, Dict
 
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
+from kerno.typing import DictStr
+from kerno.web.pyramid.typing import PyramidRequest
 from pyramid.response import Response
 
 from keepluggable.exceptions import FileNotAllowed
@@ -15,7 +17,7 @@ from keepluggable.web.pyramid import _
 from .resources import BaseFilesResource, BaseFileResource
 
 
-def list_files(context, request):
+def list_files(context, request: PyramidRequest) -> DictStr:
     """Return a dict with an *items* list containing original files.
 
     Example request with the ``curl`` command::
@@ -28,9 +30,9 @@ def list_files(context, request):
 
 
 @ajax_view
-def upload_single_file(context, request):
+def upload_single_file(context, request: PyramidRequest) -> DictStr:
     """When happy, return the uploaded file metadata as JSON."""
-    fieldStorage = request.POST.getone("file")
+    fieldStorage: Any = request.POST.getone("file")
     if not fieldStorage.bytes_read:
         raise Problem(
             _("The server did not receive an uploaded file."),
@@ -57,7 +59,7 @@ def upload_single_file(context, request):
         )
 
 
-def upload_multiple_files(context, request):
+def upload_multiple_files(context, request: PyramidRequest) -> DictStr:
     """Store multiple uploads from the POST variable "files".
 
     The response has **items**, an array in which each element is either
@@ -77,6 +79,7 @@ def upload_multiple_files(context, request):
     del other_posted_data["files"]
 
     items = []
+    fieldStorage: Any
     for fieldStorage in files:
         # encoding = fieldStorage.encoding
         try:
@@ -108,7 +111,7 @@ def upload_multiple_files(context, request):
 
 
 @ajax_view
-def delete_file_and_its_versions(context, request):
+def delete_file_and_its_versions(context, request: PyramidRequest) -> Response:
     """Delete a file and its derived versions."""
     key_to_delete = context.__name__
     context.action.delete_file(key_to_delete)
@@ -116,7 +119,7 @@ def delete_file_and_its_versions(context, request):
 
 
 @ajax_view
-def update_metadata(context, request):
+def update_metadata(context, request: PyramidRequest) -> DictStr:
     """Store new metadata for an existing file.
 
     Example request using the ``curl`` command::
@@ -131,7 +134,7 @@ def update_metadata(context, request):
     return context.action.update_metadata(context.__name__, adict)
 
 
-def get_operations(base_url: str = "") -> Dict[str, Dict[str, Any]]:
+def get_operations(base_url: str = "") -> Dict[str, DictStr]:
     """Return a dict containing all information about our views and URLs."""
     return {
         "List files in storage": dict(
@@ -173,7 +176,7 @@ def get_operations(base_url: str = "") -> Dict[str, Dict[str, Any]]:
     }
 
 
-def register_pyramid_views(config, base_url=""):
+def register_pyramid_views(config, base_url: str = "") -> None:
     """Register keepluggable views with plain Pyramid."""
     for op in get_operations(base_url=base_url).values():
         view = op["view"]
@@ -188,7 +191,7 @@ def register_pyramid_views(config, base_url=""):
         )
 
 
-def register_operations_with_burla(ops, base_url=""):
+def register_operations_with_burla(ops, base_url: str = "") -> None:
     """More featureful registration of the views using ``bag.web.burla``."""
     for op_name, adict in get_operations(base_url=base_url).items():
         view = adict.pop("view")

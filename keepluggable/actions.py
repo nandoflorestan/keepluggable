@@ -4,6 +4,7 @@ from typing import Any, BinaryIO, Dict, Iterable, Optional
 
 from bag.web.exceptions import Problem
 from kerno.pydantic import Pydantic, ZeroOrMore
+from kerno.typing import DictStr
 from pydantic import PyObject
 
 from keepluggable.exceptions import FileNotAllowed
@@ -45,7 +46,7 @@ class BaseFilesAction:
 
     def store_original_file(
         self, bytes_io: BinaryIO, repo: Any, **metadata
-    ) -> Dict[str, Any]:
+    ) -> DictStr:
         """Point of entry into the workflow of storing a file.
 
         You can override this method in subclasses to change the steps
@@ -78,7 +79,7 @@ class BaseFilesAction:
     def _compute_file_metadata(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         """Override this method in subclasses to populate the file metadata."""
         self._guess_mime_type(bytes_io, metadata)
@@ -88,7 +89,7 @@ class BaseFilesAction:
     def _guess_mime_type(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         """Discover the MIME type from the uploaded file extension.
 
@@ -106,7 +107,7 @@ class BaseFilesAction:
     def _compute_length(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         from bag.streams import get_file_size
 
@@ -115,7 +116,7 @@ class BaseFilesAction:
     def _compute_md5(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         from hashlib import md5
 
@@ -144,7 +145,7 @@ class BaseFilesAction:
     def _allow_storage_of(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         """Override this method if you wish to abort storing some files.
 
@@ -164,7 +165,7 @@ class BaseFilesAction:
     def _store_versions(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         repo: Any,
     ) -> None:
         """In this base class, just call _store_file().
@@ -177,7 +178,7 @@ class BaseFilesAction:
     def _check_for_existing_file(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         repo: Any,
     ) -> None:
         # Hook for subclasses to deviate if the file already exists
@@ -193,7 +194,7 @@ class BaseFilesAction:
                 # TODO We should roll back any versions stored in AWS
                 # In fact, we should validate everything before sending any
 
-    def _file_already_exists(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def _file_already_exists(self, metadata: DictStr) -> DictStr:
         """Return existing file with the same md5 in the namespace, or None."""
         return self.orchestrator.storage_metadata.get_entity(
             namespace=self.namespace, key=metadata["md5"]
@@ -202,7 +203,7 @@ class BaseFilesAction:
     def _store_file(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         repo: Any,
     ) -> None:
         """Save the payload and the metadata on the 2 storage backends.
@@ -230,7 +231,7 @@ class BaseFilesAction:
     def _store_metadata(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> None:
         self.orchestrator.storage_metadata.put(
             namespace=self.namespace, metadata=metadata
@@ -256,7 +257,7 @@ class BaseFilesAction:
         for metadata in metadatas:
             sm.delete(self.namespace, metadata["md5"])
 
-    def gen_originals(self, filters=None) -> Iterable[Dict[str, Any]]:
+    def gen_originals(self, filters=None) -> Iterable[DictStr]:
         """Yield the original files in this namespace.
 
         ...optionally with further filters.
@@ -284,7 +285,7 @@ class BaseFilesAction:
         for fil in originals.values():
             yield self._complement(fil)
 
-    def _complement(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def _complement(self, metadata: DictStr) -> DictStr:
         """Add the links for downloading the original file and its versions."""
         url = self.orchestrator.storage_file.get_url
 
@@ -298,8 +299,8 @@ class BaseFilesAction:
 
     def _validate_metadata_for_updating(
         self,
-        adict: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        adict: DictStr,
+    ) -> DictStr:
         cls_update_metadata_schema = self.config.cls_update_metadata_schema
         if cls_update_metadata_schema is not None:
             schema = cls_update_metadata_schema()
@@ -309,8 +310,8 @@ class BaseFilesAction:
     def update_metadata(
         self,
         id: int,
-        adict: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        adict: DictStr,
+    ) -> DictStr:
         """Replace the metadata for key *id* with *adict*."""
         return self._complement(
             self.orchestrator.storage_metadata.update(
