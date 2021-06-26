@@ -19,7 +19,7 @@ requires = [  # Each backend may have additional dependencies.
 
 setup(
     name="keepluggable",
-    version="0.9.0",
+    version="0.10.0",
     description="Manages storage of images and other files, with metadata."
     " Also offers an HTTP API done on Pyramid.",
     long_description=long_description,
