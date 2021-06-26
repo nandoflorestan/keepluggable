@@ -4,7 +4,7 @@ Getting started with keepluggable
 
 ::
 
-    easy_install -UZ keepluggable
+    pip install keepluggable
 
 After installing the Python package, you can select the components
 you are using and then create a configuration file.  Each component you
