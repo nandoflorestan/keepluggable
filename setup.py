@@ -3,7 +3,6 @@
 """Installer for keepluggable."""
 
 from codecs import open
-from sys import version_info
 from setuptools import setup, find_packages
 
 # http://peak.telecommunity.com/DevCenter/setuptools#developer-s-guide
@@ -12,14 +11,11 @@ with open("README.rst", encoding="utf-8") as f:
     long_description = f.read()
 
 requires = [  # Each backend may have additional dependencies.
-    "bag >= 3.0.0",
+    "bag >= 4.0.0",
     "kerno",
     "pydantic > 1.4a, < 1.5a",
     "reg > 0.11",
 ]
-
-if version_info[:2] < (3, 4):
-    requires.append("pathlib")  # 'enum34'
 
 setup(
     name="keepluggable",
