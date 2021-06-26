@@ -65,7 +65,7 @@ class ImageAction(BaseFilesAction):
         sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib
         sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib
-        easy_install -UZ Pillow
+        pip install Pillow
 
     Pay attention to the desired supported formats near the end of the output::
 

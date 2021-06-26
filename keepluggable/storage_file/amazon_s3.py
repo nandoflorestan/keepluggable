@@ -12,7 +12,7 @@ from kerno.pydantic import Pydantic, ReqStr
 
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
-from boto3.session import Session  # easy_install -UZ boto3
+from boto3.session import Session  # pip install boto3
 
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage, get_extension
