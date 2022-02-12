@@ -38,6 +38,13 @@
     pydantic = "^1.9"
     sqlalchemy = "*"
 
+    # AWS extra, these depend on botocore.
+    awscli = {version = "1.22.*", optional = true}
+    boto3 = {version = "1.20.*", optional = true}
+
+[tool.poetry.extras]
+    aws = ["awscli", "boto3"]
+
 [tool.poetry.dev-dependencies]
     pytest = "*"
 
