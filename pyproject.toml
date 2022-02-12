@@ -35,7 +35,7 @@
     # https://python-poetry.org/docs/dependency-specification/
     bag = ">= 5.0.0"
     kerno = ">= 0.7.0"
-    pydantic = "^1.4"
+    pydantic = "^1.9"
     sqlalchemy = "*"
 
 [tool.poetry.dev-dependencies]
