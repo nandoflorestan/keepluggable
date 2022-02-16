@@ -1,3 +1,0 @@
-include *.txt *.ini *.cfg
-recursive-include keepluggable *.ico *.png *.css *.gif *.jpg *.pt *.txt *.rst *.mak *.mako *.js *.html *.xml
-# recursive-include docs *.rst *.txt
