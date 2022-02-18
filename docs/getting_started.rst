@@ -4,7 +4,7 @@ Getting started with keepluggable
 
 ::
 
-    pip install keepluggable
+    poetry add keepluggable
 
 After installing the Python package, you can select the components
 you are using and then create a configuration file.  Each component you
