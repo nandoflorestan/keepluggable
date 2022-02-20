@@ -8,9 +8,12 @@ from typing import Any, BinaryIO, Dict, List, Union
 from kerno.pydantic import Pydantic, ReqStr
 from pydantic import PositiveInt, validator
 from PIL import Image, ExifTags
+from pillow_heif import register_heif_opener
 
 from keepluggable.actions import BaseFilesAction
 from keepluggable.exceptions import FileNotAllowed
+
+register_heif_opener()  # and now Pillow can read the HEIC format.
 
 
 class ImageVersionConfig(Pydantic):
