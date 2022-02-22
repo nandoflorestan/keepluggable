@@ -4,11 +4,10 @@ from typing import Generator, Generic, List, Optional, TypeVar
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
-from kerno.pydantic import Pydantic
+import colander as c
 from kerno.repository.sqlalchemy import Query
 from kerno.typing import DictStr
 from kerno.web.to_dict import reuse_dict, to_dict
-from pydantic import PyObject
 from sqlalchemy import Column
 from sqlalchemy.orm import object_session
 from sqlalchemy.types import Integer, Unicode
@@ -58,11 +57,7 @@ class BaseFile(ID, MinimalBase):
     def q_versions(self, sas=None, order_by="image_width"):  # TODO move
         """Query that returns files derived from this instance."""
         sas = sas or object_session(self)
-        return (
-            sas.query(type(self))
-            .filter_by(original_id=self.id)
-            .order_by(order_by)
-        )
+        return sas.query(type(self)).filter_by(original_id=self.id).order_by(order_by)
 
     def __repr__(self):
         return '<{} #{} "{}" {}>'.format(
@@ -70,7 +65,7 @@ class BaseFile(ID, MinimalBase):
         )
 
 
-class MetadataStorageConfig(Pydantic):
+class StorageConfigSchema(c.Schema):
     """Validated configuration for ``SQLAlchemyMetadataStorage``.
 
     - ``metadata_model_cls`` must point to a certain model class to store
@@ -80,8 +75,8 @@ class MetadataStorageConfig(Pydantic):
       ``SQLAlchemyMetadataStorage._get_session()`` method.
     """
 
-    metadata_model_cls: PyObject
-    sql_session: Optional[PyObject] = None
+    metadata_model_cls = c.SchemaNode(c.GlobalObject(package=None))
+    sql_session = c.SchemaNode(c.GlobalObject(package=None), missing=None)
 
 
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -136,8 +131,8 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and ensure a SQLAlchemy session can be obtained."""
         self.orchestrator = orchestrator
-        self.config = MetadataStorageConfig(
-            **self.orchestrator.config.settings
+        self.config = StorageConfigSchema().deserialize(
+            self.orchestrator.config.settings
         )
 
         # Get a session at startup just to make sure it is configured
@@ -145,7 +140,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
 
     def _get_session(self):
         """Return the SQLAlchemy session."""
-        return self.config.sql_session
+        return self.config["sql_session"]
 
     def put(
         self,
@@ -187,7 +182,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         You probably need to do something with the ``namespace``.
         """
         sas = sas or self._get_session()
-        q = sas.query(what or self.config.metadata_model_cls)
+        q = sas.query(what or self.config["metadata_model_cls"])
         if md5:
             q = q.filter_by(md5=md5)
         if filters is not None:
@@ -205,7 +200,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         Override this to add or delete arguments on the constructor call.
         You probably need to do something with the ``namespace``.
         """
-        return self.config.metadata_model_cls(**metadata)
+        return self.config["metadata_model_cls"](**metadata)
 
     def _update(
         self,
@@ -232,9 +227,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
     ) -> DictStr:
         """Update a file metadata. It must exist in the database."""
         sas = sas or self._get_session()
-        entity: Optional[TFile] = sas.query(
-            self.config.metadata_model_cls
-        ).get(id)
+        entity: Optional[TFile] = sas.query(self.config["metadata_model_cls"]).get(id)
         if entity is None:
             raise Problem(
                 error_title="That file does not exist.",
@@ -275,7 +268,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         q = self._query(
             namespace,
             filters=filters,
-            what=self.config.metadata_model_cls.md5,  # type: ignore[attr-defined]
+            what=self.config["metadata_model_cls"].md5,  # type: ignore[attr-defined]
             sas=sas,
         )
         for tup in q:
@@ -286,9 +279,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         entity = self.get_entity(namespace, key, sas)
         return to_dict(entity) if entity else None
 
-    def get_entity(
-        self, namespace: str, key: str, sas=None
-    ) -> Optional[TFile]:
+    def get_entity(self, namespace: str, key: str, sas=None) -> Optional[TFile]:
         """Return a model instance representing file metadata, or None."""
         return self._query(
             sas=sas or self._get_session(),
