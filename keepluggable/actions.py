@@ -39,11 +39,16 @@ class BaseFilesAction:
           So it is recommended that you implement a schema.
         """
 
-        max_file_size = c.SchemaNode(c.Int(), validator=c.Range(min=0))
+        max_file_size = c.SchemaNode(c.Int(), validator=c.Range(min=0), missing=0)
         allow_empty_files = c.SchemaNode(c.Bool(), missing=False)
         cls_update_metadata_schema = c.SchemaNode(
             c.GlobalObject(package=None), missing=None
         )
+
+    @classmethod
+    def get_config(cls, settings: DictStr) -> DictStr:
+        """Stuff called by the orchestrator at startup."""
+        return cls.Config().deserialize(settings)
 
     def store_original_file(self, bytes_io: BinaryIO, repo: Any, **metadata) -> DictStr:
         """Point of entry into the workflow of storing a file.

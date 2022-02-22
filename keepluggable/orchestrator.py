@@ -3,34 +3,33 @@
 from os import PathLike
 from typing import Any, Dict, Union
 
+from bag.text import strip_preparer
+import colander as c
 from kerno.typing import DictStr
-from pydantic import PyObject, validator
 import reg
 
-from kerno.pydantic import Pydantic, ReqStr
 
-
-class Configuration(Pydantic):
+class ConfigurationSchema(c.Schema):
     """Validated configuration of a keepluggable instance.
 
     ``settings`` should contain only the relevant section of an INI file.
     """
 
-    name: ReqStr
-    settings: Dict[str, Any]
-    cls_storage_file: PyObject
-    cls_storage_metadata: PyObject
-    cls_action: PyObject
-
-    @validator("cls_storage_file")
-    def _validate_storage_file(cls, value):
+    @staticmethod
+    def _validate_storage_file(node, value):
         from .storage_file import BasePayloadStorage as BPS
 
         if not issubclass(value, BPS) or value is BPS:
-            raise ValueError(
-                "*cls_storage_file* must be a subclass of BasePayloadStorage."
+            raise c.Invalid(
+                node, "*cls_storage_file* must be a subclass of BasePayloadStorage."
             )
-        return value
+
+    name = c.SchemaNode(c.Str(), preparer=strip_preparer, validator=c.Length(min=1))
+    cls_action = c.SchemaNode(c.GlobalObject(package=None))
+    cls_storage_metadata = c.SchemaNode(c.GlobalObject(package=None))
+    cls_storage_file = c.SchemaNode(
+        c.GlobalObject(package=None), validator=_validate_storage_file
+    )
 
 
 class Orchestrator:
@@ -46,16 +45,14 @@ class Orchestrator:
 
     instances: Dict[str, "Orchestrator"] = {}
 
-    def __init__(self, config: Configuration) -> None:
-        """Instantiate from a validated configuration object."""
+    def __init__(self, config: DictStr) -> None:
+        """Instantiate from a validated configuration dictionary."""
         self.config = config
-        self.storage_file = config.cls_storage_file(self)
-        self.storage_metadata = config.cls_storage_metadata(self)
-        Orchestrator.instances[config.name] = self
-        self.action_config: DictStr = (
-            config.cls_action.Config().deserialize(  # type: ignore[attr-defined]
-                config.settings
-            )
+        self.storage_file = config["cls_storage_file"](self)
+        self.storage_metadata = config["cls_storage_metadata"](self)
+        Orchestrator.instances[config["name"]] = self
+        self.action_config: DictStr = config["cls_action"].get_config(
+            config["settings"]
         )
 
     @classmethod
@@ -71,21 +68,23 @@ class Orchestrator:
         parser = ConfigParser()
         parser.read(paths, encoding=encoding)
         section = parser["keepluggable " + name]
-        config = Configuration(
-            name=name,
-            settings=section,
-            cls_storage_file=section["cls_storage_file"],
-            cls_storage_metadata=section["cls_storage_metadata"],
-            cls_action=section["cls_action"],
+        config: DictStr = ConfigurationSchema().deserialize(
+            {
+                "name": name,
+                "cls_storage_file": section["cls_storage_file"],
+                "cls_storage_metadata": section["cls_storage_metadata"],
+                "cls_action": section["cls_action"],
+            }
         )
+        config["settings"] = section  # each component takes its own settings from here
         return cls(config)
 
     def get_action(self, namespace: str) -> Any:
         """Conveniently instantiate the configured action class."""
-        return self.config.cls_action(self, namespace)
+        return self.config["cls_action"](self, namespace)
 
     def __repr__(self) -> str:
-        return f'<Orchestrator "{self.config.name}">'
+        return f'<Orchestrator "{self.config["name"]}">'
 
 
 @reg.dispatch(  # Dispatch on the value of *name*.

@@ -14,6 +14,7 @@ from pillow_heif import register_heif_opener
 
 from keepluggable.actions import BaseFilesAction
 from keepluggable.exceptions import FileNotAllowed
+from keepluggable.orchestrator import Orchestrator
 
 register_heif_opener()  # and now Pillow can read the HEIC format.
 
@@ -47,26 +48,6 @@ class ImageVersionConfig(c.MappingSchema):
                 "name": parts[3],
             }
         )
-
-
-class ImageVersionListSchemaNode(c.SequenceSchema):  # noqa
-    image_version_config = ImageVersionConfig()
-
-    def preparer(self, node, value: Union[List[ImageVersionConfig], str]):
-        """Convert the configuration string into validated objects."""
-        if not isinstance(value, str):
-            return value
-
-        # Convert str to validated dict
-        versions: List[DictStr] = []
-        for line in value.split("\n"):
-            line = line.strip()
-            if not line:  # Ignore an empty line
-                continue
-            versions.append(ImageVersionConfig.from_str(line))
-        # We want to process image versions from smaller to bigger:
-        versions.sort(key=lambda d: d["width"])
-        return versions
 
 
 class ImageAction(BaseFilesAction):
@@ -141,7 +122,31 @@ class ImageAction(BaseFilesAction):
         upload_must_be_img = c.SchemaNode(c.Bool(), missing=False)
         store_original = c.SchemaNode(c.Bool(), missing=True)
         versions_quality = c.SchemaNode(c.Int(), missing=90)
-        versions = ImageVersionListSchemaNode()
+
+    @classmethod
+    def get_config(cls, settings: DictStr) -> DictStr:
+        """Image versions are a complex string in configuration; parse them.
+
+        This gets called by the orchestrator at startup.
+        Return the entire action configuration dictionary.
+        """
+        value = settings["versions"]
+        if not isinstance(value, str):
+            return value
+
+        # Convert str to validated dict
+        versions: List[DictStr] = []
+        for line in value.split("\n"):
+            line = line.strip()
+            if not line:  # Ignore an empty line
+                continue
+            versions.append(ImageVersionConfig.from_str(line))
+        # We want to process image versions from smaller to bigger:
+        versions.sort(key=lambda d: d["width"])
+
+        config: DictStr = cls.Config().deserialize(settings)
+        config["versions"] = versions
+        return config
 
     def _img_from_stream(
         self,

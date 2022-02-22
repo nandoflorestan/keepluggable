@@ -132,7 +132,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         """Read settings and ensure a SQLAlchemy session can be obtained."""
         self.orchestrator = orchestrator
         self.config = StorageConfigSchema().deserialize(
-            self.orchestrator.config.settings
+            self.orchestrator.config["settings"]
         )
 
         # Get a session at startup just to make sure it is configured

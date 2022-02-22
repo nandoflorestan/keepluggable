@@ -55,7 +55,7 @@ class AmazonS3Storage(BasePayloadStorage):
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and instantiate an S3 Session."""
         super().__init__(orchestrator)
-        self.config = S3ConfigSchema().deserialize(self.orchestrator.config.settings)
+        self.config = S3ConfigSchema().deserialize(self.orchestrator.config["settings"])
         session = Session(
             aws_access_key_id=self.config["s3_access_key_id"],
             aws_secret_access_key=self.config["s3_access_key_secret"],
@@ -72,7 +72,7 @@ class AmazonS3Storage(BasePayloadStorage):
 
     def _get_path(self, namespace: str, metadata: Dict[str, Any]) -> str:
         return (
-            get_middle_path(name=self.orchestrator.config.name, namespace=namespace)
+            get_middle_path(name=self.orchestrator.config["name"], namespace=namespace)
             + self.SEP
             + self._get_filename(metadata)
         )
@@ -224,7 +224,7 @@ class AmazonS3Power(AmazonS3Storage):
     def gen_paths(self, namespace: str) -> Iterable[str]:
         """Generate the paths in a namespace. Too costly -- avoid."""
         prefix = get_middle_path(
-            name=self.orchestrator.config.name, namespace=namespace
+            name=self.orchestrator.config["name"], namespace=namespace
         )
         for o in self.bucket.objects.all():
             composite = o.key
@@ -316,7 +316,9 @@ class AmazonS3Power(AmazonS3Storage):
                 continue
 
             new_key = (
-                get_middle_path(name=self.orchestrator.config.name, namespace=namespace)
+                get_middle_path(
+                    name=self.orchestrator.config["name"], namespace=namespace
+                )
                 + self.SEP
                 + md5
                 + get_extension(obj.content_type)

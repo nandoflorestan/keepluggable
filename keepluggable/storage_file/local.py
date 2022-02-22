@@ -50,7 +50,9 @@ class LocalStorage(BasePayloadStorage):
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Construct with an Orchestrator instance."""
         super().__init__(orchestrator)
-        self.config = LocalConfigSchema().deserialize(self.orchestrator.config.settings)
+        self.config = LocalConfigSchema().deserialize(
+            self.orchestrator.config["settings"]
+        )
         self.directory = resolve_path(self.config["local_storage_path"]).resolve()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
@@ -58,7 +60,7 @@ class LocalStorage(BasePayloadStorage):
     def _dir_of(self, namespace: str) -> Path:
         """Figure out the directory where we store the given ``namespace``."""
         return self.directory / get_middle_path(
-            name=self.orchestrator.config.name, namespace=namespace
+            name=self.orchestrator.config["name"], namespace=namespace
         )
 
     def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
@@ -118,7 +120,7 @@ class LocalStorage(BasePayloadStorage):
                 (
                     self.config["local_storage_path"],
                     get_middle_path(
-                        name=self.orchestrator.config.name, namespace=namespace
+                        name=self.orchestrator.config["name"], namespace=namespace
                     ),
                     self._get_filename(metadata),
                 )
