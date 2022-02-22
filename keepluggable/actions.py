@@ -186,7 +186,7 @@ class BaseFilesAction:
         if hasattr(self, "_handle_upload_of_existing_file"):
             existing = self._file_already_exists(metadata)
             if existing:
-                self._handle_upload_of_existing_file(  # type: ignore
+                self._handle_upload_of_existing_file(  # type: ignore[attr-defined]
                     bytes_io=bytes_io,
                     metadata=metadata,
                     existing=existing,

@@ -205,7 +205,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         Override this to add or delete arguments on the constructor call.
         You probably need to do something with the ``namespace``.
         """
-        return self.config.metadata_model_cls(**metadata)  # type: ignore
+        return self.config.metadata_model_cls(**metadata)
 
     def _update(
         self,
@@ -275,7 +275,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         q = self._query(
             namespace,
             filters=filters,
-            what=self.config.metadata_model_cls.md5,  # type: ignore
+            what=self.config.metadata_model_cls.md5,  # type: ignore[attr-defined]
             sas=sas,
         )
         for tup in q:

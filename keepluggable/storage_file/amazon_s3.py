@@ -63,9 +63,7 @@ class AmazonS3Storage(BasePayloadStorage):
 
     def _get_path(self, namespace: str, metadata: Dict[str, Any]) -> str:
         return (
-            get_middle_path(
-                name=self.orchestrator.config.name, namespace=namespace
-            )
+            get_middle_path(name=self.orchestrator.config.name, namespace=namespace)
             + self.SEP
             + self._get_filename(metadata)
         )
@@ -86,7 +84,10 @@ class AmazonS3Storage(BasePayloadStorage):
             return adict["Body"]
 
     def put(
-        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        bytes_io: BinaryIO,
     ) -> None:
         """Store a file."""
         subset = dict_subset(
@@ -104,19 +105,18 @@ class AmazonS3Storage(BasePayloadStorage):
         if hasattr(bytes_io, "seekable") and bytes_io.seekable():
             bytes_io.seek(0)
 
-        # When botocore.response.StreamingBody is passed in as bytes_io,
-        # the bucket.put_object() call below fails with
-        # "AttributeError: 'StreamingBody' object has no attribute 'tell'"
-        # so we have to read the stream, getting the bytes:
-        if not hasattr(bytes_io, "tell"):
-            bytes_io = bytes_io.read()  # type: ignore
+        byts: bytes = (
+            bytes_io.read()
+            if hasattr(bytes_io, "tell")
+            else bytes_io  # type: ignore[assignment]
+        )
 
         result = self.bucket.put_object(
             Key=self._get_path(namespace, metadata),
             # done automatically by botocore:  ContentMD5=encoded_md5,
             ContentType=metadata["mime_type"],
             ContentLength=metadata["length"],
-            Body=bytes_io,
+            Body=byts,
             Metadata=subset,
         )
         # print(result)
@@ -159,7 +159,9 @@ class AmazonS3Storage(BasePayloadStorage):
         )
 
     def delete(
-        self, namespace: str, metadatas: Sequence[Dict[str, Any]],
+        self,
+        namespace: str,
+        metadatas: Sequence[Dict[str, Any]],
     ) -> Any:
         """Delete up to 1000 files."""
         number = len(metadatas)
@@ -227,11 +229,7 @@ class AmazonS3Power(AmazonS3Storage):
         """
         # TODO Work around S3 limitation of 1000 objects per request
         self.bucket.delete_objects(
-            Delete={
-                "Objects": [
-                    {"Key": path} for path in self.gen_paths(namespace)
-                ]
-            }
+            Delete={"Objects": [{"Key": path} for path in self.gen_paths(namespace)]}
         )
 
     def empty_bucket(self):
@@ -281,14 +279,8 @@ class AmazonS3Power(AmazonS3Storage):
         print("   Retrieving existing keys in target {}".format(self.bucket))
 
         # TODO For a really big bucket we might need to use a database:
-        existing = [
-            old_path_from_new_path(fil.key) for fil in new_objects_collection
-        ]
-        print(
-            "   There are {}. Migrating remaining files...".format(
-                len(existing)
-            )
-        )
+        existing = [old_path_from_new_path(fil.key) for fil in new_objects_collection]
+        print("   There are {}. Migrating remaining files...".format(len(existing)))
 
         for index, summary in enumerate(old.objects.all(), 1):
             if index < skip_the_first_n:
@@ -311,15 +303,11 @@ class AmazonS3Power(AmazonS3Storage):
             # Ignore image versions found in "discard_img_sizes"
             version = obj.metadata.get("version")
             if version in discard_img_sizes:
-                print(
-                    "   {}. Skipping unwanted version: {}".format(index, obj)
-                )
+                print("   {}. Skipping unwanted version: {}".format(index, obj))
                 continue
 
             new_key = (
-                get_middle_path(
-                    name=self.orchestrator.config.name, namespace=namespace
-                )
+                get_middle_path(name=self.orchestrator.config.name, namespace=namespace)
                 + self.SEP
                 + md5
                 + get_extension(obj.content_type)

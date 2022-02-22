@@ -49,8 +49,8 @@ class Orchestrator:
     def __init__(self, config: Configuration) -> None:
         """Instantiate from a validated configuration object."""
         self.config = config
-        self.storage_file = config.cls_storage_file(self)  # type: ignore
-        self.storage_metadata = config.cls_storage_metadata(self)  # type: ignore
+        self.storage_file = config.cls_storage_file(self)
+        self.storage_metadata = config.cls_storage_metadata(self)
         Orchestrator.instances[config.name] = self
         self.action_config: DictStr = (
             config.cls_action.Config().deserialize(  # type: ignore[attr-defined]
@@ -82,7 +82,7 @@ class Orchestrator:
 
     def get_action(self, namespace: str) -> Any:
         """Conveniently instantiate the configured action class."""
-        return self.config.cls_action(self, namespace)  # type: ignore
+        return self.config.cls_action(self, namespace)
 
     def __repr__(self) -> str:
         return f'<Orchestrator "{self.config.name}">'

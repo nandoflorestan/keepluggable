@@ -36,11 +36,12 @@ from pyramid.decorator import reify
 
 
 class BaseResource:
-
     @reify
     def orchestrator(self) -> Orchestrator:
         """Return the Orchestrator instance relevant to this resource."""
-        return Orchestrator.instances[self.keepluggable_name]  # type: ignore
+        return Orchestrator.instances[
+            self.keepluggable_name  # type: ignore[attr-defined]
+        ]
 
     @reify
     def action(self):
