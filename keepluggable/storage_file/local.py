@@ -5,7 +5,8 @@ from shutil import rmtree
 from typing import Any, BinaryIO, Dict, Iterable, Sequence
 
 from bag.settings import resolve_path
-from kerno.pydantic import Pydantic, ReqStr
+from bag.text import strip_preparer
+import colander as c
 
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
@@ -13,10 +14,12 @@ from keepluggable.storage_file import BasePayloadStorage
 MEGABYTE = 1048576
 
 
-class LocalConfig(Pydantic):
+class LocalConfigSchema(c.Schema):
     """Validated configuration for LocalStorage."""
 
-    local_storage_path: ReqStr
+    local_storage_path = c.SchemaNode(
+        c.Str(), preparer=strip_preparer, validator=c.Length(min=1)
+    )
 
 
 class LocalStorage(BasePayloadStorage):
@@ -47,8 +50,8 @@ class LocalStorage(BasePayloadStorage):
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Construct with an Orchestrator instance."""
         super().__init__(orchestrator)
-        self.config = LocalConfig(**self.orchestrator.config.settings)
-        self.directory = resolve_path(self.config.local_storage_path).resolve()
+        self.config = LocalConfigSchema().deserialize(self.orchestrator.config.settings)
+        self.directory = resolve_path(self.config["local_storage_path"]).resolve()
         if not self.directory.exists():
             self.directory.mkdir(parents=True)
 
@@ -71,7 +74,10 @@ class LocalStorage(BasePayloadStorage):
             ) from e
 
     def put(
-        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        bytes_io: BinaryIO,
     ) -> None:
         """Store a file (``bytes_io``) inside ``namespace``."""
         if bytes_io.tell():
@@ -110,7 +116,7 @@ class LocalStorage(BasePayloadStorage):
         return request.static_path(
             "/".join(
                 (
-                    self.config.local_storage_path,
+                    self.config["local_storage_path"],
                     get_middle_path(
                         name=self.orchestrator.config.name, namespace=namespace
                     ),
@@ -120,7 +126,9 @@ class LocalStorage(BasePayloadStorage):
         )
 
     def delete(
-        self, namespace: str, metadatas: Sequence[Dict[str, Any]],
+        self,
+        namespace: str,
+        metadatas: Sequence[Dict[str, Any]],
     ) -> None:
         """Delete many files."""
         base_path = self._dir_of(namespace)
