@@ -8,7 +8,8 @@ from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
-from kerno.pydantic import Pydantic, ReqStr
+from bag.text import strip_preparer
+import colander as c
 
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
@@ -20,7 +21,7 @@ from keepluggable.storage_file import BasePayloadStorage, get_extension
 DAY = 60 * 60 * 24  # seconds
 
 
-class S3Config(Pydantic):
+class S3ConfigSchema(c.Schema):
     """Configuration settings for AmazonS3Storage.
 
     - ``s3_access_key_id``: part of your Amazon credentials
@@ -29,10 +30,18 @@ class S3Config(Pydantic):
     - ``s3_bucket``: name of the bucket in which to store objects.
     """
 
-    s3_access_key_id: ReqStr
-    s3_access_key_secret: ReqStr
-    s3_region_name: ReqStr
-    s3_bucket: ReqStr
+    s3_access_key_id = c.SchemaNode(
+        c.Str(), preparer=strip_preparer, validator=c.Length(min=1)
+    )
+    s3_access_key_secret = c.SchemaNode(
+        c.Str(), preparer=strip_preparer, validator=c.Length(min=8)
+    )
+    s3_region_name = c.SchemaNode(
+        c.Str(), preparer=strip_preparer, validator=c.Length(min=4)
+    )
+    s3_bucket = c.SchemaNode(
+        c.Str(), preparer=strip_preparer, validator=c.Length(min=1)
+    )
 
 
 class AmazonS3Storage(BasePayloadStorage):
@@ -46,17 +55,17 @@ class AmazonS3Storage(BasePayloadStorage):
     def __init__(self, orchestrator: Orchestrator) -> None:
         """Read settings and instantiate an S3 Session."""
         super().__init__(orchestrator)
-        self.config = S3Config(**self.orchestrator.config.settings)
+        self.config = S3ConfigSchema().deserialize(self.orchestrator.config.settings)
         session = Session(
-            aws_access_key_id=self.config.s3_access_key_id,
-            aws_secret_access_key=self.config.s3_access_key_secret,
-            region_name=self.config.s3_region_name,
+            aws_access_key_id=self.config["s3_access_key_id"],
+            aws_secret_access_key=self.config["s3_access_key_secret"],
+            region_name=self.config["s3_region_name"],
         )
         self.s3 = session.resource("s3")
         self._set_bucket()
 
     def _set_bucket(self, bucket_name=None):
-        self.bucket_name = bucket_name or self.config.s3_bucket
+        self.bucket_name = bucket_name or self.config["s3_bucket"]
         self.bucket = self.s3.Bucket(self.bucket_name)
 
     SEP = "/"
@@ -144,7 +153,7 @@ class AmazonS3Storage(BasePayloadStorage):
             seconds, self.bucket_name, composite
         ).encode("ascii")
         digest = hmac.new(
-            self.config.s3_access_key_secret.encode("ascii"), to_sign, sha1
+            self.config["s3_access_key_secret"].encode("ascii"), to_sign, sha1
         ).digest()
         return (
             "{scheme}{bucket}.s3.amazonaws.com/{key}?AWSAccessKeyId="
@@ -152,7 +161,7 @@ class AmazonS3Storage(BasePayloadStorage):
                 scheme="https://" if https else "http://",
                 bucket=self.bucket_name,
                 key=composite,
-                access_key_id=self.config.s3_access_key_id,
+                access_key_id=self.config["s3_access_key_id"],
                 seconds=seconds,
                 signature=quote(base64.encodebytes(digest).strip()),
             )
