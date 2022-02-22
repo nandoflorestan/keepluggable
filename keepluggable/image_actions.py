@@ -4,9 +4,11 @@ from copy import copy
 from io import BytesIO
 from typing import Any, BinaryIO, Dict, List, Union
 
+from bag.text import strip_lower_preparer, strip_preparer
+import colander as c
+
 # import imghdr  # imghdr.what(file)
-from kerno.pydantic import Pydantic, ReqStr
-from pydantic import PositiveInt, validator
+from kerno.typing import DictStr
 from PIL import Image, ExifTags
 from pillow_heif import register_heif_opener
 
@@ -16,35 +18,55 @@ from keepluggable.exceptions import FileNotAllowed
 register_heif_opener()  # and now Pillow can read the HEIC format.
 
 
-class ImageVersionConfig(Pydantic):
+def _image_format_validator(node, value: str):
+    if value not in ("png", "jpeg", "gif"):
+        raise c.Invalid(node, f"Unknown image format: {value}")
+    return value
+
+
+class ImageVersionConfig(c.MappingSchema):
     """A part of the configuration."""
 
-    format: ReqStr
-    width: PositiveInt
-    height: PositiveInt
-    name: ReqStr
-
-    @validator("format")
-    def validate_format(cls, value: str) -> str:
-        """Convert format to lower case."""
-        value = value.lower()
-        if value not in ("png", "jpeg", "gif"):
-            raise ValueError(f"Unknown format: {value}")
-        return value
+    format = c.SchemaNode(
+        c.String(), preparer=strip_lower_preparer, validator=_image_format_validator
+    )
+    height = c.SchemaNode(c.Int(), validator=c.Range(min=1))
+    width = c.SchemaNode(c.Int(), validator=c.Range(min=1))
+    name = c.SchemaNode(c.String(), preparer=strip_preparer, validator=c.Length(min=1))
 
     @classmethod
-    def from_str(cls, line: str) -> "ImageVersionConfig":
-        """Instantiate from a configuration line."""
+    def from_str(cls, line: str) -> DictStr:
+        """From a configuration line, return a config dict."""
         parts = line.split()
-        assert (
-            len(parts) == 4
-        ), f'The configuration line "{line}" should have 4 parts'
-        return cls(
-            format=parts[0],
-            width=parts[1],
-            height=parts[2],
-            name=parts[3],
+        assert len(parts) == 4, f'The configuration line "{line}" should have 4 parts'
+        return cls().deserialize(
+            {
+                "format": parts[0],
+                "width": parts[1],
+                "height": parts[2],
+                "name": parts[3],
+            }
         )
+
+
+class ImageVersionListSchemaNode(c.SequenceSchema):  # noqa
+    image_version_config = ImageVersionConfig()
+
+    def preparer(self, node, value: Union[List[ImageVersionConfig], str]):
+        """Convert the configuration string into validated objects."""
+        if not isinstance(value, str):
+            return value
+
+        # Convert str to validated dict
+        versions: List[DictStr] = []
+        for line in value.split("\n"):
+            line = line.strip()
+            if not line:  # Ignore an empty line
+                continue
+            versions.append(ImageVersionConfig.from_str(line))
+        # We want to process image versions from smaller to bigger:
+        versions.sort(key=lambda d: d["width"])
+        return versions
 
 
 class ImageAction(BaseFilesAction):
@@ -116,30 +138,10 @@ class ImageAction(BaseFilesAction):
     class Config(BaseFilesAction.Config):
         """Validated configuration for ``ImageAction``."""
 
-        upload_must_be_img: bool = False
-        store_original: bool = True
-        versions_quality: int = 90
-        versions: List[ImageVersionConfig]
-
-        @validator("versions", pre=True, each_item=False)
-        def validate_versions(
-            cls,
-            value: Union[List[ImageVersionConfig], str],
-        ) -> List[ImageVersionConfig]:
-            """Convert the configuration string into validated objects."""
-            if not isinstance(value, str):
-                return value
-
-            # Convert str to ImageVersionConfig
-            versions = []
-            for line in value.split("\n"):
-                line = line.strip()
-                if not line:  # Ignore an empty line
-                    continue
-                versions.append(ImageVersionConfig.from_str(line))
-            # We want to process from smaller to bigger:
-            versions.sort(key=lambda d: d.width)
-            return versions
+        upload_must_be_img = c.SchemaNode(c.Bool(), missing=False)
+        store_original = c.SchemaNode(c.Bool(), missing=True)
+        versions_quality = c.SchemaNode(c.Int(), missing=90)
+        versions = ImageVersionListSchemaNode()
 
     def _img_from_stream(
         self,
@@ -185,7 +187,7 @@ class ImageAction(BaseFilesAction):
         # We override this method to deal with images.
         is_image = metadata["mime_type"].startswith("image")
         if not is_image:
-            if self.config.upload_must_be_img:
+            if self.config["upload_must_be_img"]:
                 raise FileNotAllowed(
                     'The file name "{}" lacks a supported image extension, '
                     "so it was not stored.".format(metadata["file_name"])
@@ -205,7 +207,7 @@ class ImageAction(BaseFilesAction):
 
         #  No exceptions were raised,  so store the original file
         metadata["image_width"], metadata["image_height"] = original.size
-        if self.config.store_original:  # Optionally store original payload
+        if self.config["store_original"]:  # Optionally store original payload
             self._store_file(bytes_io, metadata, repo)
         else:  # Always store original metadata
             self._store_metadata(bytes_io, metadata)
@@ -216,7 +218,7 @@ class ImageAction(BaseFilesAction):
         largest_version_created_so_far = 0
         original_area = original.size[0] * original.size[1]
         new_versions = []
-        for version_config in self.config.versions:
+        for version_config in self.config["versions"]:
             current_area = version_config.width * version_config.height
             if largest_version_created_so_far <= original_area:
                 # Do it
@@ -259,9 +261,7 @@ class ImageAction(BaseFilesAction):
         except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
-                "the server is unable to convert it.".format(
-                    metadata["file_name"]
-                )
+                "the server is unable to convert it.".format(metadata["file_name"])
             )
 
     def _convert_img(
@@ -285,7 +285,7 @@ class ImageAction(BaseFilesAction):
         img.save(
             stream,
             format=fmt.upper(),
-            quality=self.config.versions_quality,
+            quality=self.config["versions_quality"],
             optimize=1,
         )
         img.stream = stream  # so we can recover it elsewhere
@@ -302,6 +302,6 @@ class ImageAction(BaseFilesAction):
         """Omit the main *href* if we are not storing original images."""
         metadata = super()._complement(metadata)
         # Add main *href* if we are storing original images or if not image
-        if metadata.get("image_width") and not self.config.store_original:
+        if metadata.get("image_width") and not self.config["store_original"]:
             del metadata["href"]
         return metadata

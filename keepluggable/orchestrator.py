@@ -3,6 +3,7 @@
 from os import PathLike
 from typing import Any, Dict, Union
 
+from kerno.typing import DictStr
 from pydantic import PyObject, validator
 import reg
 
@@ -49,17 +50,20 @@ class Orchestrator:
         """Instantiate from a validated configuration object."""
         self.config = config
         self.storage_file = config.cls_storage_file(self)  # type: ignore
-        self.storage_metadata = config.cls_storage_metadata(  # type: ignore
-            self
-        )
+        self.storage_metadata = config.cls_storage_metadata(self)  # type: ignore
         Orchestrator.instances[config.name] = self
-        self.action_config = config.cls_action.Config(  # type: ignore
-            **config.settings
+        self.action_config: DictStr = (
+            config.cls_action.Config().deserialize(  # type: ignore[attr-defined]
+                config.settings
+            )
         )
 
     @classmethod
     def from_ini(
-        cls, name: str, *paths: Union[str, PathLike], encoding: str = "utf-8",
+        cls,
+        name: str,
+        *paths: Union[str, PathLike],
+        encoding: str = "utf-8",
     ) -> "Orchestrator":
         """Read one or more INI files and return an Orchestrator instance."""
         from configparser import ConfigParser

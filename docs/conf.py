@@ -71,7 +71,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Keepluggable'
-copyright = '2013-2021 by Nando Florestan'
+copyright = '2013-2022 by Nando Florestan'
 author = 'Nando Florestan'
 
 # The version info for the project you're documenting, acts as replacement for

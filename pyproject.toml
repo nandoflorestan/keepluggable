@@ -34,6 +34,7 @@
     python = "^3.8"
     # https://python-poetry.org/docs/dependency-specification/
     bag = ">= 5.0.0"
+    colander = "1.*"
     kerno = ">= 0.7.0"
     pydantic = "^1.9"
     sqlalchemy = "*"

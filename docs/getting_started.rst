@@ -36,7 +36,7 @@ Selecting components
   is the basic action that fills in basic metadata such as MD5, file name, file size etc. and stores the file in the aforementioned backends.
 - :py:class:`keepluggable.image_actions.ImageAction`
   is a workflow class that does everything that BaseFilesAction does, but has
-  additional features for image files. You must install Pillow to use this.
+  additional features for image files.
 
 
 Understanding configuration
@@ -65,8 +65,8 @@ section to my Pyramid config file::
     max_file_size = 23068672
 
 Above you see a few ``[key = value]`` pairs. At startup this INI file section
-is read into a Python dictionary which is what the system actually uses as
-configuration.
+is validated and turned into a Python dictionary which is what the system
+actually uses as configuration.
 
 The first group of settings define which components we are using.
 Each value is comprised of a Python package name (containing dots),

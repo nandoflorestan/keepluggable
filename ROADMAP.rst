@@ -6,8 +6,8 @@ ROADMAP
 Urgent
 ======
 
+- Replace pydantic with colander
 - Fix inability to store .svg images
-- Support HEIC / HEIF format
 - metadata should be a class instead of a dumb dictionary.
 - Use strategies or events instead of subclassing actions.
 - Formalize action interface or use kerno actions

@@ -3,9 +3,12 @@
 from typing import Any, BinaryIO, Dict, Iterable, Optional
 
 from bag.web.exceptions import Problem
-from kerno.pydantic import Pydantic, ZeroOrMore
+import colander as c
+
+# from kerno.pydantic import Pydantic, ZeroOrMore
 from kerno.typing import DictStr
-from pydantic import PyObject
+
+# from pydantic import PyObject
 
 from keepluggable.exceptions import FileNotAllowed
 from keepluggable.orchestrator import Orchestrator
@@ -25,28 +28,28 @@ class BaseFilesAction:
         """Instantiate an action for one request."""
         self.orchestrator = orchestrator
         self.namespace = namespace
-        self.config = orchestrator.action_config
+        self.config: DictStr = orchestrator.action_config
 
-    class Config(Pydantic):
+    class Config(c.Schema):
         """Validated configuration for BaseFilesAction.
 
-        - ``max_file_size`` (int): the maximum file length, in bytes, that
-          can be uploaded. When zero, the system does not have a maximum size.
+        - ``max_file_size`` (int): the maximum file length, in bytes, that can be
+          uploaded. When zero, the system does not have a maximum size.  Default: 0.
         - ``allow_empty_files`` (boolean): whether to allow zero-length
-          files to be uploaded.
+          files to be uploaded.  Default: false.
         - ``cls_update_metadata_schema`` (dotted resource spec):
           Colander schema that validates metadata being updated.
           Without it, no validation is done, which is unsafe.
           So it is recommended that you implement a schema.
         """
 
-        max_file_size: ZeroOrMore = 0
-        allow_empty_files: bool = False
-        cls_update_metadata_schema: Optional[PyObject] = None
+        max_file_size = c.SchemaNode(c.Int(), validator=c.Range(min=0))
+        allow_empty_files = c.SchemaNode(c.Bool(), missing=False)
+        cls_update_metadata_schema = c.SchemaNode(
+            c.GlobalObject(package=None), missing=None
+        )
 
-    def store_original_file(
-        self, bytes_io: BinaryIO, repo: Any, **metadata
-    ) -> DictStr:
+    def store_original_file(self, bytes_io: BinaryIO, repo: Any, **metadata) -> DictStr:
         """Point of entry into the workflow of storing a file.
 
         You can override this method in subclasses to change the steps
@@ -65,9 +68,7 @@ class BaseFilesAction:
 
         # In the case of images, keepluggable can be configured to not store
         # the original, but it still must be checked for duplicates
-        self._check_for_existing_file(
-            bytes_io=bytes_io, metadata=metadata, repo=repo
-        )
+        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata, repo=repo)
 
         # Hook for subclasses to allow or forbid storing this file
         # by raising FileNotAllowed
@@ -151,7 +152,7 @@ class BaseFilesAction:
 
         To abort, raise FileNotAllowed with a message explaining why.
         """
-        maximum = self.config.max_file_size
+        maximum = self.config["max_file_size"]
         if maximum and metadata["length"] > maximum:
             raise FileNotAllowed(
                 "The file is {} KB long and the maximum is {} KB.".format(
@@ -159,7 +160,7 @@ class BaseFilesAction:
                 )
             )
 
-        if not self.config.allow_empty_files and metadata["length"] == 0:
+        if not self.config["allow_empty_files"] and metadata["length"] == 0:
             raise FileNotAllowed("The file is empty.")
 
     def _store_versions(
@@ -213,14 +214,10 @@ class BaseFilesAction:
 
         But first we check for duplicates of the file being stored.
         """
-        self._check_for_existing_file(
-            bytes_io=bytes_io, metadata=metadata, repo=repo
-        )
+        self._check_for_existing_file(bytes_io=bytes_io, metadata=metadata, repo=repo)
 
         storage_file = self.orchestrator.storage_file
-        storage_file.put(
-            namespace=self.namespace, metadata=metadata, bytes_io=bytes_io
-        )
+        storage_file.put(namespace=self.namespace, metadata=metadata, bytes_io=bytes_io)
 
         try:
             self._store_metadata(bytes_io, metadata)
@@ -264,13 +261,9 @@ class BaseFilesAction:
         """
         # This implementation queries the DB once rather than thousands:
         universe = list(
-            self.orchestrator.storage_metadata.gen_all(
-                self.namespace, filters=filters
-            )
+            self.orchestrator.storage_metadata.gen_all(self.namespace, filters=filters)
         )
-        originals = {
-            f["id"]: f for f in universe if f["version"] == "original"
-        }
+        originals = {f["id"]: f for f in universe if f["version"] == "original"}
         for f in originals.values():
             f["versions"] = []
         for adict in universe:
@@ -301,7 +294,7 @@ class BaseFilesAction:
         self,
         adict: DictStr,
     ) -> DictStr:
-        cls_update_metadata_schema = self.config.cls_update_metadata_schema
+        cls_update_metadata_schema = self.config["cls_update_metadata_schema"]
         if cls_update_metadata_schema is not None:
             schema = cls_update_metadata_schema()
             adict = schema.deserialize(adict)
