@@ -29,7 +29,7 @@ class ConfigurationSchema(c.Schema):
     cls_storage_metadata = c.SchemaNode(c.GlobalObject(package=None))
     cls_storage_file = c.SchemaNode(
         c.GlobalObject(package=None),
-        validator=_validate_storage_file.__func__,
+        validator=_validate_storage_file.__func__,  # type: ignore[attr-defined]
     )
 
 
