@@ -6,7 +6,6 @@ ROADMAP
 Urgent
 ======
 
-- Replace pydantic with colander
 - Fix inability to store .svg images
 - metadata should be a class instead of a dumb dictionary.
 - Use strategies or events instead of subclassing actions.

@@ -36,7 +36,6 @@
     bag = ">= 5.0.0"
     colander = "1.*"
     kerno = ">= 0.7.0"
-    pydantic = "^1.9"
     sqlalchemy = "*"
 
     # Image processing
