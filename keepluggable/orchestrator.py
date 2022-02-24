@@ -28,7 +28,8 @@ class ConfigurationSchema(c.Schema):
     cls_action = c.SchemaNode(c.GlobalObject(package=None))
     cls_storage_metadata = c.SchemaNode(c.GlobalObject(package=None))
     cls_storage_file = c.SchemaNode(
-        c.GlobalObject(package=None), validator=_validate_storage_file
+        c.GlobalObject(package=None),
+        validator=_validate_storage_file.__func__,
     )
 
 
