@@ -224,7 +224,7 @@ class ImageAction(BaseFilesAction):
         original_area = original.size[0] * original.size[1]
         new_versions = []
         for version_config in self.config["versions"]:
-            current_area = version_config.width * version_config.height
+            current_area = version_config["width"] * version_config["height"]
             if largest_version_created_so_far <= original_area:
                 # Do it
                 new_versions.append(
@@ -243,7 +243,7 @@ class ImageAction(BaseFilesAction):
         repo: Any,
     ) -> Dict[str, Any]:
         metadata = copy(original_metadata)
-        metadata["version"] = version_config.name
+        metadata["version"] = version_config["name"]
         metadata["original_id"] = original_metadata["id"]
         del metadata["id"]
 
@@ -273,18 +273,18 @@ class ImageAction(BaseFilesAction):
         self,
         original: Image,
         metadata: Dict[str, Any],
-        version_config: ImageVersionConfig,
+        version_config: DictStr,
         resample=Image.LANCZOS,
     ) -> Image:
         """Return a new image, converted from ``original``.
 
         Do it using ``version_config`` and setting ``metadata``.
         """
-        fmt = version_config.format
+        fmt = version_config["format"]
 
         # Resize, keeping the aspect ratio:
         img = self._copy_img(original, metadata, alpha=fmt != "jpeg")
-        img.thumbnail((version_config.width, version_config.height), resample)
+        img.thumbnail((version_config["width"], version_config["height"]), resample)
 
         stream = BytesIO()
         img.save(
