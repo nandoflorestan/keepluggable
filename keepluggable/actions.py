@@ -102,9 +102,15 @@ class BaseFilesAction:
         """
         from mimetypes import guess_type
 
-        typ = guess_type(metadata["file_name"])[0]
+        file_name = metadata["file_name"]
+        typ = None
+        if file_name.endswith((".HEIC", ".HEIF", ".heic", ".heif")):
+            typ = "image/heic"  # because Ubuntu 2020 is lacking this MIME type
+        else:
+            typ = guess_type(file_name)[0]  # might be None again
         if typ:
             metadata["mime_type"] = typ
+        # else keep the value provided by the browser.
 
     def _compute_length(
         self,
