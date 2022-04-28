@@ -1,6 +1,6 @@
 [tool.poetry]
     name = "keepluggable"
-    version = "0.11.0"
+    version = "0.10.1.dev1"
     description = "Manage storage of images and other files, with metadata."
     authors = ["Nando Florestan <nandoflorestan@gmail.com>"]
     license = "BSD"
