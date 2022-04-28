@@ -58,6 +58,9 @@ image file, so keepluggable rotates it for you, before creating the thumbnails.
 
 `Get started with keepluggable! <http://docs.nando.audio/keepluggable/latest/getting_started.html>`_
 
+There exists a similar library called
+`filedepot <https://pypi.org/project/filedepot/>`_.
+
 
 Collaboration
 =============
