@@ -207,7 +207,7 @@ class ImageAction(BaseFilesAction):
         original = self._rotate_exif_orientation(original)
 
         # Probably don't need to verify() the image since we are loading it
-        # original.verify()  # TODO What does this raise?
+        # original.verify()  # What does this raise?
         self._copy_img(original, metadata)  # Try to raise before storing
 
         #  No exceptions were raised,  so store the original file
