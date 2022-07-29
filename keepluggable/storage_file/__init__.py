@@ -9,9 +9,13 @@ from keepluggable.orchestrator import Orchestrator
 
 def get_extension(mime_type: str) -> str:
     """From a ``mime_type`` return a corresponding file extension, or empty."""
-    extensions = sorted(mimetypes.guess_all_extensions(
-        mime_type, strict=False))
-    return extensions[0] if extensions else ''
+    extensions = sorted(mimetypes.guess_all_extensions(mime_type, strict=False))
+    if not extensions:
+        return ""
+    extension = extensions[0]
+    if extension == ".jfif":  # Suddenly with Ubuntu 22.04 we need this
+        return ".jpe"
+    return extension
 
 
 class BasePayloadStorage(metaclass=ABCMeta):
@@ -22,9 +26,7 @@ class BasePayloadStorage(metaclass=ABCMeta):
         self.orchestrator = orchestrator
 
     @abstractmethod
-    def put(
-        self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO,
-    ) -> None:
+    def put(self, namespace: str, metadata: Dict[str, Any], bytes_io: BinaryIO) -> None:
         """Store a file (``bytes_io``) inside ``namespace``."""
         raise NotImplementedError()
 
@@ -37,19 +39,20 @@ class BasePayloadStorage(metaclass=ABCMeta):
         raise NotImplementedError()
 
     def _get_filename(self, metadata: Dict[str, Any]) -> str:
-        return metadata['md5'] + get_extension(metadata['mime_type'])
+        return metadata["md5"] + get_extension(metadata["mime_type"])
 
     @abstractmethod
     def get_url(
-        self, namespace: str, metadata: Dict[str, Any], seconds: int = 3600,
+        self,
+        namespace: str,
+        metadata: Dict[str, Any],
+        seconds: int = 3600,
         https: bool = True,
     ) -> str:
         """Return a URL for a certain stored file."""
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(
-        self, namespace: str, metadatas: Sequence[Dict[str, Any]],
-    ) -> None:
+    def delete(self, namespace: str, metadatas: Sequence[Dict[str, Any]]) -> None:
         """Delete many files within a namespace."""
         raise NotImplementedError()
