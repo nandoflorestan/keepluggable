@@ -1,6 +1,6 @@
 [tool.poetry]
 	name = "keepluggable"
-	version = "0.11.1"
+	version = "0.11.2.dev1"
 	description = "Manage storage of images and other files, with metadata."
 	readme = "README.rst"
 	authors = ["Nando Florestan <nandoflorestan@gmail.com>"]
