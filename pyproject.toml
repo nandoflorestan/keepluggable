@@ -39,8 +39,8 @@
     sqlalchemy = "*"
 
     # Image processing
-    Pillow = "8.0.*"
-    pillow-heif = "0.1.*"
+    Pillow = ">= 9.2.0"
+    pillow-heif = ">= 0.8.0"
 
     # AWS extra, these depend on botocore.
     awscli = {version = "1.22.*", optional = true}
