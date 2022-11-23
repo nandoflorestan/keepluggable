@@ -2,8 +2,9 @@
 	name = "keepluggable"
 	version = "0.11.1.dev1"
 	description = "Manage storage of images and other files, with metadata."
+	readme = "README.rst"
 	authors = ["Nando Florestan <nandoflorestan@gmail.com>"]
-	license = "BSD"
+	license = "MIT"
 	repository = "https://github.com/nandoflorestan/keepluggable"
 	documentation = "http://docs.nando.audio/keepluggable/latest/"
 	classifiers = [
