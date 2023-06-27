@@ -4,7 +4,7 @@ import base64
 from hashlib import sha1
 import hmac
 from time import time
-from typing import Any, BinaryIO, Callable, Dict, Iterable, Sequence
+from typing import Any, BinaryIO, Callable, Dict, Iterable, Optional, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset
@@ -262,7 +262,7 @@ class AmazonS3Power(AmazonS3Storage):
     def migrate_bucket(
         self,
         old_bucket: str,
-        new_bucket: str = None,
+        new_bucket: Optional[str] = None,
         skip_the_first_n: int = 0,
         discard_img_sizes: Sequence[str] = [],
         old_path_from_new_path: Callable[[str], str] = old_path_from_new_path,
