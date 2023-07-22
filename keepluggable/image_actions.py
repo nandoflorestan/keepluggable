@@ -2,7 +2,7 @@
 
 from copy import copy
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, List, Union
+from typing import Any, BinaryIO, Dict, Union
 
 from bag.text import strip_lower_preparer, strip_preparer
 import colander as c
@@ -135,7 +135,7 @@ class ImageAction(BaseFilesAction):
             return value
 
         # Convert str to validated dict
-        versions: List[DictStr] = []
+        versions: list[DictStr] = []
         for line in value.split("\n"):
             line = line.strip()
             if not line:  # Ignore an empty line

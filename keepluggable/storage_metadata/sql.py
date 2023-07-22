@@ -1,6 +1,6 @@
 """Component that stores file metadata in a relational database."""
 
-from typing import Generator, Generic, List, Optional, TypeVar
+from typing import Generator, Generic, Optional, TypeVar
 
 from bag.sqlalchemy.tricks import ID, MinimalBase, now_column
 from bag.web.exceptions import Problem
@@ -38,7 +38,7 @@ class BaseFile(ID, MinimalBase):
     image_width = Column(Integer, doc="Image width in pixels")
     image_height = Column(Integer, doc="Image height in pixels")
     version = Column(Unicode(20), default="original")
-    versions: List["BaseFile"]  # must be implemented in subclasses
+    versions: list["BaseFile"]  # must be implemented in subclasses
 
     @property
     def aspect_ratio(self):
