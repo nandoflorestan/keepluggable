@@ -2,11 +2,12 @@
 
 from pathlib import Path
 from shutil import rmtree
-from typing import Any, BinaryIO, Dict, Iterable, Sequence
+from typing import BinaryIO, Dict, Iterable, Sequence
 
 from bag.settings import resolve_path
 from bag.text import strip_preparer
 import colander as c
+from kerno.typing import DictStr
 
 from keepluggable.orchestrator import get_middle_path, Orchestrator
 from keepluggable.storage_file import BasePayloadStorage
@@ -63,7 +64,7 @@ class LocalStorage(BasePayloadStorage):
             name=self.orchestrator.config["name"], namespace=namespace
         )
 
-    def get_reader(self, namespace: str, metadata: Dict[str, Any]) -> BinaryIO:
+    def get_reader(self, namespace: str, metadata: DictStr) -> BinaryIO:
         """Return a stream for the file content."""
         try:
             return open(
@@ -75,12 +76,7 @@ class LocalStorage(BasePayloadStorage):
                 "Key not found: {} / {}".format(namespace, metadata["md5"])
             ) from e
 
-    def put(
-        self,
-        namespace: str,
-        metadata: Dict[str, Any],
-        bytes_io: BinaryIO,
-    ) -> None:
+    def put(self, namespace: str, metadata: DictStr, bytes_io: BinaryIO) -> None:
         """Store a file (``bytes_io``) inside ``namespace``."""
         if bytes_io.tell():
             bytes_io.seek(0)
@@ -98,11 +94,7 @@ class LocalStorage(BasePayloadStorage):
         assert outfile.lstat().st_size == metadata["length"]
 
     def get_url(
-        self,
-        namespace: str,
-        metadata: Dict[str, Any],
-        seconds: int = 3600,
-        https: bool = True,
+        self, namespace: str, metadata: DictStr, seconds: int = 3600, https: bool = True
     ) -> str:
         """Return a Pyramid static URL.
 
@@ -127,11 +119,7 @@ class LocalStorage(BasePayloadStorage):
             )
         )
 
-    def delete(
-        self,
-        namespace: str,
-        metadatas: Sequence[Dict[str, Any]],
-    ) -> None:
+    def delete(self, namespace: str, metadatas: Sequence[DictStr]) -> None:
         """Delete many files."""
         base_path = self._dir_of(namespace)
         for metadata in metadatas:

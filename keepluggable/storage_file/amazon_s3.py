@@ -10,6 +10,7 @@ from urllib.parse import quote
 from bag import dict_subset
 from bag.text import strip_preparer
 import colander as c
+from kerno.typing import DictStr
 
 # http://botocore.readthedocs.org/en/latest/
 from botocore.exceptions import ClientError
@@ -70,17 +71,17 @@ class AmazonS3Storage(BasePayloadStorage):
 
     SEP = "/"
 
-    def _get_path(self, namespace: str, metadata: Dict[str, Any]) -> str:
+    def _get_path(self, namespace: str, metadata: DictStr) -> str:
         return (
             get_middle_path(name=self.orchestrator.config["name"], namespace=namespace)
             + self.SEP
             + self._get_filename(metadata)
         )
 
-    def _get_object(self, namespace: str, metadata: Dict[str, Any]):
+    def _get_object(self, namespace: str, metadata: DictStr):
         return self.bucket.Object(self._get_path(namespace, metadata))
 
-    def get_reader(self, namespace: str, metadata: Dict[str, Any]):
+    def get_reader(self, namespace: str, metadata: DictStr):
         """Return a stream for the file content."""
         try:
             adict = self._get_object(namespace, metadata).get()
@@ -92,12 +93,7 @@ class AmazonS3Storage(BasePayloadStorage):
             # botocore.response.StreamingBody has .read(), but not .tell():
             return adict["Body"]
 
-    def put(
-        self,
-        namespace: str,
-        metadata: Dict[str, Any],
-        bytes_io: BinaryIO,
-    ) -> None:
+    def put(self, namespace: str, metadata: DictStr, bytes_io: BinaryIO) -> None:
         """Store a file."""
         subset = dict_subset(
             metadata,
@@ -131,17 +127,13 @@ class AmazonS3Storage(BasePayloadStorage):
         # print(result)
         return result
 
-    def _convert_values_to_str(self, subset: Dict[str, Any]) -> None:
+    def _convert_values_to_str(self, subset: DictStr) -> None:
         """Replace ints with the strings that botocore likes values to be."""
         for k in subset.keys():
             subset[k] = str(subset[k])
 
     def get_url(
-        self,
-        namespace: str,
-        metadata: Dict[str, Any],
-        seconds: int = DAY,
-        https: bool = True,
+        self, namespace: str, metadata: DictStr, seconds: int = DAY, https: bool = True
     ) -> str:
         """Return S3 authenticated URL without making a request.
 
@@ -167,11 +159,7 @@ class AmazonS3Storage(BasePayloadStorage):
             )
         )
 
-    def delete(
-        self,
-        namespace: str,
-        metadatas: Sequence[Dict[str, Any]],
-    ) -> Any:
+    def delete(self, namespace: str, metadatas: Sequence[DictStr]) -> Any:
         """Delete up to 1000 files."""
         number = len(metadatas)
         assert number <= 1000, (

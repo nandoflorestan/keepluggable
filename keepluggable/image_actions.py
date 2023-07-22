@@ -151,7 +151,7 @@ class ImageAction(BaseFilesAction):
     def _img_from_stream(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
     ) -> Image:
         try:
             img = Image.open(bytes_io)
@@ -186,7 +186,7 @@ class ImageAction(BaseFilesAction):
     def _store_versions(
         self,
         bytes_io: BinaryIO,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         repo: Any,
     ) -> None:
         # We override this method to deal with images.
@@ -238,10 +238,10 @@ class ImageAction(BaseFilesAction):
     def _store_img_version(
         self,
         original: Image,
-        original_metadata: Dict[str, Any],
+        original_metadata: DictStr,
         version_config: ImageVersionConfig,
         repo: Any,
-    ) -> Dict[str, Any]:
+    ) -> DictStr:
         metadata = copy(original_metadata)
         metadata["version"] = version_config["name"]
         metadata["original_id"] = original_metadata["id"]
@@ -257,7 +257,7 @@ class ImageAction(BaseFilesAction):
     def _copy_img(
         self,
         original: Image,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         alpha: bool = True,
     ) -> Image:
         mode = "RGBA" if alpha else "RGB"
@@ -272,7 +272,7 @@ class ImageAction(BaseFilesAction):
     def _convert_img(
         self,
         original: Image,
-        metadata: Dict[str, Any],
+        metadata: DictStr,
         version_config: DictStr,
         resample=Image.LANCZOS,
     ) -> Image:
@@ -303,7 +303,7 @@ class ImageAction(BaseFilesAction):
 
         return img
 
-    def _complement(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def _complement(self, metadata: DictStr) -> DictStr:
         """Omit the main *href* if we are not storing original images."""
         metadata = super()._complement(metadata)
         # Add main *href* if we are storing original images or if not image
