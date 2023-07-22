@@ -4,7 +4,7 @@ import base64
 from hashlib import sha1
 import hmac
 from time import time
-from typing import Any, BinaryIO, Callable, Dict, Iterable, Optional, Sequence
+from typing import Any, BinaryIO, Callable, Iterable, Optional, Sequence
 from urllib.parse import quote
 
 from bag import dict_subset

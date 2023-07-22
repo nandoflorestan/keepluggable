@@ -1,7 +1,7 @@
 """The *Orchestrator* coordinates the components you chose in configuration."""
 
 from os import PathLike
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from bag.text import strip_preparer
 import colander as c
@@ -44,7 +44,7 @@ class Orchestrator:
       action class, in order to serve a request.
     """
 
-    instances: Dict[str, "Orchestrator"] = {}
+    instances: dict[str, "Orchestrator"] = {}
 
     def __init__(self, config: DictStr) -> None:
         """Instantiate from a validated configuration dictionary."""

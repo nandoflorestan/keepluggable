@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from shutil import rmtree
-from typing import BinaryIO, Dict, Iterable, Sequence
+from typing import BinaryIO, Iterable, Sequence
 
 from bag.settings import resolve_path
 from bag.text import strip_preparer

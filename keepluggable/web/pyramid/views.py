@@ -4,7 +4,7 @@ Views must be thin. They marshal data into *actions* that contain the actual
 business logic ― which thus becomes reusable.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from bag.web.exceptions import Problem
 from bag.web.pyramid.views import ajax_view, get_json_or_raise
@@ -134,7 +134,7 @@ def update_metadata(context, request: PyramidRequest) -> DictStr:
     return context.action.update_metadata(context.__name__, adict)
 
 
-def get_operations(base_url: str = "") -> Dict[str, DictStr]:
+def get_operations(base_url: str = "") -> dict[str, DictStr]:
     """Return a dict containing all information about our views and URLs."""
     return {
         "List files in storage": dict(

@@ -2,7 +2,7 @@
 
 from copy import copy
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, Union
+from typing import Any, BinaryIO
 
 from bag.text import strip_lower_preparer, strip_preparer
 import colander as c

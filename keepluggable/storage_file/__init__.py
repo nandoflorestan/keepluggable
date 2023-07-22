@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 import mimetypes
-from typing import BinaryIO, Dict, Sequence
+from typing import BinaryIO, Sequence
 
 from kerno.typing import DictStr
 
