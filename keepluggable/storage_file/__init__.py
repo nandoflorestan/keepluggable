@@ -52,5 +52,8 @@ class BasePayloadStorage(metaclass=ABCMeta):
 
     @abstractmethod
     def delete(self, namespace: str, metadatas: Sequence[DictStr]) -> None:
-        """Delete many files within a namespace."""
+        """Delete many files within a namespace.
+
+        metadatas is a Sequence, not just an Iterable, so we can len() it.
+        """
         raise NotImplementedError()
