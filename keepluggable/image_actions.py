@@ -14,7 +14,6 @@ from pillow_heif import register_heif_opener
 
 from keepluggable.actions import BaseFilesAction
 from keepluggable.exceptions import FileNotAllowed
-from keepluggable.orchestrator import Orchestrator
 
 register_heif_opener()  # and now Pillow can read the HEIC format.
 
