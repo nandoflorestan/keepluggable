@@ -60,7 +60,7 @@ class BaseFilesAction:
         *metadata* is a dict with the information to be persisted in
         the metadata storage.
         """
-        assert metadata["file_name"]
+        assert metadata["file_name"], "Missing file name."
 
         # This is not a derived file such as a resized image.
         metadata["version"] = "original"

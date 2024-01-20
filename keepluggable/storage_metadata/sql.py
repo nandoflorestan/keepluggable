@@ -136,7 +136,7 @@ class SQLAlchemyMetadataStorage(Generic[TFile]):
         )
 
         # Get a session at startup just to make sure it is configured
-        assert self._get_session() is not None
+        assert self._get_session() is not None, "Cannot obtain a SQLAlchemy session."
 
     def _get_session(self):
         """Return the SQLAlchemy session."""

@@ -91,7 +91,9 @@ class LocalStorage(BasePayloadStorage):
                     writer.write(chunk)
                 else:
                     break
-        assert outfile.lstat().st_size == metadata["length"]
+        assert (
+            outfile.lstat().st_size == metadata["length"]
+        ), "Reported file size must match actual file size."
 
     def get_url(
         self, namespace: str, metadata: DictStr, seconds: int = 3600, https: bool = True
