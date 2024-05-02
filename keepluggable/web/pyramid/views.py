@@ -24,9 +24,7 @@ def list_files(context, request: PyramidRequest) -> DictStr:
 
         curl -i -H 'Accept: application/json' http://localhost:6543/d/1/files
     """
-    return {
-        "items": list(context.action.gen_originals(filters=context.filters))
-    }
+    return {"items": list(context.action.gen_originals(filters=context.filters))}
 
 
 @ajax_view
@@ -48,7 +46,7 @@ def upload_single_file(context, request: PyramidRequest) -> DictStr:
             file_name=fieldStorage.filename,
             mime_type=fieldStorage.type,
             repo=getattr(request, "repo"),
-            **other_posted_data
+            **other_posted_data,
         )
     except (OSError, FileNotAllowed) as e:
         raise Problem(
@@ -88,7 +86,7 @@ def upload_multiple_files(context, request: PyramidRequest) -> DictStr:
                 file_name=fieldStorage.filename,
                 mime_type=fieldStorage.type,
                 repo=getattr(request, "repo"),
-                **other_posted_data
+                **other_posted_data,
             )
             items.append(metadata)
         except (OSError, FileNotAllowed) as e:
