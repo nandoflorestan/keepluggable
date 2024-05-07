@@ -1,5 +1,7 @@
 """The *Orchestrator* coordinates the components you chose in configuration."""
 
+from __future__ import annotations  # allows forward references; python 3.7+
+from configparser import SectionProxy
 from os import PathLike
 from typing import Any, Union
 
@@ -48,27 +50,23 @@ class Orchestrator:
 
     def __init__(self, config: DictStr) -> None:
         """Instantiate from a validated configuration dictionary."""
+        name = config["name"]
+        assert None is Orchestrator.instances.get(
+            name
+        ), f"Orchestrator instantiated more than once: {name}"
         self.config = config
         self.storage_file = config["cls_storage_file"](self)
         self.storage_metadata = config["cls_storage_metadata"](self)
-        Orchestrator.instances[config["name"]] = self
+        Orchestrator.instances[name] = self
         self.action_config: DictStr = config["cls_action"].get_config(
             config["settings"]
         )
 
     @classmethod
-    def from_ini(
-        cls,
-        name: str,
-        *paths: Union[str, PathLike],
-        encoding: str = "utf-8",
-    ) -> "Orchestrator":
-        """Read one or more INI files and return an Orchestrator instance."""
-        from configparser import ConfigParser
-
-        parser = ConfigParser()
-        parser.read(paths, encoding=encoding)
-        section = parser["keepluggable " + name]
+    def instantiate_validating(
+        cls, name: str, section: DictStr | SectionProxy
+    ) -> Orchestrator:
+        """Validate the configuration section and return the Orchestrator."""
         config: DictStr = ConfigurationSchema().deserialize(
             {
                 "name": name,
@@ -79,6 +77,21 @@ class Orchestrator:
         )
         config["settings"] = section  # each component takes its own settings from here
         return cls(config)
+
+    @classmethod
+    def from_ini(
+        cls,
+        name: str,
+        *paths: Union[str, PathLike],
+        encoding: str = "utf-8",
+    ) -> Orchestrator:
+        """Read one or more INI files and return an Orchestrator instance."""
+        from configparser import ConfigParser
+
+        parser = ConfigParser()
+        parser.read(paths, encoding=encoding)
+        section = parser["keepluggable " + name]
+        return cls.instantiate_validating(name=name, section=section)
 
     def get_action(self, namespace: str) -> Any:
         """Conveniently instantiate the configured action class."""
