@@ -121,6 +121,10 @@ class LocalStorage(BasePayloadStorage):
             )
         )
 
+    def get_path(self, namespace: str, metadata: DictStr) -> Path:
+        """Return the local path where a payload is stored."""
+        return self._dir_of(namespace) / self._get_filename(metadata)
+
     def delete(self, namespace: str, metadatas: Sequence[DictStr]) -> None:
         """Delete many files."""
         base_path = self._dir_of(namespace)
