@@ -9,7 +9,8 @@ import colander as c
 
 # import imghdr  # imghdr.what(file)
 from kerno.typing import DictStr
-from PIL import Image, ExifTags
+from PIL import ExifTags, Image as image_module
+from PIL.Image import Image
 from pillow_heif import register_heif_opener
 
 from keepluggable.actions import BaseFilesAction
@@ -153,7 +154,7 @@ class ImageAction(BaseFilesAction):
         metadata: DictStr,
     ) -> Image:
         try:
-            img = Image.open(bytes_io)
+            img = image_module.open(bytes_io)
         except OSError:
             raise FileNotAllowed(
                 'Unable to store the image "{}" because '
@@ -161,7 +162,7 @@ class ImageAction(BaseFilesAction):
                     metadata["file_name"]
                 )
             )
-        img.bytes_io = bytes_io
+        img.stream = bytes_io  # type: ignore [attr-defined]
         return img
 
     def _rotate_exif_orientation(self, img: Image) -> Image:
@@ -249,7 +250,7 @@ class ImageAction(BaseFilesAction):
         img = self._convert_img(original, metadata, version_config)
 
         # Store the new metadata and the new payload
-        self._store_file(img.stream, metadata, repo)
+        self._store_file(img.stream, metadata, repo)  # type: ignore [attr-defined]
 
         return metadata
 
@@ -273,7 +274,7 @@ class ImageAction(BaseFilesAction):
         original: Image,
         metadata: DictStr,
         version_config: DictStr,
-        resample=Image.LANCZOS,
+        resample=image_module.LANCZOS,  # type: ignore [attr-defined]
     ) -> Image:
         """Return a new image, converted from ``original``.
 
@@ -292,7 +293,8 @@ class ImageAction(BaseFilesAction):
             quality=self.config["versions_quality"],
             optimize=1,
         )
-        img.stream = stream  # so we can recover it elsewhere
+        # We want to recover the stream elsewhere, so:
+        img.stream = stream  # type: ignore [attr-defined]
 
         # Fill in the metadata
         metadata["mime_type"] = "image/" + fmt
