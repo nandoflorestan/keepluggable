@@ -1,61 +1,61 @@
 [tool.poetry]
-	name = "keepluggable"
-	version = "0.11.2.dev1"
-	description = "Manage storage of images and other files, with metadata."
-	readme = "README.rst"
-	authors = ["Nando Florestan <nandoflorestan@gmail.com>"]
-	license = "MIT"
-	repository = "https://github.com/nandoflorestan/keepluggable"
-	documentation = "http://docs.nando.audio/keepluggable/latest/"
-	classifiers = [
-		# https://pypi.org/pypi?:action=list_classifiers
-		"Development Status :: 4 - Beta",
-		# "Development Status :: 5 - Production/Stable",
-		"Intended Audience :: Developers",
-		"License :: OSI Approved :: MIT License",
-		"Operating System :: OS Independent",
-		"Programming Language :: Python",
-		"Programming Language :: Python :: 3",
-		"Programming Language :: Python :: 3.9",
-		"Programming Language :: Python :: 3.10",
-		"Programming Language :: Python :: 3.11",
-		"Programming Language :: Python :: Implementation :: CPython",
-		# 'Programming Language :: Python :: Implementation :: PyPy',
-		"Framework :: Pyramid",
-		"Topic :: Database",
-		"Topic :: Internet :: WWW/HTTP",
-		"Topic :: Internet :: WWW/HTTP :: WSGI",
-		"Topic :: Multimedia :: Graphics :: Graphics Conversion",
-		"Topic :: Software Development :: Libraries :: Python Modules",
-	]
-	# A list of keywords (max: 5) that the package is related to
-	keywords = ["web", "pyramid", "images", "store", "thumbnails"]
+name = "keepluggable"
+version = "0.11.2.dev1"
+description = "Manage storage of images and other files, with metadata."
+readme = "README.rst"
+authors = ["Nando Florestan <nandoflorestan@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/nandoflorestan/keepluggable"
+documentation = "http://docs.nando.audio/keepluggable/latest/"
+classifiers = [
+	# https://pypi.org/pypi?:action=list_classifiers
+	"Development Status :: 4 - Beta",
+	# "Development Status :: 5 - Production/Stable",
+	"Intended Audience :: Developers",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Programming Language :: Python :: Implementation :: CPython",
+	# 'Programming Language :: Python :: Implementation :: PyPy',
+	"Framework :: Pyramid",
+	"Topic :: Database",
+	"Topic :: Internet :: WWW/HTTP",
+	"Topic :: Internet :: WWW/HTTP :: WSGI",
+	"Topic :: Multimedia :: Graphics :: Graphics Conversion",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+]
+# A list of keywords (max: 5) that the package is related to
+keywords = ["web", "pyramid", "images", "store", "thumbnails"]
 
 [tool.poetry.dependencies]
-	python = ">= 3.9"
-	# https://python-poetry.org/docs/dependency-specification/
-	bag = ">= 5.0.0"
-	colander = "1.*"
-	kerno = ">= 0.7.0"
-	sqlalchemy = "*"
+python = ">= 3.11"
+# https://python-poetry.org/docs/dependency-specification/
+bag = ">= 5.0.0"
+colander = "1.*"
+kerno = ">= 0.7.0"
+sqlalchemy = "*"
 
-	# Image processing
-	Pillow = ">= 9.2.0"
-	pillow-heif = ">= 0.8.0"
+# Image processing
+Pillow = ">= 9.2.0"
+pillow-heif = ">= 0.8.0"
 
-	# AWS extra, these depend on botocore.
-	awscli = {version = "^1.22", optional = true}
-	boto3 = {version = "^1.20", optional = true}
+# AWS extra, these depend on botocore.
+awscli = { version = "^1.22", optional = true }
+boto3 = { version = "^1.20", optional = true }
 
 [tool.poetry.extras]
-	aws = ["awscli", "boto3"]
+aws = ["awscli", "boto3"]
 
-[tool.poetry.dev-dependencies]
-	pytest = "*"
-	releaser = "3.*"
-	sphinx = "*"
-	sphinx-autodoc-typehints = "*"
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+releaser = "3.*"
+sphinx = "*"
+sphinx-autodoc-typehints = "*"
 
 [build-system]
-	requires = ["poetry-core>=1.0.0"]
-	build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
