@@ -125,18 +125,20 @@ class ImageAction(BaseFilesAction):
 
     @classmethod
     def get_config(cls, settings: DictStr) -> DictStr:
-        """Image versions are a complex string in configuration; parse them.
+        """Parse image versions from configuration.
+
+        - They can be a list of strings (e.g. coming from TOML)
+        - They can be a single string with each version on a line (e.g. from INI)
 
         This gets called by the orchestrator at startup.
         Return the entire action configuration dictionary.
         """
         value = settings["versions"]
-        if not isinstance(value, str):
-            return value
-
-        # Convert str to validated dict
+        lines: list[str] = value.split("\n") if isinstance(value, str) else value
+        assert isinstance(lines, list)
+        # Convert each line to a validated dict specifying an image version
         versions: list[DictStr] = []
-        for line in value.split("\n"):
+        for line in lines:
             line = line.strip()
             if not line:  # Ignore an empty line
                 continue
