@@ -185,12 +185,7 @@ class ImageAction(BaseFilesAction):
         rotated = img.rotate(degrees, expand=True) if degrees else img
         return rotated
 
-    def _store_versions(
-        self,
-        bytes_io: BinaryIO,
-        metadata: DictStr,
-        repo: Any,
-    ) -> None:
+    def _store_versions(self, bytes_io: BinaryIO, metadata: DictStr, repo: Any) -> None:
         # We override this method to deal with images.
         is_image = metadata["mime_type"].startswith("image")
         if not is_image:

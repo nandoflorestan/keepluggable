@@ -65,7 +65,7 @@ class BaseFilesAction:
         # This is not a derived file such as a resized image.
         metadata["version"] = "original"
 
-        self._compute_file_metadata(bytes_io=bytes_io, metadata=metadata)
+        self._compute_file_metadata(bytes_io=bytes_io, metadata=metadata, repo=repo)
 
         # In the case of images, keepluggable can be configured to not store
         # the original, but it still must be checked for duplicates
@@ -82,6 +82,7 @@ class BaseFilesAction:
         self,
         bytes_io: BinaryIO,
         metadata: DictStr,
+        repo: Any,
     ) -> None:
         """Override this method in subclasses to populate the file metadata."""
         self._guess_mime_type(bytes_io, metadata)
